@@ -46,6 +46,7 @@ function toApp(r) {
     fonte:r.fonte||"Instagram", fase:r.fase||"INVITO",
     conosciutoAt:r.conosciuto_at||"", followUp:r.follow_up||"",
     note:r.note||"", storico:r.storico||[], profilazione:r.profilazione||{},
+    pacchetto:r.pacchetto||"",
   };
 }
 function toDB(p, uid) {
@@ -53,8 +54,17 @@ function toDB(p, uid) {
     id:p.id, user_id:uid, nome:p.nome, cognome:p.cognome, citta:p.citta,
     fonte:p.fonte, fase:p.fase, conosciuto_at:p.conosciutoAt,
     follow_up:p.followUp||null, note:p.note, storico:p.storico, profilazione:p.profilazione,
+    pacchetto:p.pacchetto||null,
   };
 }
+
+const PACCHETTI = [
+  { key:"starter",   label:"Starter",   bv:100  },
+  { key:"standard",  label:"Standard",  bv:250  },
+  { key:"premium",   label:"Premium",   bv:550  },
+  { key:"signature", label:"Signature", bv:1025 },
+];
+function bvOfPacchetto(key) { const p = PACCHETTI.find(x=>x.key===key); return p?p.bv:0; }
 
 const FASI_FUNNEL   = ["INVITO","FUP1","FUP2","PACK","CLOSING","SUB"];
 const FASI_DASH     = ["FUP1","FUP2","PACK","CLOSING","SUB"];
@@ -164,7 +174,8 @@ function teamStats(prospects) {
   const sub   = prospects.filter(p=>p.fase==="SUB").length;
   const act   = prospects.filter(p=>["FUP1","FUP2","PACK","CLOSING"].includes(p.fase)).length;
   const conv  = total>0 ? Math.round(sub/total*100) : 0;
-  return { total, sub, act, conv };
+  const bv    = prospects.filter(p=>p.fase==="SUB").reduce((acc,p)=>acc+bvOfPacchetto(p.pacchetto),0);
+  return { total, sub, act, conv, bv };
 }
 
 const CSS = `
@@ -684,7 +695,7 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam }) {
             {label:"Prospect totali",value:mStats.total,color:"#2563eb",icon:"👥"},
             {label:"Iscritti",value:mStats.sub,color:"#10b981",icon:"✅"},
             {label:"In percorso",value:mStats.act,color:"#0ea5e9",icon:"📊"},
-            {label:"Conv. rate",value:mStats.conv+"%",color:convColor(mStats.conv),icon:"🎯"},
+            {label:"BV prodotti",value:mStats.bv,color:"#f59e0b",icon:"🏆"},
           ].map((k,i)=>(
             <div key={i} style={{background:"#080f1f",border:"1px solid #11203a",borderRadius:14,padding:"16px 18px",position:"relative",overflow:"hidden"}}>
               <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"linear-gradient(90deg,"+k.color+","+k.color+"44)",borderRadius:"14px 14px 0 0"}} />
@@ -752,7 +763,7 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam }) {
           {label:"Membri team",value:downline.length,color:"#8b5cf6",icon:"◈"},
           {label:"Prospect totali",value:statsTot.total,color:"#2563eb",icon:"👥"},
           {label:"Iscritti team",value:statsTot.sub,color:"#10b981",icon:"✅"},
-          {label:"Conv. media",value:statsTot.conv+"%",color:convColor(statsTot.conv),icon:"🎯"},
+          {label:"BV team",value:statsTot.bv,color:"#f59e0b",icon:"🏆"},
         ].map((k,i)=>(
           <div key={i} className="kpi" style={{background:"#080f1f",border:"1px solid #11203a",borderRadius:14,padding:"16px 18px",position:"relative",overflow:"hidden"}}>
             <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"linear-gradient(90deg,"+k.color+","+k.color+"44)",borderRadius:"14px 14px 0 0"}} />
@@ -777,11 +788,12 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam }) {
                 <span style={{fontSize:13,fontWeight:900,color,textTransform:"capitalize"}}>Squadra {team}</span>
                 <span style={{fontSize:11,color:"#3b5478"}}>{members} membri</span>
               </div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8}}>
                 {[
                   {l:"Prospect",v:stats.total},
                   {l:"Iscritti",v:stats.sub},
                   {l:"Conv%",v:stats.conv+"%"},
+                  {l:"BV",v:stats.bv},
                 ].map(({l,v})=>(
                   <div key={l} style={{background:"#0a1426",borderRadius:9,padding:"10px"}}>
                     <div style={{fontSize:10,color:"#3b5478",marginBottom:4}}>{l}</div>
@@ -836,7 +848,7 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam }) {
             </div>
           : <table style={{width:"100%",borderCollapse:"collapse"}}>
               <thead><tr style={{borderBottom:"1px solid #11203a"}}>
-                {["Membro","Squadra","Prospect","Iscritti","Conv%","Azione",""].map(h=>(
+                {["Membro","Squadra","Prospect","Iscritti","Conv%","BV","Azione",""].map(h=>(
                   <th key={h} style={{textAlign:"left",color:"#3b5478",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>
                 ))}
               </tr></thead>
@@ -866,6 +878,7 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam }) {
                     <td style={{padding:"12px 16px",fontWeight:700,color:"#eff6ff",fontSize:13}}>{ms.total}</td>
                     <td style={{padding:"12px 16px",fontWeight:700,color:"#10b981",fontSize:13}}>{ms.sub}</td>
                     <td style={{padding:"12px 16px",fontWeight:800,fontSize:13,color:convColor(ms.conv)}}>{ms.conv}%</td>
+                    <td style={{padding:"12px 16px",fontWeight:800,fontSize:13,color:"#f59e0b"}}>{ms.bv}</td>
                     <td style={{padding:"12px 16px"}}>
                       <button onClick={()=>setSelectedMember(m)} style={{padding:"6px 12px",background:"#0d1b33",color:"#60a5fa",border:"1px solid #1e3a5f",borderRadius:7,cursor:"pointer",fontWeight:700,fontSize:11}}>
                         Dettaglio →
@@ -885,11 +898,12 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam }) {
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, funnelCounts, funnelMax, urgenti, dashCiclo, setDashCiclo, onOpen }) {
   const cc = v => v>=20?"#10b981":v>=10?"#0ea5e9":"#f59e0b";
+  const bvCiclo = cdSub.reduce((acc,p)=>acc+bvOfPacchetto(p.pacchetto),0);
   const kpis = [
     {label:"In percorso",value:cdAct.length,icon:"📊",color:"#2563eb",sub:cd.length+" totali nel ciclo",detail:"FUP1 → Closing"},
     {label:"Conv. ciclo",value:cdConv+"%",icon:"🎯",color:cc(cdConv),sub:cdSub.length+" iscritti / "+cd.length,detail:cdConv>=20?"Ottimo 🔥":cdConv>=10?"Nella media":"Da migliorare"},
     {label:"Iscritti ciclo",value:cdSub.length,icon:"✅",color:"#10b981",sub:"su "+cd.length+" conosciuti",detail:"questo ciclo"},
-    {label:"Conv. totale",value:totConv+"%",icon:"📈",color:cc(totConv),sub:totSub+" / "+totAll+" tot.",detail:"tutti i cicli"},
+    {label:"BV ciclo",value:bvCiclo,icon:"🏆",color:"#f59e0b",sub:"da "+cdSub.length+" iscritti",detail:"Business Volume"},
   ];
   return (
     <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
@@ -1105,6 +1119,20 @@ function FormModal({ form, setForm, onSave, onClose, onDelete, isEdit }) {
         <div style={{gridColumn:"1/-1"}}><label style={lbl}>Data conoscenza</label><input type="date" value={form.conosciutoAt||today()} onChange={e=>set("conosciutoAt",e.target.value)} /></div>
         <div style={{gridColumn:"1/-1"}}><label style={lbl}>Ciclo</label><select value={cicloCalc} onChange={e=>onCicloChange(Number(e.target.value))}>{CICLO_NUMS.map(c=><option key={c} value={c}>Ciclo {c} — {cicloLabel(c)}</option>)}</select></div>
         <div style={{gridColumn:"1/-1"}}><label style={lbl}>Prossimo Follow-up</label><input type="date" value={form.followUp||""} onChange={e=>set("followUp",e.target.value)} /></div>
+        {form.fase==="SUB" && (
+          <div style={{gridColumn:"1/-1"}}>
+            <label style={lbl}>Pacchetto</label>
+            <select value={form.pacchetto||""} onChange={e=>set("pacchetto",e.target.value)}>
+              <option value="">Seleziona pacchetto...</option>
+              {PACCHETTI.map(p=><option key={p.key} value={p.key}>{p.label} — {p.bv} BV</option>)}
+            </select>
+            {form.pacchetto && (
+              <div style={{marginTop:8,background:"#10b98115",border:"1px solid #10b98130",borderRadius:9,padding:"8px 12px",fontSize:12,color:"#10b981",fontWeight:700}}>
+                🏆 {bvOfPacchetto(form.pacchetto)} BV prodotti
+              </div>
+            )}
+          </div>
+        )}
       </div>
       <div style={{marginBottom:18}}><label style={lbl}>Note</label><textarea value={form.note||""} onChange={e=>set("note",e.target.value)} style={{height:76,resize:"vertical"}} placeholder="Dove l'ho conosciuto, contesto..." /></div>
       <div style={{display:"flex",gap:9,justifyContent:"flex-end",flexWrap:"wrap"}}>
@@ -1210,6 +1238,15 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onRiattiva, o
           )}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:9}}>
             {[{l:"Fase ora",v:FASE_LABEL[p.fase],color:clr},{l:"Ciclo conoscenza",v:ciclo?"Ciclo "+ciclo:"\u2014",color:ciclo===CICLO_CORRENTE?"#2563eb":undefined},{l:"Conosciuto il",v:fmt(p.conosciutoAt)},{l:"Follow-up",v:p.followUp?(od?"⚠️ Scaduto · ":dt?"📅 Oggi · ":"✅ ")+fmt(p.followUp):"Non impostato",color:od?"#f87171":dt?"#fbbf24":undefined}].map(({l,v,color:col})=>(<div key={l} style={box}><div style={lbl}>{l}</div><div style={{color:col||"#eff6ff",fontWeight:700,fontSize:13}}>{v}</div></div>))}
+            {p.fase==="SUB"&&(
+              <div style={{...box,gridColumn:"1/-1",background:"#10b98112",border:"1px solid #10b98130"}}>
+                <div style={lbl}>Pacchetto</div>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <span style={{color:"#10b981",fontWeight:800,fontSize:13}}>{p.pacchetto?PACCHETTI.find(x=>x.key===p.pacchetto)?.label||"\u2014":"Non impostato"}</span>
+                  {p.pacchetto&&<span style={{fontWeight:900,fontSize:16,color:"#10b981"}}>🏆 {bvOfPacchetto(p.pacchetto)} BV</span>}
+                </div>
+              </div>
+            )}
           </div>
           {storico.length>0&&(<div style={{...box,marginBottom:9}}><div style={lbl}>🛤️ Storico percorso</div><div style={{display:"flex",flexDirection:"column",gap:6,marginTop:8}}>{storico.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:9}}><span style={{width:8,height:8,borderRadius:99,background:FASE_CLR[s.fase],flexShrink:0,boxShadow:"0 0 6px "+FASE_CLR[s.fase]+"70"}}/><span style={{fontSize:12.5,fontWeight:700,color:"#eff6ff",minWidth:64}}>{FASE_LABEL[s.fase]}</span><span style={{fontSize:11,color:"#5278a8"}}>{fmt(s.data)}</span><span style={{fontSize:10,color:"#3b5478",marginLeft:"auto"}}>Ciclo {cicloOfDate(s.data)||"\u2014"}</span></div>))}</div></div>)}
           {p.note&&<div style={{...box,marginBottom:9}}><div style={lbl}>📝 Note</div><p style={{color:"#94b5d8",lineHeight:1.6,fontSize:13,marginTop:4}}>{p.note}</p></div>}
