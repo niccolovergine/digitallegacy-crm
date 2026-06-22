@@ -425,6 +425,7 @@ export default function App() {
 
   async function saveForm() {
     if (!form.nome?.trim()) return;
+    if (form.fase === "SUB" && !form.pacchetto) { showToast("Seleziona il pacchetto per un iscritto ❌", "#ef4444"); return; }
     setSaving(true);
     try {
       const conosciutoAt = form.conosciutoAt||today();
