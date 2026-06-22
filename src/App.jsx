@@ -670,9 +670,9 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam }) {
   const convColor = v => v>=20?"#10b981":v>=10?"#0ea5e9":"#f59e0b";
 
   const compareData = [
-    { name:"Prospect", sinistra:statsS.total, destra:statsD.total },
-    { name:"Iscritti",  sinistra:statsS.sub,   destra:statsD.sub },
-    { name:"Attivi",    sinistra:statsS.act,   destra:statsD.act },
+    { name:"In percorso", sinistra:statsS.act,   destra:statsD.act },
+    { name:"Iscritti",    sinistra:statsS.sub,   destra:statsD.sub },
+    { name:"BV",          sinistra:statsS.bv,    destra:statsD.bv  },
   ];
 
   if (selectedMember) {
@@ -781,7 +781,7 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam }) {
       <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12,marginBottom:16}}>
         {[
           {label:"Membri team",  value:downline.length,       color:"#8b5cf6", icon:"◈"},
-          {label:"Prospect",     value:statsTot.total,        color:"#2563eb", icon:"👥"},
+          {label:"In percorso",  value:statsTot.act,          color:"#2563eb", icon:"📊"},
           {label:"Iscritti",     value:statsTot.sub,          color:"#10b981", icon:"✅"},
           {label:"Conv. team",   value:statsTot.conv+"%",     color:convColor(statsTot.conv), icon:"🎯"},
           {label:"BV team",      value:statsTot.bv,           color:"#f59e0b", icon:"🏆"},
@@ -797,6 +797,49 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam }) {
         ))}
       </div>
 
+      {/* Funnel team */}
+      {(() => {
+        const teamFunnelCounts = FASI_DASH.map(f=>({f, n:dlByCiclo.filter(p=>p.fase===f).length}));
+        const teamFunnelMax = Math.max(...teamFunnelCounts.map(x=>x.n), 1);
+        const teamFU = dlByCiclo.filter(p=>p.fase==="FOLLOW_UP").length;
+        const teamNI = dlByCiclo.filter(p=>p.fase==="NON_INT").length;
+        return (
+          <div style={{background:"#080f1f",border:"1px solid #11203a",borderRadius:14,padding:"1.4rem",marginBottom:16}}>
+            <div style={{fontSize:10,fontWeight:700,color:"#3b5478",textTransform:"uppercase",letterSpacing:1.2,marginBottom:4}}>
+              Funnel team — {teamCiclo==="ALL"?"tutti i cicli":"Ciclo "+teamCiclo}
+            </div>
+            <div style={{fontSize:11,color:"#1e3a5f",marginBottom:16}}>{dlByCiclo.length} prospect totali nel team</div>
+            {dlByCiclo.length===0
+              ? <div style={{textAlign:"center",padding:"1.5rem",color:"#1e3a5f",fontSize:13}}>Nessun prospect in questo ciclo</div>
+              : <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                  {teamFunnelCounts.map(({f,n})=>{
+                    const pct = Math.round(n/(dlByCiclo.length||1)*100);
+                    const w   = Math.round((n/teamFunnelMax)*100)+"%";
+                    return (
+                      <div key={f} style={{display:"flex",alignItems:"center",gap:11}}>
+                        <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",borderRadius:6,padding:"3px 9px",fontSize:10,fontWeight:700,color:"#fff",background:FASE_CLR[f],minWidth:68,boxShadow:"0 0 10px "+FASE_CLR[f]+"35"}}>{FASE_LABEL[f]}</span>
+                        <div style={{flex:1,height:9,background:"#0d1b33",borderRadius:99,overflow:"hidden"}}>
+                          <div className="bar" style={{"--w":w,width:w,height:"100%",background:"linear-gradient(90deg,"+FASE_CLR[f]+"88,"+FASE_CLR[f]+")",boxShadow:"0 0 8px "+FASE_CLR[f]+"50"}} />
+                        </div>
+                        <span style={{fontWeight:800,color:"#eff6ff",minWidth:16,textAlign:"right",fontSize:13}}>{n}</span>
+                        <span style={{color:"#3b5478",fontSize:11,minWidth:30,textAlign:"right"}}>{pct}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+            }
+            <div style={{display:"flex",gap:10,marginTop:16,paddingTop:14,borderTop:"1px dashed #11203a"}}>
+              {[{f:"FOLLOW_UP",n:teamFU},{f:"NON_INT",n:teamNI}].map(({f,n})=>(
+                <div key={f} style={{flex:1,background:FASE_CLR[f]+"12",border:"1px solid "+FASE_CLR[f]+"28",borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",gap:8}}>
+                  <div style={{width:8,height:8,borderRadius:99,background:FASE_CLR[f],flexShrink:0}} />
+                  <div><div style={{fontWeight:900,fontSize:18,color:FASE_CLR[f]}}>{n}</div><div style={{fontSize:10,color:"#3b5478",marginTop:1}}>{FASE_LABEL[f]}</div></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Confronto squadre */}
       {(sinistra.length>0||destra.length>0) && (
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
@@ -811,7 +854,7 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam }) {
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8}}>
                 {[
-                  {l:"Prospect",v:stats.total},
+                  {l:"In percorso",v:stats.act},
                   {l:"Iscritti",v:stats.sub},
                   {l:"Conv%",v:stats.conv+"%"},
                   {l:"BV",v:stats.bv},
