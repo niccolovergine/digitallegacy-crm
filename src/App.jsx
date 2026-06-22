@@ -209,6 +209,8 @@ function AuthScreen({ onAuth }) {
   const [pass, setPass]     = useState("");
   const [err, setErr]       = useState("");
   const [loading, setLoading] = useState(false);
+  const [nome, setNome]       = useState("");
+  const [cognome, setCognome] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -218,6 +220,7 @@ function AuthScreen({ onAuth }) {
 
   async function submit() {
     if (!email.trim() || !pass.trim()) { setErr("Compila email e password"); return; }
+    if (mode === "signup" && (!nome.trim() || !cognome.trim())) { setErr("Compila nome e cognome"); return; }
     setLoading(true); setErr("");
     try {
       if (mode === "signup") {
@@ -232,7 +235,7 @@ function AuthScreen({ onAuth }) {
             if (profiles && profiles.length > 0) uplineId = profiles[0].id;
             localStorage.removeItem("pending_ref");
           }
-          await sbCreateProfile(tok, { id:userId, email, upline_id:uplineId });
+          await sbCreateProfile(tok, { id:userId, email, nome:nome.trim(), cognome:cognome.trim(), upline_id:uplineId });
           const profile = await sbGetProfile(tok, userId);
           onAuth({ token:tok, userId, email, profile:profile?.[0]||null });
         } else {
@@ -277,6 +280,18 @@ function AuthScreen({ onAuth }) {
           ))}
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:16}}>
+          {mode==="signup" && (
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+              <div>
+                <label style={{fontSize:11,fontWeight:700,color:"#3b5478",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"}}>Nome *</label>
+                <input value={nome} onChange={e=>setNome(e.target.value)} placeholder="Luigi" />
+              </div>
+              <div>
+                <label style={{fontSize:11,fontWeight:700,color:"#3b5478",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"}}>Cognome *</label>
+                <input value={cognome} onChange={e=>setCognome(e.target.value)} placeholder="Rossi" />
+              </div>
+            </div>
+          )}
           <div>
             <label style={{fontSize:11,fontWeight:700,color:"#3b5478",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"}}>Email</label>
             <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="tua@email.com" onKeyDown={e=>e.key==="Enter"&&submit()} />
