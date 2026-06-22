@@ -39,9 +39,11 @@ const sbGetDownline     = (tok)             => sbFetch("/rest/v1/profiles?select
 const sbGetAllProfiles  = (tok)             => sbFetch("/rest/v1/profiles?select=*", { _token:tok });
 const sbGetDownlineProspects = (tok, uids)  => sbFetch("/rest/v1/prospects?select=*&user_id=in.("+uids.join(",")+")", { _token:tok });
 const sbGetProfileByRef = (tok, code)       => sbFetch("/rest/v1/profiles?referral_code=eq."+code+"&select=*", { _token:tok });
-const sbUpdateTeam      = (tok, uid, team)  => sbFetch("/rest/v1/profiles?id=eq."+uid, { method:"PATCH", _token:tok, body:JSON.stringify({ team }) });
 const sbLinkDownline    = (tok, uid, uplineId) => sbFetch("/rest/v1/profiles?id=eq."+uid, { method:"PATCH", _token:tok, body:JSON.stringify({ upline_id:uplineId }) });
-const sbPositionMember  = (tok, uid, positionedUnder, team) => sbFetch("/rest/v1/profiles?id=eq."+uid, { method:"PATCH", _token:tok, body:JSON.stringify({ positioned_under:positionedUnder, team }) });
+const sbPositionMember  = (tok, uid, positionedUnder) => sbFetch("/rest/v1/profiles?id=eq."+uid, { method:"PATCH", _token:tok, body:JSON.stringify({ positioned_under:positionedUnder }) });
+const sbGetPositions    = (tok)             => sbFetch("/rest/v1/team_positions?select=*", { _token:tok });
+const sbSetPosition     = (tok, uplineId, memberId, team) => sbFetch("/rest/v1/team_positions", { method:"POST", _token:tok, headers:{"Prefer":"resolution=merge-duplicates"}, body:JSON.stringify({ upline_id:uplineId, member_id:memberId, team }) });
+
 
 function toApp(r) {
   return {
@@ -377,6 +379,7 @@ export default function App() {
   const [saving, setSaving]       = useState(false);
   const [downline, setDownline]   = useState([]);
   const [dlProspects, setDlProspects] = useState([]);
+  const [positions, setPositions] = useState([]); // {upline_id, member_id, team}
 
   useEffect(()=>{
     const el=document.createElement("style");
@@ -397,9 +400,14 @@ export default function App() {
       setData(arr);
     }).catch(e=>showToast("Errore: "+e.message,"#ef4444")).finally(()=>setReady(true));
 
-    // Load downline ricorsiva basata su positioned_under
-    sbGetAllProfiles(auth.token).then(async allProfiles => {
+    // Load downline ricorsiva + posizioni
+    Promise.all([
+      sbGetAllProfiles(auth.token),
+      sbGetPositions(auth.token).catch(()=>[]),
+    ]).then(async ([allProfiles, allPositions]) => {
       const all = allProfiles || [];
+      const pos = allPositions || [];
+      setPositions(pos);
       function buildFullDownline(parentId) {
         const result = [];
         function collect(pid) {
@@ -504,8 +512,11 @@ export default function App() {
 
   async function assignTeam(memberId, team) {
     try {
-      await sbUpdateTeam(auth.token, memberId, team);
-      setDownline(d=>d.map(m=>m.id===memberId?{...m,team}:m));
+      await sbSetPosition(auth.token, auth.userId, memberId, team);
+      setPositions(p => {
+        const filtered = p.filter(x => !(x.upline_id===auth.userId && x.member_id===memberId));
+        return [...filtered, { upline_id:auth.userId, member_id:memberId, team }];
+      });
       showToast("Squadra aggiornata ✅");
     } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
   }
@@ -517,9 +528,12 @@ export default function App() {
       const target = profiles[0];
       if (target.id === auth.userId) { showToast("Non puoi aggiungere te stesso ❌","#ef4444"); return false; }
       if (downline.some(m=>m.id===target.id)) { showToast("Questo membro è già nel tuo team ❌","#ef4444"); return false; }
-      await sbPositionMember(auth.token, target.id, positionedUnder || auth.userId, team || null);
-      const updated = { ...target, positioned_under: positionedUnder || auth.userId, team: team || null };
+      const posUnder = positionedUnder || auth.userId;
+      await sbPositionMember(auth.token, target.id, posUnder);
+      if (team) await sbSetPosition(auth.token, posUnder, target.id, team);
+      const updated = { ...target, positioned_under: posUnder };
       setDownline(d=>[...d, updated]);
+      if (team) setPositions(p=>[...p, { upline_id:posUnder, member_id:target.id, team }]);
       showToast((target.nome||target.email)+" aggiunto al team ✅");
       return true;
     } catch(e) { showToast("Errore: "+e.message,"#ef4444"); return false; }
@@ -579,7 +593,7 @@ export default function App() {
         {view==="dash"  && <Dash cd={cd} cdSub={cdSub} cdAct={cdAct} cdFU={cdFU} cdNI={cdNI} cdConv={cdConv} totSub={totSub} totConv={totConv} totAll={dashData.length} funnelCounts={funnelCounts} funnelMax={funnelMax} urgenti={urgenti} dashCiclo={dashCiclo} setDashCiclo={setDashCiclo} onOpen={openDetail} dashMode={dashMode} setDashMode={setDashMode} hasTeam={dlProspects.length>0} />}
         {view==="lista" && <Lista prospects={listaData} total={data.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} onOpen={openDetail} onAdd={openAdd} />}
         {view==="stats" && <Statistiche data={data} dlProspects={dlProspects} />}
-        {view==="team"  && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} onAssignTeam={assignTeam} onAddManual={addDownlineManually} />}
+        {view==="team"  && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} />}
       </main>
 
       {modal && (
@@ -658,7 +672,7 @@ function Sidebar({ view, setView, data, urgenti, onAdd, onExport, auth, onLogout
 }
 
 // ─── TEAM VIEW ────────────────────────────────────────────────────────────────
-function TeamView({ auth, downline, dlProspects, onAssignTeam, onAddManual }) {
+function TeamView({ auth, downline, dlProspects, onAssignTeam, onAddManual, positions }) {
   const [selectedMember, setSelectedMember] = useState(null);
   const [teamFilter, setTeamFilter] = useState("all");
   const [copied, setCopied] = useState(false);
@@ -668,7 +682,27 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam, onAddManual }) {
   const [addLoading, setAddLoading] = useState(false);
   const [addPositionedUnder, setAddPositionedUnder] = useState("");
   const [addTeam, setAddTeam] = useState("");
-  const [activeTeamTab, setActiveTeamTab] = useState("dashboard"); // dashboard | albero | membri
+  const [activeTeamTab, setActiveTeamTab] = useState("dashboard");
+
+  // Restituisce la squadra di un membro dal punto di vista del suo upline diretto
+  function getTeam(memberId, uplineId) {
+    const pos = positions.find(p => p.member_id === memberId && p.upline_id === uplineId);
+    return pos?.team || null;
+  }
+
+  // Restituisce la squadra di un membro dal punto di vista dell'utente loggato
+  // risalendo l'albero per trovare il primo antenato che ha una posizione registrata
+  function getTeamForMe(member) {
+    const directPos = positions.find(p => p.member_id === member.id && p.upline_id === auth.userId);
+    if (directPos) return directPos.team;
+    // Se non è diretto, trova l'upline diretto di questo membro nella mia downline
+    const parent = downline.find(m => m.id === member.positioned_under);
+    if (parent) {
+      const parentTeam = getTeamForMe(parent);
+      return parentTeam; // eredita la squadra dell'antenato
+    }
+    return null;
+  }
 
   const referralLink = auth?.profile?.referral_code
     ? window.location.origin + "?ref=" + auth.profile.referral_code
@@ -695,9 +729,9 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam, onAddManual }) {
     ? dlProspects
     : dlProspects.filter(p => cicloOfDate(p.conosciutoAt) === Number(teamCiclo));
 
-  const sinistra = downline.filter(m=>m.team==="sinistra");
-  const destra   = downline.filter(m=>m.team==="destra");
-  const noTeam   = downline.filter(m=>!m.team);
+  const sinistra = downline.filter(m=>getTeamForMe(m)==="sinistra");
+  const destra   = downline.filter(m=>getTeamForMe(m)==="destra");
+  const noTeam   = downline.filter(m=>!getTeamForMe(m));
 
   const filteredMembers = teamFilter==="all" ? downline :
     teamFilter==="sinistra" ? sinistra :
@@ -893,13 +927,15 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam, onAddManual }) {
             ? <div style={{textAlign:"center",padding:"3rem",color:"#1e3a5f"}}>Nessun membro nel team ancora</div>
             : <TreeNode
                 memberId={auth.userId}
-                label={auth.email}
-                nome={auth.profile?.nome||""}
-                cognome={auth.profile?.cognome||""}
+                memberNome={auth.profile?.nome||""}
+                memberCognome={auth.profile?.cognome||""}
+                memberEmail={auth.email}
                 allMembers={downline}
                 dlProspects={dlProspects}
+                positions={positions}
                 onSelect={setSelectedMember}
                 depth={0}
+                viewerId={auth.userId}
               />
           }
         </div>
@@ -1056,7 +1092,8 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam, onAddManual }) {
               <tbody>{filteredMembers.map(m=>{
                 const mP=getMemberProspects(m.id);
                 const ms=teamStats(mP);
-                const teamColor=m.team==="sinistra"?"#2563eb":m.team==="destra"?"#10b981":"#6b7280";
+                const myTeam=getTeamForMe(m);
+                const teamColor=myTeam==="sinistra"?"#2563eb":myTeam==="destra"?"#10b981":"#6b7280";
                 return (
                   <tr key={m.id} className="hrow" style={{borderBottom:"1px solid #0d1b3355"}}>
                     <td style={{padding:"12px 16px"}}>
@@ -1069,12 +1106,23 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam, onAddManual }) {
                       </div>
                     </td>
                     <td style={{padding:"12px 16px"}}>
-                      <select value={m.team||""} onChange={e=>onAssignTeam(m.id,e.target.value||null)}
-                        style={{width:"auto",minWidth:110,fontSize:11,padding:"5px 9px",color:teamColor,border:"1px solid "+teamColor+"40",background:"#0a1426"}}>
-                        <option value="">Non assegnato</option>
-                        <option value="sinistra">Sinistra</option>
-                        <option value="destra">Destra</option>
-                      </select>
+                      {(() => {
+                        const directUplineId = m.positioned_under;
+                        const isMyDirect = directUplineId === auth.userId;
+                        const myTeam = getTeamForMe(m);
+                        const teamColor = myTeam==="sinistra"?"#2563eb":myTeam==="destra"?"#10b981":"#6b7280";
+                        if (isMyDirect) {
+                          return (
+                            <select value={getTeam(m.id, auth.userId)||""} onChange={e=>onAssignTeam(m.id, e.target.value||null)}
+                              style={{width:"auto",minWidth:110,fontSize:11,padding:"5px 9px",color:teamColor,border:"1px solid "+teamColor+"40",background:"#0a1426"}}>
+                              <option value="">Non assegnato</option>
+                              <option value="sinistra">Sinistra</option>
+                              <option value="destra">Destra</option>
+                            </select>
+                          );
+                        }
+                        return <span style={{fontSize:11,color:teamColor,fontWeight:700}}>{myTeam||"—"}</span>;
+                      })()}
                     </td>
                     <td style={{padding:"12px 16px",fontWeight:700,color:"#eff6ff",fontSize:13}}>{ms.total}</td>
                     <td style={{padding:"12px 16px",fontWeight:700,color:"#10b981",fontSize:13}}>{ms.sub}</td>
@@ -1099,51 +1147,72 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam, onAddManual }) {
 }
 
 // ─── TREE NODE ────────────────────────────────────────────────────────────────
-function TreeNode({ memberId, label, nome, cognome, allMembers, dlProspects, onSelect, depth }) {
+function TreeNode({ memberId, memberNome, memberCognome, memberEmail, allMembers, dlProspects, positions, onSelect, depth, viewerId }) {
   const children = allMembers.filter(m => m.positioned_under === memberId);
-  const sinistra = children.filter(m => m.team === "sinistra");
-  const destra   = children.filter(m => m.team === "destra");
-  const noTeam   = children.filter(m => !m.team);
+
+  function getTeamFromPositions(mId, upId) {
+    const pos = positions.find(p => p.member_id === mId && p.upline_id === upId);
+    return pos?.team || null;
+  }
+
+  const sinChildren = children.filter(m => getTeamFromPositions(m.id, memberId) === "sinistra");
+  const deChildren  = children.filter(m => getTeamFromPositions(m.id, memberId) === "destra");
+  const noChildren  = children.filter(m => !getTeamFromPositions(m.id, memberId));
+
   const mProspects = dlProspects.filter(p => p._userId === memberId);
   const ms = teamStats(mProspects);
-  const teamColor = depth === 0 ? "#2563eb" : "#8b5cf6";
+  const isRoot = depth === 0;
 
   return (
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",minWidth:160}}>
       {/* Nodo */}
-      <div onClick={()=>depth>0&&onSelect(allMembers.find(m=>m.id===memberId))}
-        style={{background:depth===0?"linear-gradient(135deg,#2563eb,#0ea5e9)":"#0d1b33",border:"2px solid "+(depth===0?"#2563eb":"#1e3a5f"),borderRadius:12,padding:"10px 16px",textAlign:"center",cursor:depth>0?"pointer":"default",minWidth:120,maxWidth:160,boxShadow:depth===0?"0 0 20px #2563eb40":"none",transition:"all .2s",marginBottom:4}}>
-        <div style={{fontWeight:800,fontSize:12,color:depth===0?"#fff":"#eff6ff"}}>{nome||label} {cognome||""}</div>
-        {depth>0&&<div style={{fontSize:10,color:"#5278a8",marginTop:2}}>{ms.sub} iscr · {ms.bv} BV</div>}
+      <div onClick={()=>!isRoot&&onSelect(allMembers.find(m=>m.id===memberId))}
+        style={{background:isRoot?"linear-gradient(135deg,#2563eb,#0ea5e9)":"#0d1b33",border:"2px solid "+(isRoot?"#2563eb":"#1e3a5f"),borderRadius:12,padding:"10px 16px",textAlign:"center",cursor:isRoot?"default":"pointer",minWidth:130,boxShadow:isRoot?"0 0 20px #2563eb40":"none",marginBottom:4}}>
+        <div style={{fontWeight:800,fontSize:12,color:isRoot?"#fff":"#eff6ff"}}>{memberNome||memberEmail} {memberCognome||""}</div>
+        {!isRoot && <div style={{fontSize:10,color:"#5278a8",marginTop:2}}>{ms.sub} iscr · {ms.bv} BV</div>}
       </div>
 
-      {/* Connettori figli */}
-      {children.length > 0 && (
+      {/* Figli */}
+      {(sinChildren.length>0||deChildren.length>0||noChildren.length>0) && (
         <>
-          <div style={{width:2,height:20,background:"#1e3a5f"}} />
-          <div style={{display:"flex",gap:32,alignItems:"flex-start",position:"relative"}}>
-            {/* Linea orizzontale */}
-            {children.length > 1 && (
-              <div style={{position:"absolute",top:0,left:"50%",transform:"translateX(-50%)",height:2,background:"#1e3a5f",width:`calc(100% - 40px)`}} />
+          <div style={{width:2,height:16,background:"#1e3a5f"}} />
+          <div style={{display:"flex",gap:0,alignItems:"flex-start"}}>
+            {/* SINISTRA */}
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",minWidth:160}}>
+              <div style={{fontSize:9,fontWeight:800,color:"#2563eb",textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>← Sinistra</div>
+              {sinChildren.length===0
+                ? <div style={{width:120,height:44,border:"2px dashed #1e3a5f",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:10,color:"#2a4060"}}>vuota</span></div>
+                : sinChildren.map(child=>(
+                    <TreeNode key={child.id} memberId={child.id} memberNome={child.nome} memberCognome={child.cognome} memberEmail={child.email} allMembers={allMembers} dlProspects={dlProspects} positions={positions} onSelect={onSelect} depth={depth+1} viewerId={viewerId} />
+                  ))
+              }
+            </div>
+
+            <div style={{width:2,height:"100%",background:"#1e3a5f",minHeight:60,margin:"0 8px"}} />
+
+            {/* DESTRA */}
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",minWidth:160}}>
+              <div style={{fontSize:9,fontWeight:800,color:"#10b981",textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Destra →</div>
+              {deChildren.length===0
+                ? <div style={{width:120,height:44,border:"2px dashed #1e3a5f",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:10,color:"#2a4060"}}>vuota</span></div>
+                : deChildren.map(child=>(
+                    <TreeNode key={child.id} memberId={child.id} memberNome={child.nome} memberCognome={child.cognome} memberEmail={child.email} allMembers={allMembers} dlProspects={dlProspects} positions={positions} onSelect={onSelect} depth={depth+1} viewerId={viewerId} />
+                  ))
+              }
+            </div>
+
+            {/* NON ASSEGNATI */}
+            {noChildren.length>0 && (
+              <>
+                <div style={{width:2,height:"100%",background:"#1e3a5f",minHeight:60,margin:"0 8px"}} />
+                <div style={{display:"flex",flexDirection:"column",alignItems:"center",minWidth:140}}>
+                  <div style={{fontSize:9,fontWeight:800,color:"#6b7280",textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Non assegnati</div>
+                  {noChildren.map(child=>(
+                    <TreeNode key={child.id} memberId={child.id} memberNome={child.nome} memberCognome={child.cognome} memberEmail={child.email} allMembers={allMembers} dlProspects={dlProspects} positions={positions} onSelect={onSelect} depth={depth+1} viewerId={viewerId} />
+                  ))}
+                </div>
+              </>
             )}
-            {[...sinistra, ...noTeam, ...destra].map((child, i) => (
-              <div key={child.id} style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
-                <div style={{width:2,height:20,background:"#1e3a5f"}} />
-                {child.team && (
-                  <div style={{fontSize:9,fontWeight:700,color:child.team==="sinistra"?"#2563eb":"#10b981",marginBottom:3,textTransform:"uppercase",letterSpacing:.5}}>{child.team}</div>
-                )}
-                <TreeNode
-                  memberId={child.id}
-                  label={child.email}
-                  nome={child.nome}
-                  cognome={child.cognome}
-                  allMembers={allMembers}
-                  dlProspects={dlProspects}
-                  onSelect={onSelect}
-                  depth={depth+1}
-                />
-              </div>
-            ))}
           </div>
         </>
       )}
