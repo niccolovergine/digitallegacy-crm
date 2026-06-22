@@ -47,6 +47,7 @@ function toApp(r) {
     conosciutoAt:r.conosciuto_at||"", followUp:r.follow_up||"",
     note:r.note||"", storico:r.storico||[], profilazione:r.profilazione||{},
     pacchetto:r.pacchetto||"",
+    telefono:r.telefono||"", instagram:r.instagram||"",
   };
 }
 function toDB(p, uid) {
@@ -55,6 +56,7 @@ function toDB(p, uid) {
     fonte:p.fonte, fase:p.fase, conosciuto_at:p.conosciutoAt,
     follow_up:p.followUp||null, note:p.note, storico:p.storico, profilazione:p.profilazione,
     pacchetto:p.pacchetto||null,
+    telefono:p.telefono||null, instagram:p.instagram||null,
   };
 }
 
@@ -1217,6 +1219,8 @@ function FormModal({ form, setForm, onSave, onClose, onDelete, isEdit }) {
         <div><label style={lbl}>Nome *</label><input value={form.nome||""} onChange={e=>set("nome",e.target.value)} placeholder="Nome" /></div>
         <div><label style={lbl}>Cognome</label><input value={form.cognome||""} onChange={e=>set("cognome",e.target.value)} placeholder="Cognome" /></div>
         <div style={{gridColumn:"1/-1"}}><label style={lbl}>Citta</label><input value={form.citta||""} onChange={e=>set("citta",e.target.value)} placeholder="es. Milano" /></div>
+        <div><label style={lbl}>Telefono</label><input value={form.telefono||""} onChange={e=>set("telefono",e.target.value)} placeholder="+39 333 000 0000" /></div>
+        <div><label style={lbl}>Instagram</label><input value={form.instagram||""} onChange={e=>set("instagram",e.target.value)} placeholder="@username" /></div>
         <div><label style={lbl}>Fonte</label><select value={form.fonte||"Instagram"} onChange={e=>set("fonte",e.target.value)}>{FONTI.map(f=><option key={f} value={f}>{FONTE_ICO[f]} {f}</option>)}</select></div>
         <div><label style={lbl}>Fase</label><select value={form.fase||"INVITO"} onChange={e=>set("fase",e.target.value)}><optgroup label="Funnel">{FASI_FUNNEL.map(f=><option key={f} value={f}>{FASE_LABEL[f]}</option>)}</optgroup><optgroup label="Speciali">{FASI_SPECIALI.map(f=><option key={f} value={f}>{FASE_LABEL[f]}</option>)}</optgroup></select></div>
         <div style={{gridColumn:"1/-1"}}><label style={lbl}>Data conoscenza</label><input type="date" value={form.conosciutoAt||today()} onChange={e=>set("conosciutoAt",e.target.value)} /></div>
@@ -1356,6 +1360,18 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onRiattiva, o
           )}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:9}}>
             {[{l:"Fase ora",v:FASE_LABEL[p.fase],color:clr},{l:"Ciclo conoscenza",v:ciclo?"Ciclo "+ciclo:"\u2014",color:ciclo===CICLO_CORRENTE?"#2563eb":undefined},{l:"Conosciuto il",v:fmt(p.conosciutoAt)},{l:"Follow-up",v:p.followUp?(od?"⚠️ Scaduto · ":dt?"📅 Oggi · ":"✅ ")+fmt(p.followUp):"Non impostato",color:od?"#f87171":dt?"#fbbf24":undefined}].map(({l,v,color:col})=>(<div key={l} style={box}><div style={lbl}>{l}</div><div style={{color:col||"#eff6ff",fontWeight:700,fontSize:13}}>{v}</div></div>))}
+            {p.telefono&&(
+              <div style={box}>
+                <div style={lbl}>📞 Telefono</div>
+                <a href={"tel:"+p.telefono} style={{color:"#60a5fa",fontWeight:700,fontSize:13,textDecoration:"none"}}>{p.telefono}</a>
+              </div>
+            )}
+            {p.instagram&&(
+              <div style={box}>
+                <div style={lbl}>📸 Instagram</div>
+                <a href={"https://instagram.com/"+p.instagram.replace("@","")} target="_blank" rel="noreferrer" style={{color:"#c084fc",fontWeight:700,fontSize:13,textDecoration:"none"}}>{p.instagram.startsWith("@")?p.instagram:"@"+p.instagram}</a>
+              </div>
+            )}
             {p.fase==="SUB"&&(
               <div style={{...box,gridColumn:"1/-1",background:"#10b98112",border:"1px solid #10b98130"}}>
                 <div style={lbl}>Pacchetto</div>
