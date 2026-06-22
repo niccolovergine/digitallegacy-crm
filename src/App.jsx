@@ -627,6 +627,7 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam }) {
   const [selectedMember, setSelectedMember] = useState(null);
   const [teamFilter, setTeamFilter] = useState("all");
   const [copied, setCopied] = useState(false);
+  const [teamCiclo, setTeamCiclo] = useState(CICLO_CORRENTE);
 
   const referralLink = auth?.profile?.referral_code
     ? window.location.origin + "?ref=" + auth.profile.referral_code
@@ -639,6 +640,11 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam }) {
     });
   }
 
+  // Filtra prospect del team per ciclo selezionato
+  const dlByCiclo = teamCiclo === "ALL"
+    ? dlProspects
+    : dlProspects.filter(p => cicloOfDate(p.conosciutoAt) === Number(teamCiclo));
+
   const sinistra = downline.filter(m=>m.team==="sinistra");
   const destra   = downline.filter(m=>m.team==="destra");
   const noTeam   = downline.filter(m=>!m.team);
@@ -648,18 +654,18 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam }) {
     teamFilter==="destra"   ? destra   : noTeam;
 
   function getMemberProspects(memberId) {
-    return dlProspects.filter(p=>p._userId===memberId);
+    return dlByCiclo.filter(p=>p._userId===memberId);
   }
 
-  // Stats per squadra
+  // Stats per squadra (filtrate per ciclo)
   function squadraStats(members) {
     const prospects = members.flatMap(m=>getMemberProspects(m.id));
     return teamStats(prospects);
   }
 
-  const statsS = squadraStats(sinistra);
-  const statsD = squadraStats(destra);
-  const statsTot = teamStats(dlProspects);
+  const statsS   = squadraStats(sinistra);
+  const statsD   = squadraStats(destra);
+  const statsTot = teamStats(dlByCiclo);
 
   const convColor = v => v>=20?"#10b981":v>=10?"#0ea5e9":"#f59e0b";
 
@@ -738,9 +744,22 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam }) {
 
   return (
     <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
-      <div style={{marginBottom:"1.5rem"}}>
-        <h1 style={{fontWeight:900,fontSize:26,color:"#eff6ff",letterSpacing:-0.8}}>Team</h1>
-        <p style={{color:"#3b5478",fontSize:12,marginTop:4}}>{downline.length} membri nella tua downline</p>
+      <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:"1.5rem",gap:12,flexWrap:"wrap"}}>
+        <div>
+          <div style={{fontSize:11,fontWeight:700,color:"#2563eb",textTransform:"uppercase",letterSpacing:1.4,marginBottom:4}}>
+            {teamCiclo==="ALL"?"Tutti i cicli":"Ciclo "+teamCiclo+(teamCiclo===CICLO_CORRENTE?" · in corso":"")}
+          </div>
+          <h1 style={{fontWeight:900,fontSize:26,color:"#eff6ff",letterSpacing:-0.8,lineHeight:1}}>Team</h1>
+          <p style={{color:"#3b5478",fontSize:12,marginTop:4}}>{downline.length} membri nella tua downline</p>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:6,background:"#080f1f",border:"1px solid #11203a",borderRadius:11,padding:"5px 10px"}}>
+          <button onClick={()=>setTeamCiclo(c=>c==="ALL"?CICLO_NUMS[CICLO_NUMS.length-1]:Math.max(CICLO_NUMS[CICLO_NUMS.length-1],Number(c)-1))} style={{background:"none",border:"none",color:"#5278a8",fontSize:18,cursor:"pointer",padding:"2px 8px",fontWeight:700}}>‹</button>
+          <select value={teamCiclo} onChange={e=>setTeamCiclo(e.target.value==="ALL"?"ALL":Number(e.target.value))} style={{background:"none",border:"none",color:"#bfdbfe",fontWeight:800,fontSize:12,padding:"2px 4px",width:"auto",cursor:"pointer"}}>
+            <option value="ALL">Tutti i cicli</option>
+            {CICLO_NUMS.map(c=><option key={c} value={c}>Ciclo {c}</option>)}
+          </select>
+          <button onClick={()=>setTeamCiclo(c=>c==="ALL"?CICLO_NUMS[0]:Math.min(CICLO_NUMS[0],Number(c)+1))} style={{background:"none",border:"none",color:"#5278a8",fontSize:18,cursor:"pointer",padding:"2px 8px",fontWeight:700}}>›</button>
+        </div>
       </div>
 
       {/* Referral link */}
@@ -759,12 +778,13 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam }) {
       </div>
 
       {/* KPI totali team */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:16}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12,marginBottom:16}}>
         {[
-          {label:"Membri team",value:downline.length,color:"#8b5cf6",icon:"◈"},
-          {label:"Prospect totali",value:statsTot.total,color:"#2563eb",icon:"👥"},
-          {label:"Iscritti team",value:statsTot.sub,color:"#10b981",icon:"✅"},
-          {label:"BV team",value:statsTot.bv,color:"#f59e0b",icon:"🏆"},
+          {label:"Membri team",  value:downline.length,       color:"#8b5cf6", icon:"◈"},
+          {label:"Prospect",     value:statsTot.total,        color:"#2563eb", icon:"👥"},
+          {label:"Iscritti",     value:statsTot.sub,          color:"#10b981", icon:"✅"},
+          {label:"Conv. team",   value:statsTot.conv+"%",     color:convColor(statsTot.conv), icon:"🎯"},
+          {label:"BV team",      value:statsTot.bv,           color:"#f59e0b", icon:"🏆"},
         ].map((k,i)=>(
           <div key={i} className="kpi" style={{background:"#080f1f",border:"1px solid #11203a",borderRadius:14,padding:"16px 18px",position:"relative",overflow:"hidden"}}>
             <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"linear-gradient(90deg,"+k.color+","+k.color+"44)",borderRadius:"14px 14px 0 0"}} />
