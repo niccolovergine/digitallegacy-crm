@@ -211,11 +211,23 @@ function AuthScreen({ onAuth }) {
   const [loading, setLoading] = useState(false);
   const [nome, setNome]       = useState("");
   const [cognome, setCognome] = useState("");
+  const [remember, setRemember] = useState(true);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const ref = params.get("ref");
     if (ref) { localStorage.setItem("pending_ref", ref); setMode("signup"); }
+
+    // Auto-restore session
+    const saved = localStorage.getItem("becrm_session");
+    if (saved) {
+      try {
+        const session = JSON.parse(saved);
+        if (session.token && session.userId) {
+          onAuth({ token:session.token, userId:session.userId, email:session.email, profile:session.profile||null });
+        }
+      } catch(e) { localStorage.removeItem("becrm_session"); }
+    }
   }, []);
 
   async function submit() {
@@ -237,7 +249,9 @@ function AuthScreen({ onAuth }) {
           }
           await sbCreateProfile(tok, { id:userId, email, nome:nome.trim(), cognome:cognome.trim(), upline_id:uplineId });
           const profile = await sbGetProfile(tok, userId);
-          onAuth({ token:tok, userId, email, profile:profile?.[0]||null });
+          const authData = { token:tok, userId, email, profile:profile?.[0]||null };
+          if (remember) localStorage.setItem("becrm_session", JSON.stringify(authData));
+          onAuth(authData);
         } else {
           setErr("Registrazione ok! Ora accedi.");
           setMode("login");
@@ -252,7 +266,9 @@ function AuthScreen({ onAuth }) {
             await sbCreateProfile(tok, { id:userId, email });
             profile = await sbGetProfile(tok, userId);
           }
-          onAuth({ token:tok, userId, email, profile:profile?.[0]||null });
+          const authData = { token:tok, userId, email, profile:profile?.[0]||null };
+          if (remember) localStorage.setItem("becrm_session", JSON.stringify(authData));
+          onAuth(authData);
         } else {
           setErr("Credenziali non valide");
         }
@@ -302,6 +318,15 @@ function AuthScreen({ onAuth }) {
           </div>
         </div>
         {err && <div style={{background:"#ef444415",border:"1px solid #ef444435",borderRadius:9,padding:"9px 13px",fontSize:12,color:"#f87171",marginBottom:14,lineHeight:1.5}}>{err}</div>}
+
+        {mode==="login" && (
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,cursor:"pointer"}} onClick={()=>setRemember(r=>!r)}>
+            <div style={{width:18,height:18,borderRadius:5,border:"1.5px solid "+(remember?"#2563eb":"#1e3a5f"),background:remember?"#2563eb":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .2s"}}>
+              {remember && <span style={{color:"#fff",fontSize:11,fontWeight:900}}>✓</span>}
+            </div>
+            <span style={{fontSize:12,color:"#5278a8",userSelect:"none"}}>Ricordami su questo dispositivo</span>
+          </div>
+        )}
         <button onClick={submit} disabled={loading}
           style={{width:"100%",padding:"11px",background:"linear-gradient(135deg,#2563eb,#0ea5e9)",color:"#fff",border:"none",borderRadius:10,cursor:loading?"not-allowed":"pointer",fontWeight:800,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8,opacity:loading?0.7:1}}>
           {loading && <span className="spinner" />}
@@ -383,6 +408,7 @@ export default function App() {
 
   async function handleLogout() {
     try { await sbSignOut(auth.token); } catch(e){}
+    localStorage.removeItem("becrm_session");
     setAuth(null); setData([]); setReady(true);
   }
 
