@@ -39,6 +39,7 @@ const sbGetDownline     = (tok)             => sbFetch("/rest/v1/profiles?select
 const sbGetDownlineProspects = (tok, uids)  => sbFetch("/rest/v1/prospects?select=*&user_id=in.("+uids.join(",")+")", { _token:tok });
 const sbGetProfileByRef = (tok, code)       => sbFetch("/rest/v1/profiles?referral_code=eq."+code+"&select=*", { _token:tok });
 const sbUpdateTeam      = (tok, uid, team)  => sbFetch("/rest/v1/profiles?id=eq."+uid, { method:"PATCH", _token:tok, body:JSON.stringify({ team }) });
+const sbLinkDownline    = (tok, uid, uplineId) => sbFetch("/rest/v1/profiles?id=eq."+uid, { method:"PATCH", _token:tok, body:JSON.stringify({ upline_id:uplineId }) });
 
 function toApp(r) {
   return {
@@ -497,6 +498,20 @@ export default function App() {
     } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
   }
 
+  async function addDownlineManually(referralCode) {
+    try {
+      const profiles = await sbGetProfileByRef(auth.token, referralCode.trim().toLowerCase());
+      if (!profiles || profiles.length === 0) { showToast("Nessun account trovato con questo ID ❌","#ef4444"); return false; }
+      const target = profiles[0];
+      if (target.id === auth.userId) { showToast("Non puoi aggiungere te stesso ❌","#ef4444"); return false; }
+      if (downline.some(m=>m.id===target.id)) { showToast("Questo membro è già nel tuo team ❌","#ef4444"); return false; }
+      await sbLinkDownline(auth.token, target.id, auth.userId);
+      setDownline(d=>[...d, {...target, upline_id:auth.userId}]);
+      showToast((target.nome||target.email)+" aggiunto al team ✅");
+      return true;
+    } catch(e) { showToast("Errore: "+e.message,"#ef4444"); return false; }
+  }
+
   function onExport() {
     try {
       const b=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
@@ -551,7 +566,7 @@ export default function App() {
         {view==="dash"  && <Dash cd={cd} cdSub={cdSub} cdAct={cdAct} cdFU={cdFU} cdNI={cdNI} cdConv={cdConv} totSub={totSub} totConv={totConv} totAll={dashData.length} funnelCounts={funnelCounts} funnelMax={funnelMax} urgenti={urgenti} dashCiclo={dashCiclo} setDashCiclo={setDashCiclo} onOpen={openDetail} dashMode={dashMode} setDashMode={setDashMode} hasTeam={dlProspects.length>0} />}
         {view==="lista" && <Lista prospects={listaData} total={data.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} onOpen={openDetail} onAdd={openAdd} />}
         {view==="stats" && <Statistiche data={data} dlProspects={dlProspects} />}
-        {view==="team"  && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} onAssignTeam={assignTeam} />}
+        {view==="team"  && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} onAssignTeam={assignTeam} onAddManual={addDownlineManually} />}
       </main>
 
       {modal && (
@@ -630,11 +645,14 @@ function Sidebar({ view, setView, data, urgenti, onAdd, onExport, auth, onLogout
 }
 
 // ─── TEAM VIEW ────────────────────────────────────────────────────────────────
-function TeamView({ auth, downline, dlProspects, onAssignTeam }) {
+function TeamView({ auth, downline, dlProspects, onAssignTeam, onAddManual }) {
   const [selectedMember, setSelectedMember] = useState(null);
   const [teamFilter, setTeamFilter] = useState("all");
   const [copied, setCopied] = useState(false);
   const [teamCiclo, setTeamCiclo] = useState(CICLO_CORRENTE);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addCode, setAddCode] = useState("");
+  const [addLoading, setAddLoading] = useState(false);
 
   const referralLink = auth?.profile?.referral_code
     ? window.location.origin + "?ref=" + auth.profile.referral_code
@@ -645,6 +663,14 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam }) {
     navigator.clipboard.writeText(referralLink).then(()=>{
       setCopied(true); setTimeout(()=>setCopied(false),2000);
     });
+  }
+
+  async function handleAddManual() {
+    if (!addCode.trim()) return;
+    setAddLoading(true);
+    const ok = await onAddManual(addCode);
+    setAddLoading(false);
+    if (ok) { setShowAddModal(false); setAddCode(""); }
   }
 
   // Filtra prospect del team per ciclo selezionato
@@ -769,9 +795,17 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam }) {
         </div>
       </div>
 
-      {/* Referral link */}
+      {/* Referral link + ID */}
       <div style={{background:"#080f1f",border:"1px solid #2563eb30",borderRadius:14,padding:"1.2rem 1.4rem",marginBottom:16}}>
-        <div style={{fontSize:11,fontWeight:700,color:"#2563eb",textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>🔗 Il tuo link referral</div>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8,flexWrap:"wrap",gap:8}}>
+          <div style={{fontSize:11,fontWeight:700,color:"#2563eb",textTransform:"uppercase",letterSpacing:1}}>🔗 Il tuo link referral</div>
+          {auth?.profile?.referral_code && (
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <span style={{fontSize:10,color:"#3b5478"}}>Il tuo ID:</span>
+              <span style={{background:"#2563eb20",color:"#60a5fa",borderRadius:6,padding:"2px 10px",fontSize:12,fontWeight:800,letterSpacing:.5,fontFamily:"monospace"}}>{auth.profile.referral_code}</span>
+            </div>
+          )}
+        </div>
         {referralLink
           ? <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
               <div style={{flex:1,background:"#0a1426",border:"1px solid #1e3a5f",borderRadius:9,padding:"9px 13px",fontSize:12,color:"#94b5d8",fontFamily:"monospace",minWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{referralLink}</div>
@@ -783,6 +817,29 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam }) {
         }
         <div style={{fontSize:11,color:"#2a4060",marginTop:8}}>Condividi questo link — chi si registra tramite il tuo link appare automaticamente nel tuo team.</div>
       </div>
+
+      {/* Modal aggiunta manuale */}
+      {showAddModal && (
+        <div onClick={()=>setShowAddModal(false)} style={{position:"fixed",inset:0,background:"#00000090",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:16}}>
+          <div className="pop" onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:420,background:"#080f1f",border:"1px solid #1e3a5f",borderRadius:16,padding:"1.6rem",boxShadow:"0 20px 70px #000000aa"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+              <h2 style={{fontWeight:900,fontSize:17,color:"#eff6ff"}}>+ Aggiungi membro</h2>
+              <button onClick={()=>{setShowAddModal(false);setAddCode("");}} style={{background:"#0d1b33",color:"#7da8d8",border:"1px solid #1e3a5f",borderRadius:8,cursor:"pointer",padding:"4px 10px",fontSize:14}}>✕</button>
+            </div>
+            <p style={{fontSize:12,color:"#5278a8",marginBottom:16,lineHeight:1.6}}>Inserisci l&apos;ID della persona che vuoi aggiungere al tuo team. L&apos;ID si trova nella loro sezione Team in alto a destra.</p>
+            <div style={{marginBottom:16}}>
+              <label style={{fontSize:11,fontWeight:700,color:"#3b5478",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"}}>ID membro</label>
+              <input value={addCode} onChange={e=>setAddCode(e.target.value)} placeholder="es. mario_abc123" onKeyDown={e=>e.key==="Enter"&&handleAddManual()} />
+            </div>
+            <div style={{display:"flex",gap:9,justifyContent:"flex-end"}}>
+              <button onClick={()=>{setShowAddModal(false);setAddCode("");}} style={{padding:"9px 15px",background:"#0d1b33",color:"#7da8d8",border:"1px solid #1e3a5f",borderRadius:9,cursor:"pointer",fontWeight:600,fontSize:13}}>Annulla</button>
+              <button onClick={handleAddManual} disabled={addLoading} style={{padding:"9px 20px",background:"linear-gradient(135deg,#2563eb,#0ea5e9)",color:"#fff",border:"none",borderRadius:9,cursor:addLoading?"not-allowed":"pointer",fontWeight:800,fontSize:13,display:"flex",alignItems:"center",gap:7,opacity:addLoading?.7:1}}>
+                {addLoading&&<span className="spinner"/>}Aggiungi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* KPI totali team */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12,marginBottom:16}}>
@@ -900,7 +957,10 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam }) {
       {/* Lista membri */}
       <div style={{background:"#080f1f",border:"1px solid #11203a",borderRadius:14,overflow:"hidden"}}>
         <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
-          <div style={{fontSize:13,fontWeight:800,color:"#eff6ff"}}>Membri</div>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={{fontSize:13,fontWeight:800,color:"#eff6ff"}}>Membri</div>
+            <button onClick={()=>setShowAddModal(true)} style={{width:26,height:26,borderRadius:"50%",background:"linear-gradient(135deg,#2563eb,#0ea5e9)",color:"#fff",border:"none",cursor:"pointer",fontWeight:900,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 0 10px #2563eb50"}} title="Aggiungi membro manualmente">+</button>
+          </div>
           <div style={{display:"flex",gap:6}}>
             {["all","sinistra","destra","nessuna"].map(f=>(
               <button key={f} onClick={()=>setTeamFilter(f)} className="tabbtn"
