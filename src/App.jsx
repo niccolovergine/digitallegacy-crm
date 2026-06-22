@@ -26,7 +26,7 @@ async function sbFetch(path, opts = {}) {
 const sbSignUp  = (email, pw)      => sbFetch("/auth/v1/signup", { method:"POST", body:JSON.stringify({ email, password:pw }) });
 const sbSignIn  = (email, pw)      => sbFetch("/auth/v1/token?grant_type=password", { method:"POST", body:JSON.stringify({ email, password:pw }) });
 const sbSignOut = (tok)            => sbFetch("/auth/v1/logout", { method:"POST", _token:tok });
-const sbList    = (tok)            => sbFetch("/rest/v1/prospects?select=*&order=created_at.asc", { _token:tok });
+const sbList    = (tok, uid)       => sbFetch("/rest/v1/prospects?select=*&order=created_at.asc&user_id=eq."+uid, { _token:tok });
 const sbInsert  = (tok, row)       => sbFetch("/rest/v1/prospects", { method:"POST", _token:tok, body:JSON.stringify(row) });
 const sbUpdate  = (tok, id, row)   => sbFetch("/rest/v1/prospects?id=eq."+id, { method:"PATCH", _token:tok, body:JSON.stringify(row) });
 const sbDelete  = (tok, id)        => sbFetch("/rest/v1/prospects?id=eq."+id, { method:"DELETE", _token:tok });
@@ -383,7 +383,7 @@ export default function App() {
   useEffect(()=>{
     if (!auth) { setData([]); setReady(true); return; }
     setReady(false);
-    sbList(auth.token).then(rows=>{
+    sbList(auth.token, auth.userId).then(rows=>{
       const arr=(rows||[]).map(r=>{
         const p=toApp(r);
         if (!p.storico.length) p.storico=buildStorico(p,p.fase,p.conosciutoAt);
@@ -507,14 +507,19 @@ export default function App() {
     } catch(e) { showToast("Errore export","#ef4444"); }
   }
 
-  const cd    = dataByCiclo(data,dashCiclo);
+  const [dashMode, setDashMode] = useState("personale"); // "personale" | "team"
+
+  // Dati da usare nella dashboard in base alla modalità
+  const dashData = dashMode === "team" ? [...data, ...dlProspects] : data;
+
+  const cd    = dataByCiclo(dashData, dashCiclo);
   const cdSub = cd.filter(p=>p.fase==="SUB");
   const cdAct = cd.filter(p=>["FUP1","FUP2","PACK","CLOSING"].includes(p.fase));
   const cdFU  = cd.filter(p=>p.fase==="FOLLOW_UP");
   const cdNI  = cd.filter(p=>p.fase==="NON_INT");
   const cdConv= cd.length?Math.round(cdSub.length/cd.length*100):0;
-  const totSub  = data.filter(p=>p.fase==="SUB").length;
-  const totConv = data.length?Math.round(totSub/data.length*100):0;
+  const totSub  = dashData.filter(p=>p.fase==="SUB").length;
+  const totConv = dashData.length?Math.round(totSub/dashData.length*100):0;
   const urgenti = data.filter(p=>(isOver(p.followUp)||isToday(p.followUp))&&p.fase!=="NON_INT");
   const funnelCounts=FASI_DASH.map(f=>({f,n:cd.filter(p=>p.fase===f).length}));
   const funnelMax=Math.max(...funnelCounts.map(x=>x.n),1);
@@ -541,9 +546,9 @@ export default function App() {
       <Sidebar view={view} setView={setView} data={data} urgenti={urgenti} onAdd={openAdd} onExport={onExport} auth={auth} onLogout={handleLogout} downlineCount={downline.length} />
 
       <main style={{flex:1,overflowY:"auto",height:"100vh"}}>
-        {view==="dash"  && <Dash cd={cd} cdSub={cdSub} cdAct={cdAct} cdFU={cdFU} cdNI={cdNI} cdConv={cdConv} totSub={totSub} totConv={totConv} totAll={data.length} funnelCounts={funnelCounts} funnelMax={funnelMax} urgenti={urgenti} dashCiclo={dashCiclo} setDashCiclo={setDashCiclo} onOpen={openDetail} />}
+        {view==="dash"  && <Dash cd={cd} cdSub={cdSub} cdAct={cdAct} cdFU={cdFU} cdNI={cdNI} cdConv={cdConv} totSub={totSub} totConv={totConv} totAll={dashData.length} funnelCounts={funnelCounts} funnelMax={funnelMax} urgenti={urgenti} dashCiclo={dashCiclo} setDashCiclo={setDashCiclo} onOpen={openDetail} dashMode={dashMode} setDashMode={setDashMode} hasTeam={dlProspects.length>0} />}
         {view==="lista" && <Lista prospects={listaData} total={data.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} onOpen={openDetail} onAdd={openAdd} />}
-        {view==="stats" && <Statistiche data={data} />}
+        {view==="stats" && <Statistiche data={data} dlProspects={dlProspects} />}
         {view==="team"  && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} onAssignTeam={assignTeam} />}
       </main>
 
@@ -960,7 +965,7 @@ function TeamView({ auth, downline, dlProspects, onAssignTeam }) {
 }
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
-function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, funnelCounts, funnelMax, urgenti, dashCiclo, setDashCiclo, onOpen }) {
+function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, funnelCounts, funnelMax, urgenti, dashCiclo, setDashCiclo, onOpen, dashMode, setDashMode, hasTeam }) {
   const cc = v => v>=20?"#10b981":v>=10?"#0ea5e9":"#f59e0b";
   const bvCiclo = cdSub.reduce((acc,p)=>acc+bvOfPacchetto(p.pacchetto),0);
   const kpis = [
@@ -977,12 +982,26 @@ function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, f
           <h1 style={{fontWeight:900,fontSize:26,color:"#eff6ff",letterSpacing:-0.8,lineHeight:1}}>Dashboard</h1>
           <p style={{color:"#3b5478",fontSize:12,marginTop:4}}>{cicloLabel(dashCiclo)}</p>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:6,background:"#080f1f",border:"1px solid #11203a",borderRadius:11,padding:"5px 10px"}}>
-          <button onClick={()=>setDashCiclo(c=>Math.max(CICLO_NUMS[CICLO_NUMS.length-1],c-1))} style={{background:"none",border:"none",color:"#5278a8",fontSize:18,cursor:"pointer",padding:"2px 8px",fontWeight:700}}>‹</button>
-          <select value={dashCiclo} onChange={e=>setDashCiclo(Number(e.target.value))} style={{background:"none",border:"none",color:"#bfdbfe",fontWeight:800,fontSize:12,padding:"2px 4px",width:"auto",cursor:"pointer"}}>
-            {CICLO_NUMS.map(c=><option key={c} value={c}>Ciclo {c}</option>)}
-          </select>
-          <button onClick={()=>setDashCiclo(c=>Math.min(CICLO_NUMS[0],c+1))} style={{background:"none",border:"none",color:"#5278a8",fontSize:18,cursor:"pointer",padding:"2px 8px",fontWeight:700}}>›</button>
+        <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+          {/* Toggle Personale / Team */}
+          {hasTeam && (
+            <div style={{display:"flex",background:"#0a1426",borderRadius:10,padding:4,border:"1px solid #11203a"}}>
+              {["personale","team"].map(m=>(
+                <button key={m} onClick={()=>setDashMode(m)} className="tabbtn"
+                  style={{background:dashMode===m?"#0d1b33":"transparent",color:dashMode===m?"#7dd3fc":"#5278a8",boxShadow:dashMode===m?"inset 0 0 0 1px #2563eb40":"none",fontSize:11,padding:"6px 14px"}}>
+                  {m==="personale"?"👤 Personale":"◈ Team"}
+                </button>
+              ))}
+            </div>
+          )}
+          {/* Selettore ciclo */}
+          <div style={{display:"flex",alignItems:"center",gap:6,background:"#080f1f",border:"1px solid #11203a",borderRadius:11,padding:"5px 10px"}}>
+            <button onClick={()=>setDashCiclo(c=>Math.max(CICLO_NUMS[CICLO_NUMS.length-1],c-1))} style={{background:"none",border:"none",color:"#5278a8",fontSize:18,cursor:"pointer",padding:"2px 8px",fontWeight:700}}>‹</button>
+            <select value={dashCiclo} onChange={e=>setDashCiclo(Number(e.target.value))} style={{background:"none",border:"none",color:"#bfdbfe",fontWeight:800,fontSize:12,padding:"2px 4px",width:"auto",cursor:"pointer"}}>
+              {CICLO_NUMS.map(c=><option key={c} value={c}>Ciclo {c}</option>)}
+            </select>
+            <button onClick={()=>setDashCiclo(c=>Math.min(CICLO_NUMS[0],c+1))} style={{background:"none",border:"none",color:"#5278a8",fontSize:18,cursor:"pointer",padding:"2px 8px",fontWeight:700}}>›</button>
+          </div>
         </div>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:16}}>
@@ -1076,20 +1095,39 @@ function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, f
 }
 
 // ─── STATISTICHE ──────────────────────────────────────────────────────────────
-function Statistiche({ data }) {
+function Statistiche({ data, dlProspects }) {
   const [linePhase, setLinePhase] = useState("FUP1");
   const [barCiclo,  setBarCiclo]  = useState("ALL");
-  const cicliPresenti=[...new Set(data.flatMap(p=>(p.storico||[]).map(s=>cicloOfDate(s.data)).filter(Boolean)))].sort((a,b)=>a-b);
+  const [statsMode, setStatsMode] = useState("personale");
+
+  const hasTeam = dlProspects && dlProspects.length > 0;
+  const activeData = statsMode === "team" ? [...data, ...(dlProspects||[])] : data;
+
+  const cicliPresenti=[...new Set(activeData.flatMap(p=>(p.storico||[]).map(s=>cicloOfDate(s.data)).filter(Boolean)))].sort((a,b)=>a-b);
   const cicli=cicliPresenti.length?cicliPresenti:[CICLO_CORRENTE];
-  const lineData=cicli.map(c=>{const row={ciclo:"C"+c};FASI_FUNNEL.forEach(f=>{row[f]=data.filter(p=>reachedInCiclo(p,f,c)).length;});return row;});
-  const barData=FASI_FUNNEL.map(f=>{const count=barCiclo==="ALL"?data.filter(p=>reachedEver(p,f)).length:data.filter(p=>reachedInCiclo(p,f,Number(barCiclo))).length;return{fase:FASE_LABEL[f],key:f,count,fill:FASE_CLR[f]};});
-  const tableRows=[...cicli].sort((a,b)=>b-a).map(c=>{const r={c};FASI_FUNNEL.forEach(f=>{r[f]=data.filter(p=>reachedInCiclo(p,f,c)).length;});r.conv=r.INVITO>0?Math.round(r.SUB/r.INVITO*100):r.FUP1>0?Math.round(r.SUB/r.FUP1*100):0;return r;});
+  const lineData=cicli.map(c=>{const row={ciclo:"C"+c};FASI_FUNNEL.forEach(f=>{row[f]=activeData.filter(p=>reachedInCiclo(p,f,c)).length;});return row;});
+  const barData=FASI_FUNNEL.map(f=>{const count=barCiclo==="ALL"?activeData.filter(p=>reachedEver(p,f)).length:activeData.filter(p=>reachedInCiclo(p,f,Number(barCiclo))).length;return{fase:FASE_LABEL[f],key:f,count,fill:FASE_CLR[f]};});
+  const tableRows=[...cicli].sort((a,b)=>b-a).map(c=>{const r={c};FASI_FUNNEL.forEach(f=>{r[f]=activeData.filter(p=>reachedInCiclo(p,f,c)).length;});r.conv=r.INVITO>0?Math.round(r.SUB/r.INVITO*100):r.FUP1>0?Math.round(r.SUB/r.FUP1*100):0;return r;});
   const ts={background:"#0a1426",border:"1px solid #1e3a5f",borderRadius:8,color:"#dbeafe",fontSize:12};
-  if (!data.length) return <div style={{padding:"2rem 2.2rem"}}><h1 style={{fontWeight:900,fontSize:26,color:"#eff6ff",marginBottom:8}}>Statistiche</h1><div style={{textAlign:"center",padding:"5rem",color:"#1e3a5f"}}><div style={{fontSize:44,marginBottom:12}}>◪</div><p>Aggiungi prospect per vedere le statistiche</p></div></div>;
+  if (!activeData.length) return <div style={{padding:"2rem 2.2rem"}}><h1 style={{fontWeight:900,fontSize:26,color:"#eff6ff",marginBottom:8}}>Statistiche</h1><div style={{textAlign:"center",padding:"5rem",color:"#1e3a5f"}}><div style={{fontSize:44,marginBottom:12}}>◪</div><p>Aggiungi prospect per vedere le statistiche</p></div></div>;
   return (
     <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
-      <h1 style={{fontWeight:900,fontSize:26,color:"#eff6ff",letterSpacing:-0.8}}>Statistiche</h1>
-      <p style={{color:"#3b5478",fontSize:12,marginTop:4,marginBottom:24}}>Andamento e conversione del percorso, ciclo per ciclo</p>
+      <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:24,gap:12,flexWrap:"wrap"}}>
+        <div>
+          <h1 style={{fontWeight:900,fontSize:26,color:"#eff6ff",letterSpacing:-0.8}}>Statistiche</h1>
+          <p style={{color:"#3b5478",fontSize:12,marginTop:4}}>Andamento e conversione del percorso, ciclo per ciclo</p>
+        </div>
+        {hasTeam && (
+          <div style={{display:"flex",background:"#0a1426",borderRadius:10,padding:4,border:"1px solid #11203a"}}>
+            {["personale","team"].map(m=>(
+              <button key={m} onClick={()=>setStatsMode(m)} className="tabbtn"
+                style={{background:statsMode===m?"#0d1b33":"transparent",color:statsMode===m?"#7dd3fc":"#5278a8",boxShadow:statsMode===m?"inset 0 0 0 1px #2563eb40":"none",fontSize:11,padding:"6px 14px"}}>
+                {m==="personale"?"👤 Personale":"◈ Team"}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       <div style={{background:"#080f1f",border:"1px solid #11203a",borderRadius:14,padding:"1.4rem",marginBottom:16}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:10}}>
           <div><div style={{fontSize:13,fontWeight:800,color:"#eff6ff"}}>📈 Andamento nei cicli</div><div style={{fontSize:11,color:"#3b5478",marginTop:2}}>Quanti ne fai per ciclo</div></div>
