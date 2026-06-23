@@ -4,7 +4,7 @@ const SB_URL = "https://kuxrpbsvnkxhsicbyupp.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1eHJwYnN2bmt4aHNpY2J5dXBwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwNzMwODIsImV4cCI6MjA5NzY0OTA4Mn0.s_lqOUC8939I2Wgf-Qkcq9WaiH1Nxze1uv4-PIV6s7I";
 
 const TEMI = {
-  blu:   { label:"Blu",   a1:"#2563eb", a2:"#0ea5e9", preview:"linear-gradient(135deg,#2563eb,#0ea5e9)" },
+  blu:   { label:"Blu",   a1:"#2563eb", a2:"#0ea5e9", preview:"linear-gradient(135deg,var(--a1),var(--a2))" },
   verde: { label:"Verde", a1:"#059669", a2:"#10b981", preview:"linear-gradient(135deg,#059669,#10b981)" },
   viola: { label:"Viola", a1:"#7c3aed", a2:"#a78bfa", preview:"linear-gradient(135deg,#7c3aed,#a78bfa)" },
   rosa:  { label:"Rosa",  a1:"#db2777", a2:"#f472b6", preview:"linear-gradient(135deg,#db2777,#f472b6)" },
@@ -13,7 +13,7 @@ const TEMI = {
 
 function applyTema(temaKey) {
   const tAll = {
-    blu:   { bg:"#060b18", bg2:"#080f1f", bg3:"#0a1426", bg4:"#0d1b33", border:"#11203a", border2:"#1e3a5f", a1:"#2563eb", a2:"#0ea5e9", text:"#dbeafe", textMuted:"#5278a8", glow:"#2563eb" },
+    blu:   { bg:"#060b18", bg2:"#080f1f", bg3:"#0a1426", bg4:"#0d1b33", border:"var(--border)", border2:"var(--border2)", a1:"#2563eb", a2:"#0ea5e9", text:"#dbeafe", textMuted:"#5278a8", glow:"#2563eb" },
     verde: { bg:"#040e08", bg2:"#061410", bg3:"#08190e", bg4:"#0a2012", border:"#0f2a18", border2:"#1a4028", a1:"#059669", a2:"#10b981", text:"#d1fae5", textMuted:"#4a7a60", glow:"#059669" },
     viola: { bg:"#070412", bg2:"#0c0618", bg3:"#110820", bg4:"#160a28", border:"#1a0f35", border2:"#2d1a55", a1:"#7c3aed", a2:"#a78bfa", text:"#ede9fe", textMuted:"#6b5a8a", glow:"#7c3aed" },
     rosa:  { bg:"#120408", bg2:"#180610", bg3:"#200818", bg4:"#280a20", border:"#350f28", border2:"#551a40", a1:"#db2777", a2:"#f472b6", text:"#fce7f3", textMuted:"#8a4a6b", glow:"#db2777" },
@@ -60,7 +60,7 @@ export function ProfiloView({ auth, onUpdateProfile, downlineCount }) {
     setTimeout(() => setMsg(null), 3000);
   }
 
-  const lbl = { fontSize: 11, fontWeight: 700, color: "#3b5478", textTransform: "uppercase", letterSpacing: .8, marginBottom: 5, display: "block" };
+  const lbl = { fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: .8, marginBottom: 5, display: "block" };
 
   async function saveProfile() {
     setSaving(true);
@@ -95,18 +95,18 @@ export function ProfiloView({ auth, onUpdateProfile, downlineCount }) {
       )}
 
       <h1 style={{ fontWeight: 900, fontSize: 26, color: "#eff6ff", letterSpacing: -0.8, marginBottom: 4 }}>Il tuo profilo</h1>
-      <p style={{ color: "#3b5478", fontSize: 12, marginBottom: 24 }}>Le tue informazioni personali</p>
+      <p style={{ color: "var(--muted)", fontSize: 12, marginBottom: 24 }}>Le tue informazioni personali</p>
 
       <div style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 28, background: "#080f1f", border: "1px solid #11203a", borderRadius: 14, padding: "1.4rem" }}>
-        <div style={{ width: 64, height: 64, borderRadius: "50%", background: "linear-gradient(135deg,#2563eb,#0ea5e9)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 900, color: "#fff", flexShrink: 0, boxShadow: "0 0 20px #2563eb40" }}>
+        <div style={{ width: 64, height: 64, borderRadius: "50%", background: "linear-gradient(135deg,var(--a1),var(--a2))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 900, color: "#fff", flexShrink: 0, boxShadow: "0 0 20px #2563eb40" }}>
           {(nome || auth.email || "?")[0].toUpperCase()}
         </div>
         <div>
           <div style={{ fontWeight: 900, fontSize: 18, color: "#eff6ff" }}>{nome || "\u2014"} {cognome || ""}</div>
           <div style={{ fontSize: 12, color: "#5278a8", marginTop: 3 }}>{auth.email}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
-            <span style={{ fontSize: 10, color: "#3b5478" }}>Il tuo ID:</span>
-            <span style={{ background: "#2563eb20", color: "#60a5fa", borderRadius: 6, padding: "2px 10px", fontSize: 12, fontWeight: 800, fontFamily: "monospace" }}>{p.referral_code || "..."}</span>
+            <span style={{ fontSize: 10, color: "var(--muted)" }}>Il tuo ID:</span>
+            <span style={{ background: "color-mix(in srgb, var(--a1) 12%, transparent)", color: "#60a5fa", borderRadius: 6, padding: "2px 10px", fontSize: 12, fontWeight: 800, fontFamily: "monospace" }}>{p.referral_code || "..."}</span>
           </div>
         </div>
       </div>
@@ -122,12 +122,12 @@ export function ProfiloView({ auth, onUpdateProfile, downlineCount }) {
           <div style={{ gridColumn: "1/-1" }}>
             <label style={lbl}>Email</label>
             <input value={auth.email} disabled style={{ opacity: .5, cursor: "not-allowed" }} />
-            <div style={{ fontSize: 10, color: "#2a4060", marginTop: 4 }}>Email non modificabile</div>
+            <div style={{ fontSize: 10, color: "var(--border2)", marginTop: 4 }}>Email non modificabile</div>
           </div>
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
           <button onClick={saveProfile} disabled={saving}
-            style={{ padding: "9px 22px", background: "linear-gradient(135deg,#2563eb,#0ea5e9)", color: "#fff", border: "none", borderRadius: 9, cursor: saving ? "not-allowed" : "pointer", fontWeight: 800, fontSize: 13, display: "flex", alignItems: "center", gap: 7, opacity: saving ? 0.7 : 1 }}>
+            style={{ padding: "9px 22px", background: "linear-gradient(135deg,var(--a1),var(--a2))", color: "#fff", border: "none", borderRadius: 9, cursor: saving ? "not-allowed" : "pointer", fontWeight: 800, fontSize: 13, display: "flex", alignItems: "center", gap: 7, opacity: saving ? 0.7 : 1 }}>
             {saving && <span style={{ width: 14, height: 14, border: "2px solid #ffffff44", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block", animation: "spin .7s linear infinite" }} />}
             Salva
           </button>
@@ -144,7 +144,7 @@ export function ProfiloView({ auth, onUpdateProfile, downlineCount }) {
                 applyTema(key);
                 await onUpdateProfile({ tema: key });
               }}
-                style={{ padding: "12px 8px", borderRadius: 10, border: "2px solid " + (active ? t.a1 : "#1e3a5f"), cursor: "pointer", background: active ? t.a1+"18" : "#0a1426", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, transition: "all .2s" }}>
+                style={{ padding: "12px 8px", borderRadius: 10, border: "2px solid " + (active ? t.a1 : "var(--border2)"), cursor: "pointer", background: active ? t.a1+"18" : "#0a1426", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, transition: "all .2s" }}>
                 <div style={{ width: 36, height: 36, borderRadius: "50%", background: t.preview, boxShadow: active ? "0 0 12px " + t.a1 + "80" : "none" }} />
                 <span style={{ fontSize: 11, fontWeight: 700, color: active ? t.a1 : "#5278a8" }}>{t.label}</span>
               </button>
@@ -157,7 +157,7 @@ export function ProfiloView({ auth, onUpdateProfile, downlineCount }) {
         <div style={{ fontSize: 13, fontWeight: 800, color: "#eff6ff", marginBottom: 4 }}>Il tuo sponsor</div>
         {downlineCount > 0 ? (
           <>
-            <div style={{ fontSize: 11, color: "#3b5478", marginBottom: 12, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 12, lineHeight: 1.6 }}>
               Hai {downlineCount} {downlineCount === 1 ? "membro" : "membri"} nella tua downline. Per spostare il tuo sponsor senza creare problemi all albero contatta chi gestisce il sistema.
             </div>
             <div style={{ background: "#f59e0b12", border: "1px solid #f59e0b30", borderRadius: 9, padding: "10px 14px", fontSize: 12, color: "#f59e0b", fontWeight: 600 }}>
@@ -166,7 +166,7 @@ export function ProfiloView({ auth, onUpdateProfile, downlineCount }) {
           </>
         ) : (
           <>
-            <div style={{ fontSize: 11, color: "#3b5478", marginBottom: 16, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 16, lineHeight: 1.6 }}>
               Inserisci qui l ID del tuo sponsor reale per correggere il collegamento e aggiornare la tua posizione nell albero.
             </div>
             <div style={{ display: "flex", gap: 10, alignItems: "flex-end" }}>
@@ -175,7 +175,7 @@ export function ProfiloView({ auth, onUpdateProfile, downlineCount }) {
                 <input value={sponsorId} onChange={e => setSponsorId(e.target.value)} placeholder="es. mario_abc123" onKeyDown={e => e.key === "Enter" && saveSponsor()} />
               </div>
               <button onClick={saveSponsor} disabled={savingSponsor || !sponsorId.trim()}
-                style={{ padding: "9px 18px", background: sponsorId.trim() ? "linear-gradient(135deg,#2563eb,#0ea5e9)" : "#0d1b33", color: sponsorId.trim() ? "#fff" : "#3b5478", border: "none", borderRadius: 9, cursor: sponsorId.trim() && !savingSponsor ? "pointer" : "not-allowed", fontWeight: 800, fontSize: 13, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 7, opacity: savingSponsor ? 0.7 : 1 }}>
+                style={{ padding: "9px 18px", background: sponsorId.trim() ? "linear-gradient(135deg,var(--a1),var(--a2))" : "#0d1b33", color: sponsorId.trim() ? "#fff" : "var(--muted)", border: "none", borderRadius: 9, cursor: sponsorId.trim() && !savingSponsor ? "pointer" : "not-allowed", fontWeight: 800, fontSize: 13, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 7, opacity: savingSponsor ? 0.7 : 1 }}>
                 {savingSponsor && <span style={{ width: 14, height: 14, border: "2px solid #ffffff44", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block", animation: "spin .7s linear infinite" }} />}
                 Aggiorna
               </button>

@@ -44,7 +44,7 @@ const JUNG = [
   { key:"verde",  label:"VERDE",  sub:"Disposizione ad aiutare",   bg:"linear-gradient(135deg,#047857,#10b981)", border:"#10b981" },
 ];
 const TV = [null, "-", ".", "+"];
-const TC = { null:"#1e3a5f", "-":"#ef4444", ".":"#f59e0b", "+":"#10b981" };
+const TC = { null:"var(--border2)", "-":"#ef4444", ".":"#f59e0b", "+":"#10b981" };
 const TL = { "-":"\u2013", ".":"\u00b7", "+":"+" };
 
 const TEMPERATURE = ["Caldo", "Tiepido", "Freddo"];
@@ -55,7 +55,7 @@ const today = () => new Date().toISOString().split("T")[0];
 
 function Av({ n, c, size=34 }) {
   return (
-    <div style={{width:size,height:size,borderRadius:"50%",flexShrink:0,background:"linear-gradient(135deg,#2563eb,#0ea5e9)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:900,fontSize:size*0.32,boxShadow:"0 0 10px #2563eb35"}}>
+    <div style={{width:size,height:size,borderRadius:"50%",flexShrink:0,background:"linear-gradient(135deg,var(--a1),var(--a2))",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:900,fontSize:size*0.32,boxShadow:"0 0 10px #2563eb35"}}>
       {(n||"?")[0]}{(c||"")[0]}
     </div>
   );
@@ -78,13 +78,13 @@ function ProfilazionePanel({ profilazione, onChange }) {
   function ToggleGroup({ title, fields, section }) {
     return (
       <div style={{marginBottom:16}}>
-        <div style={{fontSize:10,fontWeight:800,color:"#3b5478",textTransform:"uppercase",letterSpacing:1.2,marginBottom:8}}>{title}</div>
+        <div style={{fontSize:10,fontWeight:800,color:"var(--muted)",textTransform:"uppercase",letterSpacing:1.2,marginBottom:8}}>{title}</div>
         <div style={{display:"flex",flexDirection:"column",gap:6}}>
           {fields.map(f => {
             const val = pr[section]?.[f.key] ?? null;
             const clr = TC[val] || TC.null;
             return (
-              <div key={f.key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"#0a1426",borderRadius:9,padding:"8px 11px",border:"1px solid "+(val!=null?clr+"40":"#11203a")}}>
+              <div key={f.key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--bg3)",borderRadius:9,padding:"8px 11px",border:"1px solid "+(val!=null?clr+"40":"var(--border)")}}>
                 <span style={{fontSize:12,color:val!=null?"#eff6ff":"#5278a8"}}>{f.label}</span>
                 <div style={{display:"flex",gap:5}}>
                   {TV.filter(v=>v!==null).map(v => {
@@ -95,7 +95,7 @@ function ProfilazionePanel({ profilazione, onChange }) {
                         const next = active ? null : v;
                         onChange({ ...pr, [section]: { ...(pr[section]||{}), [f.key]: next } });
                       }}
-                        style={{width:28,height:26,borderRadius:6,border:"1.5px solid "+(active?vc:"#1e3a5f"),cursor:"pointer",fontSize:13,fontWeight:900,fontFamily:"inherit",background:active?vc+"33":"#0d1b33",color:active?vc:"#3b5478",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                        style={{width:28,height:26,borderRadius:6,border:"1.5px solid "+(active?vc:"var(--border2)"),cursor:"pointer",fontSize:13,fontWeight:900,fontFamily:"inherit",background:active?vc+"33":"#0d1b33",color:active?vc:"var(--muted)",display:"flex",alignItems:"center",justifyContent:"center"}}>
                         {TL[v]}
                       </button>
                     );
@@ -117,13 +117,13 @@ function ProfilazionePanel({ profilazione, onChange }) {
       <ToggleGroup title="Pleasures" fields={PLEASURES} section="pleasures" />
       <ToggleGroup title="Punti di Forza" fields={FORZA} section="forza" />
       <div style={{marginBottom:8}}>
-        <div style={{fontSize:10,fontWeight:800,color:"#3b5478",textTransform:"uppercase",letterSpacing:1.2,marginBottom:8}}>Personalita Jung</div>
+        <div style={{fontSize:10,fontWeight:800,color:"var(--muted)",textTransform:"uppercase",letterSpacing:1.2,marginBottom:8}}>Personalita Jung</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
           {JUNG.map(j => {
             const active = sj === j.key;
             return (
               <button key={j.key} onClick={() => selectJung(j.key)}
-                style={{background:active?j.bg:"#0a1426",border:"2px solid "+(active?j.border:"#1e3a5f"),borderRadius:10,padding:"10px 12px",cursor:"pointer",textAlign:"left",transition:"all .2s"}}>
+                style={{background:active?j.bg:"#0a1426",border:"2px solid "+(active?j.border:"var(--border2)"),borderRadius:10,padding:"10px 12px",cursor:"pointer",textAlign:"left",transition:"all .2s"}}>
                 <div style={{fontWeight:900,fontSize:13,color:active?"#fff":j.border}}>{j.label}</div>
                 <div style={{fontSize:10,color:active?"rgba(255,255,255,.8)":"#5278a8",marginTop:2}}>{j.sub}</div>
               </button>
@@ -139,16 +139,16 @@ function ProfilazionePanel({ profilazione, onChange }) {
 function PersonaModal({ persona, onSave, onClose, onDelete, onInvita, isEdit }) {
   const [form, setForm] = useState(persona || { nome:"", cognome:"", citta:"", telefono:"", instagram:"", note:"", profilazione:{ pleasures:{}, forza:{} }, invitato:false });
   const [tab, setTab] = useState("dati");
-  const lbl = { fontSize:11, fontWeight:700, color:"#3b5478", textTransform:"uppercase", letterSpacing:.8, marginBottom:5, display:"block" };
+  const lbl = { fontSize:11, fontWeight:700, color:"var(--muted)", textTransform:"uppercase", letterSpacing:.8, marginBottom:5, display:"block" };
 
   return (
-    <div style={{background:"#080f1f",border:"1px solid #1e3a5f",borderRadius:16,padding:"1.6rem",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 20px 70px #000000aa"}}>
+    <div style={{background:"var(--bg2)",border:"1px solid var(--border2)",borderRadius:16,padding:"1.6rem",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 20px 70px #000000aa"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-        <h2 style={{fontWeight:900,fontSize:17,color:"#eff6ff"}}>{isEdit?"Modifica":"+ Aggiungi"}</h2>
-        <button onClick={onClose} style={{background:"#0d1b33",color:"#7da8d8",border:"1px solid #1e3a5f",borderRadius:8,cursor:"pointer",padding:"4px 10px",fontSize:14}}>X</button>
+        <h2 style={{fontWeight:900,fontSize:17,color:"var(--text)"}}>{isEdit?"Modifica":"+ Aggiungi"}</h2>
+        <button onClick={onClose} style={{background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:8,cursor:"pointer",padding:"4px 10px",fontSize:14}}>X</button>
       </div>
 
-      <div style={{display:"flex",background:"#0a1426",borderRadius:10,padding:4,marginBottom:16,border:"1px solid #11203a"}}>
+      <div style={{display:"flex",background:"var(--bg3)",borderRadius:10,padding:4,marginBottom:16,border:"1px solid var(--border)"}}>
         {[{id:"dati",label:"Dati"},{id:"profilazione",label:"Profilazione"}].map(t=>(
           <button key={t.id} onClick={()=>setTab(t.id)}
             style={{flex:1,padding:"7px",borderRadius:8,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"inherit",background:tab===t.id?"#0d1b33":"transparent",color:tab===t.id?"#7dd3fc":"#5278a8",boxShadow:tab===t.id?"inset 0 0 0 1px #2563eb40":"none"}}>
@@ -173,7 +173,7 @@ function PersonaModal({ persona, onSave, onClose, onDelete, onInvita, isEdit }) 
                 const color=TEMP_CLR[t];
                 return(
                   <button key={t} onClick={()=>setForm(f=>({...f,temperatura:active?null:t}))}
-                    style={{flex:1,padding:"9px",background:active?color+"25":"#0a1426",border:"2px solid "+(active?color:"#1e3a5f"),borderRadius:9,cursor:"pointer",color:active?color:"#5278a8",fontWeight:700,fontSize:13,fontFamily:"inherit",transition:"all .2s"}}>
+                    style={{flex:1,padding:"9px",background:active?color+"25":"#0a1426",border:"2px solid "+(active?color:"var(--border2)"),borderRadius:9,cursor:"pointer",color:active?color:"var(--muted)",fontWeight:700,fontSize:13,fontFamily:"inherit",transition:"all .2s"}}>
                     {t}
                   </button>
                 );
@@ -191,8 +191,8 @@ function PersonaModal({ persona, onSave, onClose, onDelete, onInvita, isEdit }) 
         {onDelete && <button onClick={onDelete} style={{padding:"9px 14px",background:"#ef444415",color:"#f87171",border:"1px solid #ef444438",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:13}}>Elimina</button>}
         {isEdit && !form.invitato && <button onClick={()=>onInvita(form)} style={{padding:"9px 16px",background:"#10b98120",color:"#10b981",border:"1px solid #10b98140",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:13}}>Invito fatto</button>}
         {isEdit && form.invitato && <span style={{padding:"9px 14px",fontSize:12,color:"#10b981",fontWeight:700}}>Gia invitato</span>}
-        <button onClick={onClose} style={{padding:"9px 14px",background:"#0d1b33",color:"#7da8d8",border:"1px solid #1e3a5f",borderRadius:9,cursor:"pointer",fontWeight:600,fontSize:13}}>Annulla</button>
-        <button onClick={()=>onSave(form)} style={{padding:"9px 20px",background:"linear-gradient(135deg,#2563eb,#0ea5e9)",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:13}}>
+        <button onClick={onClose} style={{padding:"9px 14px",background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:9,cursor:"pointer",fontWeight:600,fontSize:13}}>Annulla</button>
+        <button onClick={()=>onSave(form)} style={{padding:"9px 20px",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:13}}>
           {isEdit?"Aggiorna":"Aggiungi"}
         </button>
       </div>
@@ -286,10 +286,10 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
 
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1.4rem"}}>
         <div>
-          <h1 style={{fontWeight:900,fontSize:26,color:"#eff6ff",letterSpacing:-0.8}}>Lista Nomi</h1>
-          <p style={{color:"#3b5478",fontSize:12,marginTop:3}}>La tua lista personale — privata, visibile solo a te</p>
+          <h1 style={{fontWeight:900,fontSize:26,color:"var(--text)",letterSpacing:-0.8}}>Lista Nomi</h1>
+          <p style={{color:"var(--muted)",fontSize:12,marginTop:3}}>La tua lista personale — privata, visibile solo a te</p>
         </div>
-        <button onClick={()=>{setSel(null);setModal("add");}} style={{padding:"9px 18px",fontSize:13,fontWeight:800,background:"linear-gradient(135deg,#2563eb,#0ea5e9)",color:"#fff",border:"none",borderRadius:10,cursor:"pointer"}}>
+        <button onClick={()=>{setSel(null);setModal("add");}} style={{padding:"9px 18px",fontSize:13,fontWeight:800,background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:10,cursor:"pointer"}}>
           + Aggiungi
         </button>
       </div>
@@ -308,39 +308,39 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
       </div>
 
       {loading
-        ? <div style={{textAlign:"center",padding:"4rem",color:"#3b5478"}}>Caricamento...</div>
+        ? <div style={{textAlign:"center",padding:"4rem",color:"var(--muted)"}}>Caricamento...</div>
         : lista.length===0
-          ? <div style={{textAlign:"center",padding:"4rem",color:"#1e3a5f"}}>
-              <div style={{fontSize:13,marginBottom:12,color:"#3b5478"}}>La tua lista nomi e vuota</div>
-              <button onClick={()=>{setSel(null);setModal("add");}} style={{padding:"9px 20px",fontSize:13,fontWeight:800,background:"linear-gradient(135deg,#2563eb,#0ea5e9)",color:"#fff",border:"none",borderRadius:10,cursor:"pointer"}}>
+          ? <div style={{textAlign:"center",padding:"4rem",color:"var(--border2)"}}>
+              <div style={{fontSize:13,marginBottom:12,color:"var(--muted)"}}>La tua lista nomi e vuota</div>
+              <button onClick={()=>{setSel(null);setModal("add");}} style={{padding:"9px 20px",fontSize:13,fontWeight:800,background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:10,cursor:"pointer"}}>
                 Aggiungi il primo
               </button>
             </div>
           : <>
               {/* Da invitare */}
               {daInvitare.length>0&&(
-                <div style={{background:"#080f1f",border:"1px solid #11203a",borderRadius:14,overflow:"hidden",marginBottom:16}}>
-                  <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a",fontSize:13,fontWeight:800,color:"#eff6ff"}}>
-                    Da invitare <span style={{fontSize:11,color:"#3b5478",fontWeight:400,marginLeft:8}}>{daInvitare.length} persone</span>
+                <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden",marginBottom:16}}>
+                  <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a",fontSize:13,fontWeight:800,color:"var(--text)"}}>
+                    Da invitare <span style={{fontSize:11,color:"var(--muted)",fontWeight:400,marginLeft:8}}>{daInvitare.length} persone</span>
                   </div>
                   <table style={{width:"100%",borderCollapse:"collapse"}}>
                     <thead><tr style={{borderBottom:"1px solid #11203a"}}>
                       {["Nome","Citta","Telefono","Instagram","Temp.","Note","Profilo",""].map(h=>(
-                        <th key={h} style={{textAlign:"left",color:"#3b5478",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>{h}</th>
+                        <th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>{h}</th>
                       ))}
                     </tr></thead>
                     <tbody>{daInvitare.map(p=>{
                       const jung = p.profilazione?.jung ? JUNG.find(j=>j.key===p.profilazione.jung) : null;
                       return (
                         <tr key={p.id} onClick={()=>{setSel(p);setModal("edit");}} style={{borderBottom:"1px solid #0d1b3355",cursor:"pointer"}} className="hrow">
-                          <td style={{padding:"11px 16px"}}><div style={{display:"flex",alignItems:"center",gap:9}}><Av n={p.nome} c={p.cognome}/><span style={{color:"#eff6ff",fontWeight:700,fontSize:13}}>{p.nome} {p.cognome}</span></div></td>
-                          <td style={{padding:"11px 16px",color:"#5278a8",fontSize:12}}>{p.citta||"\u2014"}</td>
-                          <td style={{padding:"11px 16px",fontSize:12}}>{p.telefono?<a href={"tel:"+p.telefono} onClick={e=>e.stopPropagation()} style={{color:"#60a5fa",textDecoration:"none"}}>{p.telefono}</a>:"\u2014"}</td>
+                          <td style={{padding:"11px 16px"}}><div style={{display:"flex",alignItems:"center",gap:9}}><Av n={p.nome} c={p.cognome}/><span style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{p.nome} {p.cognome}</span></div></td>
+                          <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12}}>{p.citta||"\u2014"}</td>
+                          <td style={{padding:"11px 16px",fontSize:12}}>{p.telefono?<a href={"tel:"+p.telefono} onClick={e=>e.stopPropagation()} style={{color:"var(--a2)",textDecoration:"none"}}>{p.telefono}</a>:"\u2014"}</td>
                           <td style={{padding:"11px 16px",fontSize:12}}>{p.instagram?<a href={"https://instagram.com/"+p.instagram.replace("@","")} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()} style={{color:"#c084fc",textDecoration:"none"}}>{p.instagram.startsWith("@")?p.instagram:"@"+p.instagram}</a>:"\u2014"}</td>
                           <td style={{padding:"11px 16px"}}>{p.temperatura?<span style={{fontSize:11,fontWeight:800,padding:"2px 8px",borderRadius:6,color:TEMP_CLR[p.temperatura],background:TEMP_CLR[p.temperatura]+"20"}}>{p.temperatura}</span>:"\u2014"}</td>
-                          <td style={{padding:"11px 16px",color:"#5278a8",fontSize:12,maxWidth:200}}><div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.note||"\u2014"}</div></td>
+                          <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12,maxWidth:200}}><div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.note||"\u2014"}</div></td>
                           <td style={{padding:"11px 16px"}}>{jung?<span style={{fontSize:11,fontWeight:800,color:jung.border,background:jung.border+"18",borderRadius:6,padding:"2px 8px"}}>{jung.label}</span>:"\u2014"}</td>
-                          <td style={{padding:"11px 16px",color:"#1e3a5f",fontSize:16}}>{"\u203a"}</td>
+                          <td style={{padding:"11px 16px",color:"var(--border2)",fontSize:16}}>{"\u203a"}</td>
                         </tr>
                       );
                     })}</tbody>
@@ -350,22 +350,22 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
 
               {/* Gia invitati */}
               {invitati.length>0&&(
-                <div style={{background:"#080f1f",border:"1px solid #10b98130",borderRadius:14,overflow:"hidden"}}>
+                <div style={{background:"var(--bg2)",border:"1px solid #10b98130",borderRadius:14,overflow:"hidden"}}>
                   <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a",fontSize:13,fontWeight:800,color:"#10b981"}}>
-                    Gia invitati <span style={{fontSize:11,color:"#3b5478",fontWeight:400,marginLeft:8}}>{invitati.length} persone</span>
+                    Gia invitati <span style={{fontSize:11,color:"var(--muted)",fontWeight:400,marginLeft:8}}>{invitati.length} persone</span>
                   </div>
                   <table style={{width:"100%",borderCollapse:"collapse"}}>
                     <thead><tr style={{borderBottom:"1px solid #11203a"}}>
                       {["Nome","Citta","Instagram","Note",""].map(h=>(
-                        <th key={h} style={{textAlign:"left",color:"#3b5478",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>{h}</th>
+                        <th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>{h}</th>
                       ))}
                     </tr></thead>
                     <tbody>{invitati.map(p=>(
                       <tr key={p.id} onClick={()=>{setSel(p);setModal("edit");}} style={{borderBottom:"1px solid #0d1b3355",cursor:"pointer",opacity:0.6}} className="hrow">
-                        <td style={{padding:"11px 16px"}}><div style={{display:"flex",alignItems:"center",gap:9}}><Av n={p.nome} c={p.cognome}/><span style={{color:"#eff6ff",fontWeight:700,fontSize:13}}>{p.nome} {p.cognome}</span></div></td>
-                        <td style={{padding:"11px 16px",color:"#5278a8",fontSize:12}}>{p.citta||"\u2014"}</td>
+                        <td style={{padding:"11px 16px"}}><div style={{display:"flex",alignItems:"center",gap:9}}><Av n={p.nome} c={p.cognome}/><span style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{p.nome} {p.cognome}</span></div></td>
+                        <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12}}>{p.citta||"\u2014"}</td>
                         <td style={{padding:"11px 16px",fontSize:12}}>{p.instagram?<a href={"https://instagram.com/"+p.instagram.replace("@","")} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()} style={{color:"#c084fc",textDecoration:"none"}}>{p.instagram.startsWith("@")?p.instagram:"@"+p.instagram}</a>:"\u2014"}</td>
-                        <td style={{padding:"11px 16px",color:"#5278a8",fontSize:12}}>{p.note||"\u2014"}</td>
+                        <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12}}>{p.note||"\u2014"}</td>
                         <td style={{padding:"11px 16px"}}><span style={{fontSize:10,fontWeight:800,color:"#10b981",background:"#10b98118",borderRadius:6,padding:"2px 8px"}}>Invitato</span></td>
                       </tr>
                     ))}</tbody>

@@ -56,7 +56,7 @@ function TreeNode({memberId,memberNome,memberCognome,memberEmail,allMembers,dlPr
   function EmptySlot({team}){
     if(!canPlace)return(
       <div style={{width:120,height:44,border:"2px dashed #1e3a5f",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center"}}>
-        <span style={{fontSize:10,color:"#2a4060"}}>vuoto</span>
+        <span style={{fontSize:10,color:"var(--border2)"}}>vuoto</span>
       </div>
     );
     const color=team==="sinistra"?"#2563eb":"#10b981";
@@ -71,21 +71,21 @@ function TreeNode({memberId,memberNome,memberCognome,memberEmail,allMembers,dlPr
   return(
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",minWidth:160}}>
       <div onClick={()=>!isRoot&&onSelect&&onSelect(allMembers.find(m=>m.id===memberId))}
-        style={{background:isRoot?"linear-gradient(135deg,#2563eb,#0ea5e9)":"#0d1b33",border:"2px solid "+(isRoot?"#2563eb":"#1e3a5f"),borderRadius:12,padding:"10px 16px",textAlign:"center",cursor:isRoot?"default":"pointer",minWidth:130,boxShadow:isRoot?"0 0 20px #2563eb40":"none",marginBottom:4}}>
+        style={{background:isRoot?"linear-gradient(135deg,var(--a1),var(--a2))":"#0d1b33",border:"2px solid "+(isRoot?"#2563eb":"var(--border2)"),borderRadius:12,padding:"10px 16px",textAlign:"center",cursor:isRoot?"default":"pointer",minWidth:130,boxShadow:isRoot?"0 0 20px #2563eb40":"none",marginBottom:4}}>
         <div style={{fontWeight:800,fontSize:12,color:isRoot?"#fff":"#eff6ff"}}>{memberNome||memberEmail} {memberCognome||""}</div>
-        {!isRoot&&<div style={{fontSize:10,color:"#5278a8",marginTop:2}}>{ms.sub} iscr {"\u00b7"} {ms.bv} BV</div>}
+        {!isRoot&&<div style={{fontSize:10,color:"var(--muted)",marginTop:2}}>{ms.sub} iscr {"\u00b7"} {ms.bv} BV</div>}
       </div>
-      <div style={{width:2,height:16,background:"#1e3a5f"}}/>
+      <div style={{width:2,height:16,background:"var(--border2)"}}/>
       <div style={{display:"flex",gap:0,alignItems:"flex-start"}}>
         {/* SINISTRA */}
         <div style={{display:"flex",flexDirection:"column",alignItems:"center",minWidth:160}}>
-          <div style={{fontSize:9,fontWeight:800,color:"#2563eb",textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>{"\u2190"} Sinistra</div>
+          <div style={{fontSize:9,fontWeight:800,color:"var(--a1)",textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>{"\u2190"} Sinistra</div>
           {sin.length===0
             ?<EmptySlot team="sinistra"/>
             :sin.map(child=><TreeNode key={child.id} memberId={child.id} memberNome={child.nome} memberCognome={child.cognome} memberEmail={child.email} allMembers={allMembers} dlProspects={dlProspects} positions={positions} onSelect={onSelect} depth={depth+1} selectedForPlacement={selectedForPlacement} onPlaceHere={onPlaceHere}/>)
           }
         </div>
-        <div style={{width:2,minHeight:60,background:"#1e3a5f",margin:"0 8px"}}/>
+        <div style={{width:2,minHeight:60,background:"var(--border2)",margin:"0 8px"}}/>
         {/* DESTRA */}
         <div style={{display:"flex",flexDirection:"column",alignItems:"center",minWidth:160}}>
           <div style={{fontSize:9,fontWeight:800,color:"#10b981",textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Destra {"\u2192"}</div>
@@ -153,7 +153,7 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
   const statsTot=teamStats(dlByCiclo);
   const convColor=v=>v>=20?"#10b981":v>=10?"#0ea5e9":"#f59e0b";
   const compareData=[{name:"In percorso",sinistra:statsS.act,destra:statsD.act},{name:"Iscritti",sinistra:statsS.sub,destra:statsD.sub},{name:"BV",sinistra:statsS.bv,destra:statsD.bv}];
-  const ts={background:"#0a1426",border:"1px solid #1e3a5f",borderRadius:8,color:"#dbeafe",fontSize:12};
+  const ts={background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:8,color:"var(--text)",fontSize:12};
 
   if(selectedMember){
     const mP=getMemberProspects(selectedMember.id);
@@ -161,52 +161,52 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
     const teamColor=getTeamForMe(selectedMember)==="sinistra"?"#2563eb":getTeamForMe(selectedMember)==="destra"?"#10b981":"#6b7280";
     return(
       <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
-        <button onClick={()=>setSelectedMember(null)} style={{display:"flex",alignItems:"center",gap:8,background:"none",border:"none",color:"#60a5fa",cursor:"pointer",fontSize:13,fontWeight:700,marginBottom:20}}>
+        <button onClick={()=>setSelectedMember(null)} style={{display:"flex",alignItems:"center",gap:8,background:"none",border:"none",color:"var(--a2)",cursor:"pointer",fontSize:13,fontWeight:700,marginBottom:20}}>
           {"\u2190"} Torna al Team
         </button>
         <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:24}}>
           <Av n={selectedMember.nome||selectedMember.email} c={selectedMember.cognome} color={teamColor} size={50}/>
           <div>
-            <h2 style={{fontWeight:900,fontSize:22,color:"#eff6ff"}}>{selectedMember.nome||selectedMember.email} {selectedMember.cognome||""}</h2>
-            {selectedMember.citta&&<div style={{fontSize:12,color:"#5278a8",marginTop:3}}>{selectedMember.citta}</div>}
+            <h2 style={{fontWeight:900,fontSize:22,color:"var(--text)"}}>{selectedMember.nome||selectedMember.email} {selectedMember.cognome||""}</h2>
+            {selectedMember.citta&&<div style={{fontSize:12,color:"var(--muted)",marginTop:3}}>{selectedMember.citta}</div>}
             <div style={{display:"flex",gap:12,marginTop:8,flexWrap:"wrap"}}>
-              <a href={"mailto:"+selectedMember.email} style={{color:"#60a5fa",fontSize:12,textDecoration:"none",display:"flex",alignItems:"center",gap:4}}> {selectedMember.email}</a>
-              {selectedMember.telefono&&<a href={"tel:"+selectedMember.telefono} style={{color:"#60a5fa",fontSize:12,textDecoration:"none",display:"flex",alignItems:"center",gap:4}}> {selectedMember.telefono}</a>}
+              <a href={"mailto:"+selectedMember.email} style={{color:"var(--a2)",fontSize:12,textDecoration:"none",display:"flex",alignItems:"center",gap:4}}> {selectedMember.email}</a>
+              {selectedMember.telefono&&<a href={"tel:"+selectedMember.telefono} style={{color:"var(--a2)",fontSize:12,textDecoration:"none",display:"flex",alignItems:"center",gap:4}}> {selectedMember.telefono}</a>}
               {selectedMember.instagram&&<a href={"https://instagram.com/"+selectedMember.instagram.replace("@","")} target="_blank" rel="noreferrer" style={{color:"#c084fc",fontSize:12,textDecoration:"none",display:"flex",alignItems:"center",gap:4}}> {selectedMember.instagram.startsWith("@")?selectedMember.instagram:"@"+selectedMember.instagram}</a>}
             </div>
           </div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}}>
-          {[{label:"Prospect",value:ms.total,color:"#2563eb",icon:""},{label:"Iscritti",value:ms.sub,color:"#10b981",icon:""},{label:"In percorso",value:ms.act,color:"#0ea5e9",icon:""},{label:"BV prodotti",value:ms.bv,color:"#f59e0b",icon:""}].map((k,i)=>(
-            <div key={i} style={{background:"#080f1f",border:"1px solid #11203a",borderRadius:14,padding:"16px 18px",position:"relative",overflow:"hidden"}}>
+          {[{label:"Prospect",value:ms.total,color:"var(--a1)",icon:""},{label:"Iscritti",value:ms.sub,color:"#10b981",icon:""},{label:"In percorso",value:ms.act,color:"#0ea5e9",icon:""},{label:"BV prodotti",value:ms.bv,color:"#f59e0b",icon:""}].map((k,i)=>(
+            <div key={i} style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"16px 18px",position:"relative",overflow:"hidden"}}>
               <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"linear-gradient(90deg,"+k.color+","+k.color+"44)",borderRadius:"14px 14px 0 0"}}/>
-              <div style={{fontSize:10,color:"#3b5478",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>{k.label}</div>
+              <div style={{fontSize:10,color:"var(--muted)",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>{k.label}</div>
               <div style={{fontSize:28,fontWeight:900,color:k.color}}>{k.value}</div>
             </div>
           ))}
         </div>
-        <div style={{background:"#080f1f",border:"1px solid #11203a",borderRadius:14,overflow:"hidden"}}>
-          <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a",fontSize:13,fontWeight:800,color:"#eff6ff"}}>Prospect di {selectedMember.nome||selectedMember.email}</div>
+        <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden"}}>
+          <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a",fontSize:13,fontWeight:800,color:"var(--text)"}}>Prospect di {selectedMember.nome||selectedMember.email}</div>
           {mP.length===0
-            ?<div style={{padding:"3rem",textAlign:"center",color:"#1e3a5f"}}>Nessun prospect ancora</div>
+            ?<div style={{padding:"3rem",textAlign:"center",color:"var(--border2)"}}>Nessun prospect ancora</div>
             :<table style={{width:"100%",borderCollapse:"collapse"}}>
-              <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Nome","Conosciuto","Fonte","Fase","Checklist"].map(h=>(<th key={h} style={{textAlign:"left",color:"#3b5478",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>{h}</th>))}</tr></thead>
+              <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Nome","Conosciuto","Fonte","Fase","Checklist"].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>{h}</th>))}</tr></thead>
               <tbody>{mP.map(p=>(
                 <tr key={p.id} onClick={()=>onOpenProspect&&onOpenProspect({...p,_ownerName:(selectedMember.nome||selectedMember.email)+" "+(selectedMember.cognome||"")})} style={{borderBottom:"1px solid #0d1b3355",cursor:onOpenProspect?"pointer":"default"}} className="hrow">
-                  <td style={{padding:"11px 16px"}}><div style={{display:"flex",alignItems:"center",gap:9}}><Av n={p.nome} c={p.cognome} color={FASE_CLR[p.fase]}/><span style={{color:"#eff6ff",fontWeight:700,fontSize:13}}>{p.nome} {p.cognome}</span></div></td>
-                  <td style={{padding:"11px 16px",color:"#5278a8",fontSize:12}}>{fmt(p.conosciutoAt)}</td>
-                  <td style={{padding:"11px 16px",color:"#5278a8",fontSize:12}}>{p.fonte}</td>
+                  <td style={{padding:"11px 16px"}}><div style={{display:"flex",alignItems:"center",gap:9}}><Av n={p.nome} c={p.cognome} color={FASE_CLR[p.fase]}/><span style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{p.nome} {p.cognome}</span></div></td>
+                  <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12}}>{fmt(p.conosciutoAt)}</td>
+                  <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12}}>{p.fonte}</td>
                   <td style={{padding:"11px 16px"}}><span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:700,color:"#fff",background:FASE_CLR[p.fase]}}>{FASE_LABEL[p.fase]}</span></td>
                   <td style={{padding:"11px 16px"}}>
                     <div style={{display:"flex",gap:5}}>
                       {["kyc","pandadoc","click"].map(k=>{
                         const done=p.checklist?.[k];
                         const label=k==="pandadoc"?"PD":k.toUpperCase();
-                        return <span key={k} style={{fontSize:10,fontWeight:800,padding:"2px 7px",borderRadius:5,background:done?"#10b98120":"#1e3a5f20",color:done?"#10b981":"#3b5478",border:"1px solid "+(done?"#10b98140":"#1e3a5f")}}>{label}</span>;
+                        return <span key={k} style={{fontSize:10,fontWeight:800,padding:"2px 7px",borderRadius:5,background:done?"#10b98120":"#1e3a5f20",color:done?"#10b981":"var(--muted)",border:"1px solid "+(done?"#10b98140":"var(--border2)")}}>{label}</span>;
                       })}
                     </div>
                   </td>
-                  <td style={{padding:"11px 16px",color:"#1e3a5f",fontSize:16}}>{"\u203a"}</td>
+                  <td style={{padding:"11px 16px",color:"var(--border2)",fontSize:16}}>{"\u203a"}</td>
                 </tr>
               ))}</tbody>
             </table>
@@ -220,54 +220,54 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
     <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
       <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:"1.5rem",gap:12,flexWrap:"wrap"}}>
         <div>
-          <div style={{fontSize:11,fontWeight:700,color:"#2563eb",textTransform:"uppercase",letterSpacing:1.4,marginBottom:4}}>
+          <div style={{fontSize:11,fontWeight:700,color:"var(--a1)",textTransform:"uppercase",letterSpacing:1.4,marginBottom:4}}>
             {teamCiclo==="ALL"?"Tutti i cicli":"Ciclo "+teamCiclo+(teamCiclo===CICLO_CORRENTE?" \u00b7 in corso":"")}
           </div>
-          <h1 style={{fontWeight:900,fontSize:26,color:"#eff6ff",letterSpacing:-0.8,lineHeight:1}}>Team</h1>
-          <p style={{color:"#3b5478",fontSize:12,marginTop:4}}>{downline.length} membri nella tua downline</p>
+          <h1 style={{fontWeight:900,fontSize:26,color:"var(--text)",letterSpacing:-0.8,lineHeight:1}}>Team</h1>
+          <p style={{color:"var(--muted)",fontSize:12,marginTop:4}}>{downline.length} membri nella tua downline</p>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:6,background:"#080f1f",border:"1px solid #11203a",borderRadius:11,padding:"5px 10px"}}>
-          <button onClick={()=>setTeamCiclo(c=>c==="ALL"?CICLO_NUMS[CICLO_NUMS.length-1]:Math.max(CICLO_NUMS[CICLO_NUMS.length-1],Number(c)-1))} style={{background:"none",border:"none",color:"#5278a8",fontSize:18,cursor:"pointer",padding:"2px 8px",fontWeight:700}}>{"\u2039"}</button>
-          <select value={teamCiclo} onChange={e=>setTeamCiclo(e.target.value==="ALL"?"ALL":Number(e.target.value))} style={{background:"none",border:"none",color:"#bfdbfe",fontWeight:800,fontSize:12,padding:"2px 4px",width:"auto",cursor:"pointer"}}>
+        <div style={{display:"flex",alignItems:"center",gap:6,background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:11,padding:"5px 10px"}}>
+          <button onClick={()=>setTeamCiclo(c=>c==="ALL"?CICLO_NUMS[CICLO_NUMS.length-1]:Math.max(CICLO_NUMS[CICLO_NUMS.length-1],Number(c)-1))} style={{background:"none",border:"none",color:"var(--muted)",fontSize:18,cursor:"pointer",padding:"2px 8px",fontWeight:700}}>{"\u2039"}</button>
+          <select value={teamCiclo} onChange={e=>setTeamCiclo(e.target.value==="ALL"?"ALL":Number(e.target.value))} style={{background:"none",border:"none",color:"var(--text)",fontWeight:800,fontSize:12,padding:"2px 4px",width:"auto",cursor:"pointer"}}>
             <option value="ALL">Tutti i cicli</option>
             {CICLO_NUMS.map(c=><option key={c} value={c}>Ciclo {c}</option>)}
           </select>
-          <button onClick={()=>setTeamCiclo(c=>c==="ALL"?CICLO_NUMS[0]:Math.min(CICLO_NUMS[0],Number(c)+1))} style={{background:"none",border:"none",color:"#5278a8",fontSize:18,cursor:"pointer",padding:"2px 8px",fontWeight:700}}>{"\u203a"}</button>
+          <button onClick={()=>setTeamCiclo(c=>c==="ALL"?CICLO_NUMS[0]:Math.min(CICLO_NUMS[0],Number(c)+1))} style={{background:"none",border:"none",color:"var(--muted)",fontSize:18,cursor:"pointer",padding:"2px 8px",fontWeight:700}}>{"\u203a"}</button>
         </div>
       </div>
 
-      <div style={{background:"#080f1f",border:"1px solid #2563eb30",borderRadius:14,padding:"1.2rem 1.4rem",marginBottom:16}}>
+      <div style={{background:"var(--bg2)",border:"1px solid #2563eb30",borderRadius:14,padding:"1.2rem 1.4rem",marginBottom:16}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8,flexWrap:"wrap",gap:8}}>
-          <div style={{fontSize:11,fontWeight:700,color:"#2563eb",textTransform:"uppercase",letterSpacing:1}}>Il tuo link referral</div>
-          {auth?.profile?.referral_code&&<div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:10,color:"#3b5478"}}>Il tuo ID:</span><span style={{background:"#2563eb20",color:"#60a5fa",borderRadius:6,padding:"2px 10px",fontSize:12,fontWeight:800,fontFamily:"monospace"}}>{auth.profile.referral_code}</span></div>}
+          <div style={{fontSize:11,fontWeight:700,color:"var(--a1)",textTransform:"uppercase",letterSpacing:1}}>Il tuo link referral</div>
+          {auth?.profile?.referral_code&&<div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:10,color:"var(--muted)"}}>Il tuo ID:</span><span style={{background:"color-mix(in srgb, var(--a1) 12%, transparent)",color:"var(--a2)",borderRadius:6,padding:"2px 10px",fontSize:12,fontWeight:800,fontFamily:"monospace"}}>{auth.profile.referral_code}</span></div>}
         </div>
         {referralLink
           ?<div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
-            <div style={{flex:1,background:"#0a1426",border:"1px solid #1e3a5f",borderRadius:9,padding:"9px 13px",fontSize:12,color:"#94b5d8",fontFamily:"monospace",minWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{referralLink}</div>
-            <button onClick={copyLink} style={{padding:"9px 18px",background:copied?"#10b98120":"linear-gradient(135deg,#2563eb,#0ea5e9)",color:copied?"#10b981":"#fff",border:copied?"1px solid #10b98140":"none",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:12,whiteSpace:"nowrap"}}>{copied?"Copiato!":"Copia link"}</button>
+            <div style={{flex:1,background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:9,padding:"9px 13px",fontSize:12,color:"#94b5d8",fontFamily:"monospace",minWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{referralLink}</div>
+            <button onClick={copyLink} style={{padding:"9px 18px",background:copied?"#10b98120":"linear-gradient(135deg,var(--a1),var(--a2))",color:copied?"#10b981":"#fff",border:copied?"1px solid #10b98140":"none",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:12,whiteSpace:"nowrap"}}>{copied?"Copiato!":"Copia link"}</button>
           </div>
-          :<div style={{fontSize:12,color:"#3b5478"}}>Caricamento...</div>
+          :<div style={{fontSize:12,color:"var(--muted)"}}>Caricamento...</div>
         }
-        <div style={{fontSize:11,color:"#2a4060",marginTop:8}}>Chi si registra tramite il tuo link appare automaticamente nel tuo team.</div>
+        <div style={{fontSize:11,color:"var(--border2)",marginTop:8}}>Chi si registra tramite il tuo link appare automaticamente nel tuo team.</div>
       </div>
 
       {showAddModal&&(
         <div onClick={()=>setShowAddModal(false)} style={{position:"fixed",inset:0,background:"#00000090",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:16}}>
-          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:420,background:"#080f1f",border:"1px solid #1e3a5f",borderRadius:16,padding:"1.6rem",boxShadow:"0 20px 70px #000000aa"}}>
+          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:420,background:"var(--bg2)",border:"1px solid var(--border2)",borderRadius:16,padding:"1.6rem",boxShadow:"0 20px 70px #000000aa"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-              <h2 style={{fontWeight:900,fontSize:17,color:"#eff6ff"}}>+ Aggiungi membro</h2>
-              <button onClick={()=>{setShowAddModal(false);setAddCode("");}} style={{background:"#0d1b33",color:"#7da8d8",border:"1px solid #1e3a5f",borderRadius:8,cursor:"pointer",padding:"4px 10px",fontSize:14}}>X</button>
+              <h2 style={{fontWeight:900,fontSize:17,color:"var(--text)"}}>+ Aggiungi membro</h2>
+              <button onClick={()=>{setShowAddModal(false);setAddCode("");}} style={{background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:8,cursor:"pointer",padding:"4px 10px",fontSize:14}}>X</button>
             </div>
-            <p style={{fontSize:12,color:"#5278a8",marginBottom:16,lineHeight:1.6}}>Inserisci l ID della persona, scegli sotto chi posizionarla e in che squadra.</p>
+            <p style={{fontSize:12,color:"var(--muted)",marginBottom:16,lineHeight:1.6}}>Inserisci l ID della persona, scegli sotto chi posizionarla e in che squadra.</p>
             <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:16}}>
-              <div><label style={{fontSize:11,fontWeight:700,color:"#3b5478",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"}}>ID membro</label><input value={addCode} onChange={e=>setAddCode(e.target.value)} placeholder="es. mario_abc123"/></div>
-              <div><label style={{fontSize:11,fontWeight:700,color:"#3b5478",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"}}>Posiziona sotto</label>
+              <div><label style={{fontSize:11,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"}}>ID membro</label><input value={addCode} onChange={e=>setAddCode(e.target.value)} placeholder="es. mario_abc123"/></div>
+              <div><label style={{fontSize:11,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"}}>Posiziona sotto</label>
                 <select value={addPositionedUnder} onChange={e=>setAddPositionedUnder(e.target.value)}>
                   <option value="">Te stesso</option>
                   {downline.map(m=><option key={m.id} value={m.id}>{m.nome||m.email} {m.cognome||""}</option>)}
                 </select>
               </div>
-              <div><label style={{fontSize:11,fontWeight:700,color:"#3b5478",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"}}>Squadra</label>
+              <div><label style={{fontSize:11,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"}}>Squadra</label>
                 <select value={addTeam} onChange={e=>setAddTeam(e.target.value)}>
                   <option value="">Non assegnata</option>
                   <option value="sinistra">Sinistra</option>
@@ -276,8 +276,8 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
               </div>
             </div>
             <div style={{display:"flex",gap:9,justifyContent:"flex-end"}}>
-              <button onClick={()=>{setShowAddModal(false);setAddCode("");}} style={{padding:"9px 15px",background:"#0d1b33",color:"#7da8d8",border:"1px solid #1e3a5f",borderRadius:9,cursor:"pointer",fontWeight:600,fontSize:13}}>Annulla</button>
-              <button onClick={handleAddManual} disabled={addLoading} style={{padding:"9px 20px",background:"linear-gradient(135deg,#2563eb,#0ea5e9)",color:"#fff",border:"none",borderRadius:9,cursor:addLoading?"not-allowed":"pointer",fontWeight:800,fontSize:13,display:"flex",alignItems:"center",gap:7,opacity:addLoading?0.7:1}}>
+              <button onClick={()=>{setShowAddModal(false);setAddCode("");}} style={{padding:"9px 15px",background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:9,cursor:"pointer",fontWeight:600,fontSize:13}}>Annulla</button>
+              <button onClick={handleAddManual} disabled={addLoading} style={{padding:"9px 20px",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:9,cursor:addLoading?"not-allowed":"pointer",fontWeight:800,fontSize:13,display:"flex",alignItems:"center",gap:7,opacity:addLoading?0.7:1}}>
                 {addLoading&&<span className="spinner"/>}Aggiungi
               </button>
             </div>
@@ -285,7 +285,7 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
         </div>
       )}
 
-      <div style={{display:"flex",background:"#0a1426",borderRadius:10,padding:4,marginBottom:16,border:"1px solid #11203a"}}>
+      <div style={{display:"flex",background:"var(--bg3)",borderRadius:10,padding:4,marginBottom:16,border:"1px solid var(--border)"}}>
         {[{id:"dashboard",label:"Dashboard"},{id:"albero",label:"Albero"},{id:"membri",label:"Membri"}].map(t=>(
           <button key={t.id} onClick={()=>setActiveTeamTab(t.id)}
             style={{flex:1,padding:"8px 16px",borderRadius:8,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"inherit",transition:"all .2s",background:activeTeamTab===t.id?"#0d1b33":"transparent",color:activeTeamTab===t.id?"#7dd3fc":"#5278a8",boxShadow:activeTeamTab===t.id?"inset 0 0 0 1px #2563eb40":"none"}}>
@@ -298,7 +298,7 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
         <div style={{marginBottom:16}}>
           {/* Zona in attesa */}
           {inAttesa.length>0&&(
-            <div style={{background:"#080f1f",border:"1px solid #f59e0b30",borderRadius:14,padding:"1.2rem",marginBottom:12}}>
+            <div style={{background:"var(--bg2)",border:"1px solid #f59e0b30",borderRadius:14,padding:"1.2rem",marginBottom:12}}>
               <div style={{fontSize:12,fontWeight:800,color:"#f59e0b",marginBottom:10}}>
                 In attesa di posizionamento — seleziona una persona poi clicca lo slot nell albero
               </div>
@@ -309,7 +309,7 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
                   const isSelected=selectedForPlacement?.id===m.id;
                   return(
                     <button key={m.id} onClick={()=>setSelectedForPlacement(isSelected?null:m)}
-                      style={{padding:"8px 14px",background:isSelected?color+"30":"#0a1426",border:"2px solid "+(isSelected?color:"#1e3a5f"),borderRadius:9,cursor:"pointer",color:isSelected?color:"#eff6ff",fontWeight:700,fontSize:12,transition:"all .2s"}}>
+                      style={{padding:"8px 14px",background:isSelected?color+"30":"#0a1426",border:"2px solid "+(isSelected?color:"var(--border2)"),borderRadius:9,cursor:"pointer",color:isSelected?color:"var(--text)",fontWeight:700,fontSize:12,transition:"all .2s"}}>
                       {m.nome||m.email} {m.cognome||""} <span style={{fontSize:10,color:color,marginLeft:4}}>{team}</span>
                     </button>
                   );
@@ -320,10 +320,10 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
           )}
 
           {/* Albero */}
-          <div style={{background:"#080f1f",border:"1px solid #11203a",borderRadius:14,padding:"1.4rem",overflowX:"auto"}}>
-            <div style={{fontSize:13,fontWeight:800,color:"#eff6ff",marginBottom:20}}>Albero genealogico</div>
+          <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"1.4rem",overflowX:"auto"}}>
+            <div style={{fontSize:13,fontWeight:800,color:"var(--text)",marginBottom:20}}>Albero genealogico</div>
             {posizionati.length===0&&inAttesa.length===0
-              ?<div style={{textAlign:"center",padding:"3rem",color:"#1e3a5f"}}>Nessun membro ancora</div>
+              ?<div style={{textAlign:"center",padding:"3rem",color:"var(--border2)"}}>Nessun membro ancora</div>
               :<TreeNode
                 memberId={auth.userId}
                 memberNome={auth.profile?.nome||""}
@@ -351,11 +351,11 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
           {activeTeamTab==="dashboard"&&(
             <>
               <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12,marginBottom:16}}>
-                {[{label:"Membri",value:downline.length,color:"#8b5cf6",icon:""},{label:"In percorso",value:statsTot.act,color:"#2563eb",icon:""},{label:"Iscritti",value:statsTot.sub,color:"#10b981",icon:""},{label:"Conv. team",value:statsTot.conv+"%",color:convColor(statsTot.conv),icon:""},{label:"BV team",value:statsTot.bv,color:"#f59e0b",icon:""}].map((k,i)=>(
-                  <div key={i} style={{background:"#080f1f",border:"1px solid #11203a",borderRadius:14,padding:"16px 18px",position:"relative",overflow:"hidden"}}>
+                {[{label:"Membri",value:downline.length,color:"#8b5cf6",icon:""},{label:"In percorso",value:statsTot.act,color:"var(--a1)",icon:""},{label:"Iscritti",value:statsTot.sub,color:"#10b981",icon:""},{label:"Conv. team",value:statsTot.conv+"%",color:convColor(statsTot.conv),icon:""},{label:"BV team",value:statsTot.bv,color:"#f59e0b",icon:""}].map((k,i)=>(
+                  <div key={i} style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"16px 18px",position:"relative",overflow:"hidden"}}>
                     <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"linear-gradient(90deg,"+k.color+","+k.color+"44)",borderRadius:"14px 14px 0 0"}}/>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                      <span style={{fontSize:10,color:"#3b5478",fontWeight:700,textTransform:"uppercase",letterSpacing:.8}}>{k.label}</span>
+                      <span style={{fontSize:10,color:"var(--muted)",fontWeight:700,textTransform:"uppercase",letterSpacing:.8}}>{k.label}</span>
                       <span style={{fontSize:14,padding:6,borderRadius:8,background:k.color+"18"}}>{k.icon}</span>
                     </div>
                     <div style={{fontSize:30,fontWeight:900,color:k.color,lineHeight:1}}>{k.value}</div>
@@ -366,16 +366,16 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
               {(sinistra.length>0||destra.length>0)&&(
                 <>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
-                    {[{team:"sinistra",stats:statsS,color:"#2563eb",members:sinistra.length},{team:"destra",stats:statsD,color:"#10b981",members:destra.length}].map(({team,stats,color,members})=>(
-                      <div key={team} style={{background:"#080f1f",border:"1px solid "+color+"28",borderRadius:14,padding:"1.2rem"}}>
+                    {[{team:"sinistra",stats:statsS,color:"var(--a1)",members:sinistra.length},{team:"destra",stats:statsD,color:"#10b981",members:destra.length}].map(({team,stats,color,members})=>(
+                      <div key={team} style={{background:"var(--bg2)",border:"1px solid "+color+"28",borderRadius:14,padding:"1.2rem"}}>
                         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
                           <span style={{fontSize:13,fontWeight:900,color,textTransform:"capitalize"}}>Squadra {team}</span>
-                          <span style={{fontSize:11,color:"#3b5478"}}>{members} membri</span>
+                          <span style={{fontSize:11,color:"var(--muted)"}}>{members} membri</span>
                         </div>
                         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8}}>
                           {[{l:"In percorso",v:stats.act},{l:"Iscritti",v:stats.sub},{l:"Conv%",v:stats.conv+"%"},{l:"BV",v:stats.bv}].map(({l,v})=>(
-                            <div key={l} style={{background:"#0a1426",borderRadius:9,padding:"10px"}}>
-                              <div style={{fontSize:10,color:"#3b5478",marginBottom:4}}>{l}</div>
+                            <div key={l} style={{background:"var(--bg3)",borderRadius:9,padding:"10px"}}>
+                              <div style={{fontSize:10,color:"var(--muted)",marginBottom:4}}>{l}</div>
                               <div style={{fontSize:20,fontWeight:900,color}}>{v}</div>
                             </div>
                           ))}
@@ -383,15 +383,15 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
                       </div>
                     ))}
                   </div>
-                  <div style={{background:"#080f1f",border:"1px solid #11203a",borderRadius:14,padding:"1.4rem",marginBottom:16}}>
-                    <div style={{fontSize:13,fontWeight:800,color:"#eff6ff",marginBottom:16}}>Confronto squadre</div>
+                  <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"1.4rem",marginBottom:16}}>
+                    <div style={{fontSize:13,fontWeight:800,color:"var(--text)",marginBottom:16}}>Confronto squadre</div>
                     <div style={{height:220}}>
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={compareData} margin={{top:5,right:10,left:-15,bottom:5}}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#11203a" vertical={false}/>
-                          <XAxis dataKey="name" stroke="#3b5478" fontSize={12}/>
-                          <YAxis stroke="#3b5478" fontSize={12} allowDecimals={false}/>
-                          <Tooltip contentStyle={ts} itemStyle={{color:"#dbeafe"}} labelStyle={{color:"#94b5d8",fontWeight:700}}/>
+                          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false}/>
+                          <XAxis dataKey="name" stroke="var(--muted)" fontSize={12}/>
+                          <YAxis stroke="var(--muted)" fontSize={12} allowDecimals={false}/>
+                          <Tooltip contentStyle={ts} itemStyle={{color:"var(--text)"}} labelStyle={{color:"#94b5d8",fontWeight:700}}/>
                           <Legend wrapperStyle={{fontSize:11}}/>
                           <Bar dataKey="sinistra" name="Sinistra" fill="#2563eb" radius={[4,4,0,0]}/>
                           <Bar dataKey="destra" name="Destra" fill="#10b981" radius={[4,4,0,0]}/>
@@ -404,11 +404,11 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
             </>
           )}
 
-          <div style={{background:"#080f1f",border:"1px solid #11203a",borderRadius:14,overflow:"hidden"}}>
+          <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden"}}>
             <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
               <div style={{display:"flex",alignItems:"center",gap:10}}>
-                <div style={{fontSize:13,fontWeight:800,color:"#eff6ff"}}>Membri</div>
-                <button onClick={()=>setShowAddModal(true)} style={{width:26,height:26,borderRadius:"50%",background:"linear-gradient(135deg,#2563eb,#0ea5e9)",color:"#fff",border:"none",cursor:"pointer",fontWeight:900,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 0 10px #2563eb50"}}>+</button>
+                <div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}>Membri</div>
+                <button onClick={()=>setShowAddModal(true)} style={{width:26,height:26,borderRadius:"50%",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",cursor:"pointer",fontWeight:900,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 0 10px #2563eb50"}}>+</button>
               </div>
               <div style={{display:"flex",gap:6}}>
                 {["all","sinistra","destra","nessuna"].map(f=>(
@@ -420,9 +420,9 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
               </div>
             </div>
             {downline.length===0
-              ?<div style={{padding:"3rem",textAlign:"center",color:"#1e3a5f"}}><div style={{fontSize:36,marginBottom:12}}>{"\u25c8"}</div><p style={{fontSize:14,marginBottom:8}}>Nessun membro ancora</p><p style={{fontSize:12,color:"#2a4060"}}>Condividi il tuo link referral</p></div>
+              ?<div style={{padding:"3rem",textAlign:"center",color:"var(--border2)"}}><div style={{fontSize:36,marginBottom:12}}>{"\u25c8"}</div><p style={{fontSize:14,marginBottom:8}}>Nessun membro ancora</p><p style={{fontSize:12,color:"var(--border2)"}}>Condividi il tuo link referral</p></div>
               :<table style={{width:"100%",borderCollapse:"collapse"}}>
-                <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Membro","Squadra","Prospect","Iscritti","Conv%","BV","Azione",""].map(h=>(<th key={h} style={{textAlign:"left",color:"#3b5478",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
+                <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Membro","Squadra","Prospect","Iscritti","Conv%","BV","Azione",""].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
                 <tbody>{filteredMembers.map(m=>{
                   const mP=getMemberProspects(m.id);
                   const ms=teamStats(mP);
@@ -432,12 +432,12 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
                   return(
                     <tr key={m.id} style={{borderBottom:"1px solid #0d1b3355"}}>
                       <td style={{padding:"12px 16px"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Av n={m.nome||m.email} c={m.cognome} color={teamColor}/><div>
-                        <div style={{color:"#eff6ff",fontWeight:700,fontSize:13}}>{m.nome||m.email} {m.cognome||""}</div>
-                        {m.citta&&<div style={{color:"#5278a8",fontSize:11}}>{m.citta}</div>}
+                        <div style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{m.nome||m.email} {m.cognome||""}</div>
+                        {m.citta&&<div style={{color:"var(--muted)",fontSize:11}}>{m.citta}</div>}
                       </div></div></td>
                       <td style={{padding:"12px 16px"}}>
                         {isMyDirect
-                          ?<select value={getTeam(m.id,auth.userId)||""} onChange={e=>onAssignTeam(m.id,e.target.value||null)} style={{width:"auto",minWidth:110,fontSize:11,padding:"5px 9px",color:teamColor,border:"1px solid "+teamColor+"40",background:"#0a1426"}}>
+                          ?<select value={getTeam(m.id,auth.userId)||""} onChange={e=>onAssignTeam(m.id,e.target.value||null)} style={{width:"auto",minWidth:110,fontSize:11,padding:"5px 9px",color:teamColor,border:"1px solid "+teamColor+"40",background:"var(--bg3)"}}>
                             <option value="">Non assegnato</option>
                             <option value="sinistra">Sinistra</option>
                             <option value="destra">Destra</option>
@@ -445,12 +445,12 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
                           :<span style={{fontSize:11,color:teamColor,fontWeight:700}}>{myTeam||"\u2014"}</span>
                         }
                       </td>
-                      <td style={{padding:"12px 16px",fontWeight:700,color:"#eff6ff",fontSize:13}}>{ms.total}</td>
+                      <td style={{padding:"12px 16px",fontWeight:700,color:"var(--text)",fontSize:13}}>{ms.total}</td>
                       <td style={{padding:"12px 16px",fontWeight:700,color:"#10b981",fontSize:13}}>{ms.sub}</td>
                       <td style={{padding:"12px 16px",fontWeight:800,fontSize:13,color:convColor(ms.conv)}}>{ms.conv}%</td>
                       <td style={{padding:"12px 16px",fontWeight:800,fontSize:13,color:"#f59e0b"}}>{ms.bv}</td>
-                      <td style={{padding:"12px 16px"}}><button onClick={()=>setSelectedMember(m)} style={{padding:"6px 12px",background:"#0d1b33",color:"#60a5fa",border:"1px solid #1e3a5f",borderRadius:7,cursor:"pointer",fontWeight:700,fontSize:11}}>Dettaglio</button></td>
-                      <td style={{padding:"12px 16px",color:"#1e3a5f",fontSize:16}}>{"\u203a"}</td>
+                      <td style={{padding:"12px 16px"}}><button onClick={()=>setSelectedMember(m)} style={{padding:"6px 12px",background:"var(--bg4)",color:"var(--a2)",border:"1px solid var(--border2)",borderRadius:7,cursor:"pointer",fontWeight:700,fontSize:11}}>Dettaglio</button></td>
+                      <td style={{padding:"12px 16px",color:"var(--border2)",fontSize:16}}>{"\u203a"}</td>
                     </tr>
                   );
                 })}</tbody>
