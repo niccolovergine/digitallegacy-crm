@@ -1067,6 +1067,7 @@ function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, s
                       : <span style={{color:"#2a4060",fontSize:11}}>\u2014</span>
                     }
                   </td>
+                  <td style={{padding:"12px 16px"}}>
                     {p.fase==="SUB"
                       ? <div style={{display:"flex",gap:6}}>
                           {["kyc","pandadoc","click"].map(k=>{
