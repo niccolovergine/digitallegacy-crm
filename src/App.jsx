@@ -376,6 +376,7 @@ export default function App() {
   const [fFase, setFFase]         = useState("");
   const [fFonte, setFFonte]       = useState("");
   const [fCiclo, setFCiclo]       = useState("");
+  const [fCitta, setFCitta]       = useState("");
   const [ready, setReady]         = useState(false);
   const [saving, setSaving]       = useState(false);
   const [downline, setDownline]   = useState([]);
@@ -699,7 +700,8 @@ export default function App() {
     const q=search.toLowerCase();
     return (!q||(p.nome+" "+p.cognome+" "+(p.citta||"")).toLowerCase().includes(q))
       &&(!fFase||p.fase===fFase)&&(!fFonte||p.fonte===fFonte)
-      &&(!fCiclo||cicloOfDate(p.conosciutoAt)===Number(fCiclo));
+      &&(!fCiclo||cicloOfDate(p.conosciutoAt)===Number(fCiclo))
+      &&(!fCitta||( p.citta||"").toLowerCase().includes(fCitta.toLowerCase()));
   });
 
   if (!auth) return <AuthScreen onAuth={setAuth} />;
@@ -719,7 +721,7 @@ export default function App() {
 
       <main style={{flex:1,overflowY:"auto",height:"100vh"}}>
         {view==="dash"  && <Dash cd={cd} cdSub={cdSub} cdAct={cdAct} cdFU={cdFU} cdNI={cdNI} cdConv={cdConv} totSub={totSub} totConv={totConv} totAll={dashData.length} funnelCounts={funnelCounts} funnelMax={funnelMax} urgenti={urgenti} dashCiclo={dashCiclo} setDashCiclo={setDashCiclo} onOpen={openDetail} dashMode={dashMode} setDashMode={setDashMode} hasTeam={dlProspects.length>0} />}
-        {view==="lista" && <Lista prospects={listaData} total={listaMode==="team"?teamProspects.length:data.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} onOpen={openDetail} onAdd={openAdd} listaMode={listaMode} setListaMode={setListaMode} hasTeam={dlProspects.length>0} />}
+        {view==="lista" && <Lista prospects={listaData} total={listaMode==="team"?teamProspects.length:data.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} fCitta={fCitta} setFCitta={setFCitta} onOpen={openDetail} onAdd={openAdd} listaMode={listaMode} setListaMode={setListaMode} hasTeam={dlProspects.length>0} />}
         {view==="stats"   && <Statistiche data={data} dlProspects={dlProspects} />}
         {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} />}
         {view==="nomi"    && <ListaNomiView auth={auth} onInvitaProspect={invitaProspect} />}
@@ -991,7 +993,7 @@ function Statistiche({ data, dlProspects }) {
 }
 
 //  LISTA 
-function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, setFFonte, fCiclo, setFCiclo, onOpen, onAdd, listaMode, setListaMode, hasTeam }) {
+function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, setFFonte, fCiclo, setFCiclo, fCitta, setFCitta, onOpen, onAdd, listaMode, setListaMode, hasTeam }) {
   return (
     <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1.4rem",flexWrap:"wrap",gap:12}}>
@@ -1022,6 +1024,7 @@ function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, s
         </select>
         <select value={fFonte} onChange={e=>setFFonte(e.target.value)} style={{flex:1,minWidth:120}}><option value="">Tutte le fonti</option>{FONTI.map(f=><option key={f}>{f}</option>)}</select>
         <select value={fCiclo} onChange={e=>setFCiclo(e.target.value)} style={{flex:1,minWidth:140}}><option value="">Tutti i cicli</option>{CICLO_NUMS.map(c=><option key={c} value={c}>Ciclo {c}</option>)}</select>
+        <input value={fCitta} onChange={e=>setFCitta(e.target.value)} placeholder="Filtra per citta..." style={{flex:1,minWidth:130}} />
       </div>
       {prospects.length===0
         ?<div style={{textAlign:"center",padding:"4rem",color:"#1e3a5f"}}><div style={{fontSize:44,marginBottom:12}}></div><p style={{fontSize:14,marginBottom:14}}>Nessun prospect trovato</p><button onClick={onAdd} style={{padding:"9px 20px",fontSize:13,fontWeight:800,background:"linear-gradient(135deg,#2563eb,#0ea5e9)",color:"#fff",border:"none",borderRadius:10,cursor:"pointer"}}>Aggiungi il primo</button></div>
@@ -1042,13 +1045,16 @@ function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, s
                   <td style={{padding:"12px 16px",color:"#5278a8",fontSize:12}}>{FONTE_ICO[p.fonte]} {p.fonte}</td>
                   <td style={{padding:"12px 16px"}}><span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:700,color:"#fff",background:FASE_CLR[p.fase],boxShadow:"0 0 8px "+FASE_CLR[p.fase]+"35"}}>{FASE_LABEL[p.fase]}</span></td>
                   <td style={{padding:"12px 16px"}}>
-                    <div style={{display:"flex",gap:6}}>
-                      {["kyc","pandadoc","click"].map(k=>{
-                        const done=p.checklist?.[k];
-                        const label=k==="pandadoc"?"PD":k.toUpperCase();
-                        return <span key={k} style={{fontSize:10,fontWeight:800,padding:"2px 7px",borderRadius:5,background:done?"#10b98120":"#1e3a5f20",color:done?"#10b981":"#3b5478",border:"1px solid "+(done?"#10b98140":"#1e3a5f")}}>{label}</span>;
-                      })}
-                    </div>
+                    {p.fase==="SUB"
+                      ? <div style={{display:"flex",gap:6}}>
+                          {["kyc","pandadoc","click"].map(k=>{
+                            const done=p.checklist?.[k];
+                            const label=k==="pandadoc"?"PD":k.toUpperCase();
+                            return <span key={k} style={{fontSize:10,fontWeight:800,padding:"2px 7px",borderRadius:5,background:done?"#10b98120":"#1e3a5f20",color:done?"#10b981":"#3b5478",border:"1px solid "+(done?"#10b98140":"#1e3a5f")}}>{label}</span>;
+                          })}
+                        </div>
+                      : <span style={{color:"#2a4060",fontSize:11}}>\u2014</span>
+                    }
                   </td>
                   <td style={{padding:"12px 16px"}}>{badge.compilati===0?<span style={{color:"#2a4060",fontSize:11}}>\u2014</span>:<span style={{display:"inline-flex",alignItems:"center",gap:4,borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:800,color:bc,background:bc+"18",border:"1px solid "+bc+"30"}}> {badge.positivi}/{PROFILO_TOTAL}</span>}</td>
                   <td style={{padding:"12px 16px"}}>{jung?<span title={jung.sub} style={{display:"inline-flex",alignItems:"center",gap:6,borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:800,color:jung.border,background:jung.border+"18",border:"1px solid "+jung.border+"35"}}><span style={{width:8,height:8,borderRadius:"50%",background:jung.border,flexShrink:0,boxShadow:"0 0 6px "+jung.border}}/>{jung.label}</span>:<span style={{color:"#2a4060",fontSize:11}}>\u2014</span>}</td>
@@ -1246,23 +1252,25 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onRiattiva, o
           </div>
           {storico.length>0&&(<div style={{...box,marginBottom:9}}><div style={lbl}> Storico percorso</div><div style={{display:"flex",flexDirection:"column",gap:6,marginTop:8}}>{storico.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:9}}><span style={{width:8,height:8,borderRadius:99,background:FASE_CLR[s.fase],flexShrink:0,boxShadow:"0 0 6px "+FASE_CLR[s.fase]+"70"}}/><span style={{fontSize:12.5,fontWeight:700,color:"#eff6ff",minWidth:64}}>{FASE_LABEL[s.fase]}</span><span style={{fontSize:11,color:"#5278a8"}}>{fmt(s.data)}</span><span style={{fontSize:10,color:"#3b5478",marginLeft:"auto"}}>Ciclo {cicloOfDate(s.data)||"\u2014"}</span></div>))}</div></div>)}
           {p.note&&<div style={{...box,marginBottom:9}}><div style={lbl}> Note</div><p style={{color:"#94b5d8",lineHeight:1.6,fontSize:13,marginTop:4}}>{p.note}</p></div>}
-          <div style={{...box,marginBottom:9}}>
-            <div style={lbl}>Checklist</div>
-            <div style={{display:"flex",gap:10,marginTop:8}}>
-              {[{key:"kyc",label:"KYC"},{key:"pandadoc",label:"PANDA DOC"},{key:"click",label:"CLICK"}].map(({key,label})=>{
-                const done=p.checklist?.[key]||false;
-                return(
-                  <button key={key} onClick={()=>onUpdateChecklist({...p.checklist,[key]:!done})}
-                    style={{display:"flex",alignItems:"center",gap:7,padding:"8px 14px",background:done?"#10b98118":"#0a1426",border:"1.5px solid "+(done?"#10b981":"#1e3a5f"),borderRadius:9,cursor:"pointer",color:done?"#10b981":"#5278a8",fontWeight:700,fontSize:12,transition:"all .2s"}}>
-                    <div style={{width:16,height:16,borderRadius:4,border:"1.5px solid "+(done?"#10b981":"#3b5478"),background:done?"#10b981":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                      {done&&<span style={{color:"#fff",fontSize:10,fontWeight:900,lineHeight:1}}>{"\u2713"}</span>}
-                    </div>
-                    {label}
-                  </button>
-                );
-              })}
+          {p.fase==="SUB"&&(
+            <div style={{...box,marginBottom:9}}>
+              <div style={lbl}>Checklist</div>
+              <div style={{display:"flex",gap:10,marginTop:8}}>
+                {[{key:"kyc",label:"KYC"},{key:"pandadoc",label:"PANDA DOC"},{key:"click",label:"CLICK"}].map(({key,label})=>{
+                  const done=p.checklist?.[key]||false;
+                  return(
+                    <button key={key} onClick={()=>onUpdateChecklist({...p.checklist,[key]:!done})}
+                      style={{display:"flex",alignItems:"center",gap:7,padding:"8px 14px",background:done?"#10b98118":"#0a1426",border:"1.5px solid "+(done?"#10b981":"#1e3a5f"),borderRadius:9,cursor:"pointer",color:done?"#10b981":"#5278a8",fontWeight:700,fontSize:12,transition:"all .2s"}}>
+                      <div style={{width:16,height:16,borderRadius:4,border:"1.5px solid "+(done?"#10b981":"#3b5478"),background:done?"#10b981":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                        {done&&<span style={{color:"#fff",fontSize:10,fontWeight:900,lineHeight:1}}>{"\u2713"}</span>}
+                      </div>
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
           <div style={{display:"flex",gap:9,marginTop:16,flexWrap:"wrap"}}>
             {!isSpeciale&&ci<FASI_FUNNEL.length-1&&<button onClick={onAdvance} style={{padding:"9px 16px",background:"linear-gradient(135deg,"+FASE_CLR[FASI_FUNNEL[ci+1]]+","+FASE_CLR[FASI_FUNNEL[ci+1]]+"bb)",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:12}}>Avanza → {FASE_LABEL[FASI_FUNNEL[ci+1]]}</button>}
             {isSpeciale&&<button onClick={onRiattiva} style={{padding:"9px 16px",background:"linear-gradient(135deg,#2563eb,#0ea5e9)",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:12}}>↩ Riattiva nel Funnel</button>}
