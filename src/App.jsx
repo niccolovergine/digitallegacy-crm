@@ -426,7 +426,15 @@ export default function App() {
         collect(parentId);
         return result;
       }
-      const mine = buildFullDownline(auth.userId);
+      const posizionati = buildFullDownline(auth.userId);
+      // Aggiungi anche chi ha upline_id = me ma non è ancora posizionato (in attesa)
+      const inAttesaIds = new Set(posizionati.map(p=>p.id));
+      const inAttesa = all.filter(p => 
+        p.upline_id === auth.userId && 
+        !p.positioned_under && 
+        !inAttesaIds.has(p.id)
+      );
+      const mine = [...posizionati, ...inAttesa];
       setDownline(mine);
       if (mine.length > 0) {
         const uids = mine.map(p => p.id);
@@ -628,10 +636,9 @@ export default function App() {
         setDownline(d=>d.map(m=>m.id===memberId?{...m,positioned_under:auth.userId}:m));
         showToast("Posizionato nella leg "+team);
       } else {
-        // Slot occupato — metti in attesa (positioned_under = null)
-        await sbPositionMember(auth.token, memberId, null);
-        setDownline(d=>d.map(m=>m.id===memberId?{...m,positioned_under:null}:m));
-        showToast("In attesa di posizionamento — selezionalo nell albero");
+        // Slot occupato — metti in attesa (positioned_under rimane null, upline_id = me)
+        // Non cambiamo positioned_under, la persona resta visibile grazie a upline_id
+        showToast("In attesa — selezionalo nell albero per posizionarlo");
       }
     } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
   }
