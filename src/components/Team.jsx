@@ -166,7 +166,7 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
           </div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}}>
-          {[{label:"Prospect",value:ms.total,color:"#2563eb",icon:""},{label:"Iscritti",value:ms.sub,color:"#10b981",icon:"\u2705"},{label:"In percorso",value:ms.act,color:"#0ea5e9",icon:"\ud83d\udcca"},{label:"BV prodotti",value:ms.bv,color:"#f59e0b",icon:"\ud83c\udfc6"}].map((k,i)=>(
+          {[{label:"Prospect",value:ms.total,color:"#2563eb",icon:""},{label:"Iscritti",value:ms.sub,color:"#10b981",icon:""},{label:"In percorso",value:ms.act,color:"#0ea5e9",icon:""},{label:"BV prodotti",value:ms.bv,color:"#f59e0b",icon:""}].map((k,i)=>(
             <div key={i} style={{background:"#080f1f",border:"1px solid #11203a",borderRadius:14,padding:"16px 18px",position:"relative",overflow:"hidden"}}>
               <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"linear-gradient(90deg,"+k.color+","+k.color+"44)",borderRadius:"14px 14px 0 0"}}/>
               <div style={{fontSize:10,color:"#3b5478",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>{k.label}</div>
@@ -298,7 +298,7 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
           {activeTeamTab==="dashboard"&&(
             <>
               <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12,marginBottom:16}}>
-                {[{label:"Membri",value:downline.length,color:"#8b5cf6",icon:"\u25c8"},{label:"In percorso",value:statsTot.act,color:"#2563eb",icon:"\ud83d\udcca"},{label:"Iscritti",value:statsTot.sub,color:"#10b981",icon:"\u2705"},{label:"Conv. team",value:statsTot.conv+"%",color:convColor(statsTot.conv),icon:"\ud83c\udfaf"},{label:"BV team",value:statsTot.bv,color:"#f59e0b",icon:"\ud83c\udfc6"}].map((k,i)=>(
+                {[{label:"Membri",value:downline.length,color:"#8b5cf6",icon:"\u25c8"},{label:"In percorso",value:statsTot.act,color:"#2563eb",icon:""},{label:"Iscritti",value:statsTot.sub,color:"#10b981",icon:""},{label:"Conv. team",value:statsTot.conv+"%",color:convColor(statsTot.conv),icon:""},{label:"BV team",value:statsTot.bv,color:"#f59e0b",icon:""}].map((k,i)=>(
                   <div key={i} style={{background:"#080f1f",border:"1px solid #11203a",borderRadius:14,padding:"16px 18px",position:"relative",overflow:"hidden"}}>
                     <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"linear-gradient(90deg,"+k.color+","+k.color+"44)",borderRadius:"14px 14px 0 0"}}/>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
