@@ -363,7 +363,12 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
                   const isMyDirect=m.positioned_under===auth.userId;
                   return(
                     <tr key={m.id} style={{borderBottom:"1px solid #0d1b3355"}}>
-                      <td style={{padding:"12px 16px"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Av n={m.nome||m.email} c={m.cognome} color={teamColor}/><div><div style={{color:"#eff6ff",fontWeight:700,fontSize:13}}>{m.nome||m.email} {m.cognome||""}</div><div style={{color:"#3b5478",fontSize:11}}>{m.email}</div></div></div></td>
+                      <td style={{padding:"12px 16px"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Av n={m.nome||m.email} c={m.cognome} color={teamColor}/><div>
+                        <div style={{color:"#eff6ff",fontWeight:700,fontSize:13}}>{m.nome||m.email} {m.cognome||""}</div>
+                        <div style={{color:"#3b5478",fontSize:11}}>{m.email}</div>
+                        {m.telefono&&<a href={"tel:"+m.telefono} style={{color:"#60a5fa",fontSize:11,textDecoration:"none",display:"block"}}>{m.telefono}</a>}
+                        {m.instagram&&<a href={"https://instagram.com/"+m.instagram.replace("@","")} target="_blank" rel="noreferrer" style={{color:"#c084fc",fontSize:11,textDecoration:"none",display:"block"}}>{m.instagram.startsWith("@")?m.instagram:"@"+m.instagram}</a>}
+                      </div></div></td>
                       <td style={{padding:"12px 16px"}}>
                         {isMyDirect
                           ?<select value={getTeam(m.id,auth.userId)||""} onChange={e=>onAssignTeam(m.id,e.target.value||null)} style={{width:"auto",minWidth:110,fontSize:11,padding:"5px 9px",color:teamColor,border:"1px solid "+teamColor+"40",background:"#0a1426"}}>
