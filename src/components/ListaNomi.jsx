@@ -47,6 +47,9 @@ const TV = [null, "-", ".", "+"];
 const TC = { null:"#1e3a5f", "-":"#ef4444", ".":"#f59e0b", "+":"#10b981" };
 const TL = { "-":"\u2013", ".":"\u00b7", "+":"+" };
 
+const TEMPERATURE = ["Caldo", "Tiepido", "Freddo"];
+const TEMP_CLR = { Caldo:"#ef4444", Tiepido:"#f59e0b", Freddo:"#3b82f6" };
+
 const genId = () => crypto.randomUUID();
 const today = () => new Date().toISOString().split("T")[0];
 
@@ -162,6 +165,21 @@ function PersonaModal({ persona, onSave, onClose, onDelete, onInvita, isEdit }) 
           <div><label style={lbl}>Telefono</label><input value={form.telefono||""} onChange={e=>setForm(f=>({...f,telefono:e.target.value}))} placeholder="+39 333 000 0000" /></div>
           <div><label style={lbl}>Instagram</label><input value={form.instagram||""} onChange={e=>setForm(f=>({...f,instagram:e.target.value}))} placeholder="@username" /></div>
           <div style={{gridColumn:"1/-1"}}><label style={lbl}>Note</label><textarea value={form.note||""} onChange={e=>setForm(f=>({...f,note:e.target.value}))} style={{height:70,resize:"vertical"}} placeholder="Note personali..." /></div>
+          <div style={{gridColumn:"1/-1"}}>
+            <label style={lbl}>Temperatura contatto</label>
+            <div style={{display:"flex",gap:8}}>
+              {TEMPERATURE.map(t=>{
+                const active=form.temperatura===t;
+                const color=TEMP_CLR[t];
+                return(
+                  <button key={t} onClick={()=>setForm(f=>({...f,temperatura:active?null:t}))}
+                    style={{flex:1,padding:"9px",background:active?color+"25":"#0a1426",border:"2px solid "+(active?color:"#1e3a5f"),borderRadius:9,cursor:"pointer",color:active?color:"#5278a8",fontWeight:700,fontSize:13,fontFamily:"inherit",transition:"all .2s"}}>
+                    {t}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
 
@@ -188,6 +206,8 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
   const [modal, setModal] = useState(null);
   const [sel, setSel] = useState(null);
   const [search, setSearch] = useState("");
+  const [filterTemp, setFilterTemp] = useState("");
+  const [filterInvitato, setFilterInvitato] = useState("tutti");
   const [toast, setToast] = useState(null);
 
   function showToast(msg, color="#22d3ee") { setToast({msg,color}); setTimeout(()=>setToast(null),2800); }
@@ -203,12 +223,12 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
     if (!form.nome?.trim()) return;
     try {
       if (modal === "add") {
-        const row = { id:genId(), user_id:auth.userId, nome:form.nome, cognome:form.cognome||null, citta:form.citta||null, telefono:form.telefono||null, instagram:form.instagram||null, note:form.note||null, profilazione:form.profilazione||{}, invitato:false };
+        const row = { id:genId(), user_id:auth.userId, nome:form.nome, cognome:form.cognome||null, citta:form.citta||null, telefono:form.telefono||null, instagram:form.instagram||null, note:form.note||null, profilazione:form.profilazione||{}, invitato:false, temperatura:form.temperatura||null };
         await sbInsertNome(auth.token, row);
         setLista(l=>[row,...l]);
         showToast("Aggiunto");
       } else {
-        const row = { nome:form.nome, cognome:form.cognome||null, citta:form.citta||null, telefono:form.telefono||null, instagram:form.instagram||null, note:form.note||null, profilazione:form.profilazione||{} };
+        const row = { nome:form.nome, cognome:form.cognome||null, citta:form.citta||null, telefono:form.telefono||null, instagram:form.instagram||null, note:form.note||null, profilazione:form.profilazione||{}, temperatura:form.temperatura||null };
         await sbUpdateNome(auth.token, sel.id, row);
         setLista(l=>l.map(x=>x.id===sel.id?{...x,...row}:x));
         showToast("Aggiornato");
@@ -251,7 +271,10 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
 
   const filtered = lista.filter(p => {
     const q = search.toLowerCase();
-    return !q || (p.nome+" "+p.cognome+" "+(p.citta||"")).toLowerCase().includes(q);
+    const matchSearch = !q || (p.nome+" "+p.cognome+" "+(p.citta||"")).toLowerCase().includes(q);
+    const matchTemp = !filterTemp || p.temperatura === filterTemp;
+    const matchInvitato = filterInvitato==="tutti" || (filterInvitato==="invitati"?p.invitato:!p.invitato);
+    return matchSearch && matchTemp && matchInvitato;
   });
 
   const invitati = filtered.filter(p=>p.invitato);
@@ -271,7 +294,18 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
         </button>
       </div>
 
-      <input placeholder="Cerca..." value={search} onChange={e=>setSearch(e.target.value)} style={{marginBottom:16,maxWidth:360}} />
+      <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap"}}>
+        <input placeholder="Cerca..." value={search} onChange={e=>setSearch(e.target.value)} style={{flex:2,minWidth:200}} />
+        <select value={filterTemp} onChange={e=>setFilterTemp(e.target.value)} style={{flex:1,minWidth:130}}>
+          <option value="">Tutte le temperature</option>
+          {TEMPERATURE.map(t=><option key={t} value={t}>{t}</option>)}
+        </select>
+        <select value={filterInvitato} onChange={e=>setFilterInvitato(e.target.value)} style={{flex:1,minWidth:130}}>
+          <option value="tutti">Tutti</option>
+          <option value="da_invitare">Da invitare</option>
+          <option value="invitati">Gia invitati</option>
+        </select>
+      </div>
 
       {loading
         ? <div style={{textAlign:"center",padding:"4rem",color:"#3b5478"}}>Caricamento...</div>
@@ -291,7 +325,7 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
                   </div>
                   <table style={{width:"100%",borderCollapse:"collapse"}}>
                     <thead><tr style={{borderBottom:"1px solid #11203a"}}>
-                      {["Nome","Citta","Telefono","Instagram","Note","Profilo",""].map(h=>(
+                      {["Nome","Citta","Telefono","Instagram","Temp.","Note","Profilo",""].map(h=>(
                         <th key={h} style={{textAlign:"left",color:"#3b5478",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>{h}</th>
                       ))}
                     </tr></thead>
@@ -303,6 +337,7 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
                           <td style={{padding:"11px 16px",color:"#5278a8",fontSize:12}}>{p.citta||"\u2014"}</td>
                           <td style={{padding:"11px 16px",fontSize:12}}>{p.telefono?<a href={"tel:"+p.telefono} onClick={e=>e.stopPropagation()} style={{color:"#60a5fa",textDecoration:"none"}}>{p.telefono}</a>:"\u2014"}</td>
                           <td style={{padding:"11px 16px",fontSize:12}}>{p.instagram?<a href={"https://instagram.com/"+p.instagram.replace("@","")} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()} style={{color:"#c084fc",textDecoration:"none"}}>{p.instagram.startsWith("@")?p.instagram:"@"+p.instagram}</a>:"\u2014"}</td>
+                          <td style={{padding:"11px 16px"}}>{p.temperatura?<span style={{fontSize:11,fontWeight:800,padding:"2px 8px",borderRadius:6,color:TEMP_CLR[p.temperatura],background:TEMP_CLR[p.temperatura]+"20"}}>{p.temperatura}</span>:"\u2014"}</td>
                           <td style={{padding:"11px 16px",color:"#5278a8",fontSize:12,maxWidth:200}}><div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.note||"\u2014"}</div></td>
                           <td style={{padding:"11px 16px"}}>{jung?<span style={{fontSize:11,fontWeight:800,color:jung.border,background:jung.border+"18",borderRadius:6,padding:"2px 8px"}}>{jung.label}</span>:"\u2014"}</td>
                           <td style={{padding:"11px 16px",color:"#1e3a5f",fontSize:16}}>{"\u203a"}</td>
