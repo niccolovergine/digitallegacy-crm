@@ -90,7 +90,7 @@ const INTERESSE     = ["Alto","Medio","Basso"];
 const INTERESSE_CLR = { Alto:"#10b981", Medio:"#f59e0b", Basso:"#ef4444" };
 
 const FASE_CLR = {
-  INVITO:"#8b5cf6", FUP1:"#2563eb", FUP2:"#3b82f6", PACK:"#0ea5e9",
+  INVITO:"#8b5cf6", FUP1:"var(--a1)", FUP2:"#3b82f6", PACK:"var(--a2)",
   CLOSING:"#22d3ee", SUB:"#10b981", FOLLOW_UP:"#f59e0b", NON_INT:"#6b7280",
 };
 const FASE_LABEL = {
@@ -195,7 +195,7 @@ function teamStats(prospects) {
 }
 
 const TEMI = {
-  blu:   { label:"Blu",   preview:"linear-gradient(135deg,#1e40af,#0ea5e9)", vars:{"--bg":"#060b18","--bg2":"#080f1f","--bg3":"#0a1426","--bg4":"#0d1b33","--border":"#11203a","--border2":"#1e3a5f","--a1":"#2563eb","--a2":"#0ea5e9","--a1-10":"#2563eb1a","--a1-12":"#2563eb1f","--a1-13":"#2563eb21","--a1-18":"#2563eb2e","--a1-25":"#2563eb40","--a1-31":"#2563eb4f","--text":"#eff6ff","--muted":"#5278a8","--muted2":"#2a4060","--sidebar-active":"#0d1b33","--sidebar-border":"#2563eb40"} },
+  blu:   { label:"Blu",   preview:"linear-gradient(135deg,#1e40af,#0ea5e9)", vars:{"--bg":"var(--bg)","--bg2":"var(--bg2)","--bg3":"var(--bg3)","--bg4":"var(--bg4)","--border":"var(--border)","--border2":"var(--border2)","--a1":"var(--a1)","--a2":"var(--a2)","--a1-10":"#2563eb1a","--a1-12":"#2563eb1f","--a1-13":"#2563eb21","--a1-18":"#2563eb2e","--a1-25":"#2563eb40","--a1-31":"#2563eb4f","--text":"var(--text)","--muted":"var(--muted)","--muted2":"var(--muted2)","--sidebar-active":"var(--bg4)","--sidebar-border":"#2563eb40"} },
   verde: { label:"Verde", preview:"linear-gradient(135deg,#065f46,#10b981)", vars:{"--bg":"#030d08","--bg2":"#041208","--bg3":"#06180d","--bg4":"#082014","--border":"#0a2a14","--border2":"#134d28","--a1":"#059669","--a2":"#10b981","--a1-10":"#0596691a","--a1-12":"#0596691f","--a1-13":"#05966921","--a1-18":"#0596692e","--a1-25":"#05966940","--a1-31":"#0596694f","--text":"#ecfdf5","--muted":"#3d7a5a","--muted2":"#1a3d2a","--sidebar-active":"#082014","--sidebar-border":"#05966940"} },
   viola: { label:"Viola", preview:"linear-gradient(135deg,#4c1d95,#a78bfa)", vars:{"--bg":"#06030f","--bg2":"#0a0518","--bg3":"#0f0820","--bg4":"#140b2a","--border":"#1a1035","--border2":"#2e1a55","--a1":"#7c3aed","--a2":"#a78bfa","--a1-10":"#7c3aed1a","--a1-12":"#7c3aed1f","--a1-13":"#7c3aed21","--a1-18":"#7c3aed2e","--a1-25":"#7c3aed40","--a1-31":"#7c3aed4f","--text":"#f5f3ff","--muted":"#6b5a9a","--muted2":"#2d1a55","--sidebar-active":"#140b2a","--sidebar-border":"#7c3aed40"} },
   rosa:  { label:"Rosa",  preview:"linear-gradient(135deg,#9d174d,#f472b6)", vars:{"--bg":"#0f0308","--bg2":"#180510","--bg3":"#200718","--bg4":"#2a0a20","--border":"#380d2a","--border2":"#5a1a42","--a1":"#db2777","--a2":"#f472b6","--a1-10":"#db27771a","--a1-12":"#db27771f","--a1-13":"#db277721","--a1-18":"#db27772e","--a1-25":"#db277740","--a1-31":"#db27774f","--text":"#fdf2f8","--muted":"#8a4a6b","--muted2":"#4a1530","--sidebar-active":"#2a0a20","--sidebar-border":"#db277740"} },
@@ -334,7 +334,7 @@ function AuthScreen({ onAuth }) {
         <div style={{display:"flex",background:"var(--bg3)",borderRadius:10,padding:4,marginBottom:24,border:"1px solid var(--border)"}}>
           {["login","signup"].map(m=>(
             <button key={m} onClick={()=>{setMode(m);setErr("");}} className="tabbtn"
-              style={{flex:1,background:mode===m?"#0d1b33":"transparent",color:mode===m?"#7dd3fc":"#5278a8",boxShadow:mode===m?"inset 0 0 0 1px #2563eb40":"none"}}>
+              style={{flex:1,background:mode===m?"var(--bg4)":"transparent",color:mode===m?"var(--a2)":"var(--muted)",boxShadow:mode===m?"inset 0 0 0 1px var(--sidebar-border)":"none"}}>
               {m==="login"?"Accedi":"Registrati"}
             </button>
           ))}
@@ -365,7 +365,7 @@ function AuthScreen({ onAuth }) {
 
         {mode==="login" && (
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,cursor:"pointer"}} onClick={()=>setRemember(r=>!r)}>
-            <div style={{width:18,height:18,borderRadius:5,border:"1.5px solid "+(remember?"#2563eb":"var(--border2)"),background:remember?"#2563eb":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .2s"}}>
+            <div style={{width:18,height:18,borderRadius:5,border:"1.5px solid "+(remember?"var(--a1)":"var(--border2)"),background:remember?"var(--a1)":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .2s"}}>
               {remember && <span style={{color:"#fff",fontSize:11,fontWeight:900}}></span>}
             </div>
             <span style={{fontSize:12,color:"var(--muted)",userSelect:"none"}}>Ricordami su questo dispositivo</span>
@@ -587,7 +587,7 @@ export default function App() {
       await sbUpdate(auth.token,p.id,toDB(upd,auth.userId));
       setData(d=>d.map(x=>x.id===p.id?upd:x)); setSel(upd);
       showToast(fase==="FOLLOW_UP"?" Follow Up":fase==="NON_INT"?" Non interessato":"↩ Riattivato",
-        fase==="FOLLOW_UP"?"#f59e0b":fase==="NON_INT"?"#6b7280":"#2563eb");
+        fase==="FOLLOW_UP"?"#f59e0b":fase==="NON_INT"?"#6b7280":"var(--a1)");
     } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
   }
 
@@ -799,7 +799,7 @@ function Sidebar({ view, setView, data, urgenti, onAdd, onExport, auth, onLogout
 
       {navs.map(item=>(
         <button key={item.id} onClick={()=>setView(item.id)}
-          style={{display:"flex",alignItems:"center",gap:9,width:"100%",padding:"10px 12px",background:view===item.id?"#0d1b33":"transparent",boxShadow:view===item.id?"inset 0 0 0 1px #2563eb40":"none",color:view===item.id?"#7dd3fc":"#5278a8",borderRadius:10,cursor:"pointer",fontSize:13,fontWeight:600,textAlign:"left",border:"none",transition:"all .2s"}}>
+          style={{display:"flex",alignItems:"center",gap:9,width:"100%",padding:"10px 12px",background:view===item.id?"var(--bg4)":"transparent",boxShadow:view===item.id?"inset 0 0 0 1px var(--sidebar-border)":"none",color:view===item.id?"var(--a2)":"var(--muted)",borderRadius:10,cursor:"pointer",fontSize:13,fontWeight:600,textAlign:"left",border:"none",transition:"all .2s"}}>
           <span>{item.icon}</span>{item.label}
           {item.badge>0 && <span style={{marginLeft:"auto",background:"var(--a1-12)",color:"var(--a2)",borderRadius:99,padding:"1px 8px",fontSize:11,fontWeight:700}}>{item.badge}</span>}
         </button>
@@ -826,7 +826,7 @@ function Sidebar({ view, setView, data, urgenti, onAdd, onExport, auth, onLogout
           const n=data.filter(p=>p.fase===f).length;
           return (
             <div key={f} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"3px 2px"}}>
-              <span style={{display:"flex",alignItems:"center",gap:7,fontSize:11,color:"#4a6a8a"}}>
+              <span style={{display:"flex",alignItems:"center",gap:7,fontSize:11,color:"var(--muted)"}}>
                 <span style={{width:7,height:7,borderRadius:99,background:FASE_CLR[f],flexShrink:0}} />{FASE_LABEL[f]}
               </span>
               <span style={{fontWeight:800,fontSize:12,color:n>0?FASE_CLR[f]:"var(--border2)"}}>{n}</span>
@@ -845,7 +845,7 @@ function Sidebar({ view, setView, data, urgenti, onAdd, onExport, auth, onLogout
 
 //  DASHBOARD 
 function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, funnelCounts, funnelMax, urgenti, dashCiclo, setDashCiclo, onOpen, dashMode, setDashMode, hasTeam }) {
-  const cc = v => v>=20?"#10b981":v>=10?"#0ea5e9":"#f59e0b";
+  const cc = v => v>=20?"#10b981":v>=10?"var(--a2)":"#f59e0b";
   const bvCiclo = cdSub.reduce((acc,p)=>acc+bvOfPacchetto(p.pacchetto),0);
   const kpis = [
     {label:"In percorso",value:cdAct.length,icon:"",color:"var(--a1)",sub:cd.length+" totali nel ciclo",detail:"FUP1 → Closing"},
@@ -867,7 +867,7 @@ function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, f
             <div style={{display:"flex",background:"var(--bg3)",borderRadius:10,padding:4,border:"1px solid var(--border)"}}>
               {["personale","team"].map(m=>(
                 <button key={m} onClick={()=>setDashMode(m)} className="tabbtn"
-                  style={{background:dashMode===m?"#0d1b33":"transparent",color:dashMode===m?"#7dd3fc":"#5278a8",boxShadow:dashMode===m?"inset 0 0 0 1px #2563eb40":"none",fontSize:11,padding:"6px 14px"}}>
+                  style={{background:dashMode===m?"var(--bg4)":"transparent",color:dashMode===m?"var(--a2)":"var(--muted)",boxShadow:dashMode===m?"inset 0 0 0 1px var(--sidebar-border)":"none",fontSize:11,padding:"6px 14px"}}>
                   {m==="personale"?" Personale":" Team"}
                 </button>
               ))}
@@ -988,7 +988,7 @@ function Statistiche({ data, dlProspects }) {
   const barData=FASI_FUNNEL.map(f=>{const count=barCiclo==="ALL"?activeData.filter(p=>reachedEver(p,f)).length:activeData.filter(p=>reachedInCiclo(p,f,Number(barCiclo))).length;return{fase:FASE_LABEL[f],key:f,count,fill:FASE_CLR[f]};});
   const tableRows=[...cicli].sort((a,b)=>b-a).map(c=>{const r={c};FASI_FUNNEL.forEach(f=>{r[f]=activeData.filter(p=>reachedInCiclo(p,f,c)).length;});r.conv=r.INVITO>0?Math.round(r.SUB/r.INVITO*100):r.FUP1>0?Math.round(r.SUB/r.FUP1*100):0;return r;});
   const ts={background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:8,color:"var(--text)",fontSize:12};
-  const tProps={contentStyle:ts,itemStyle:{color:"var(--text)"},labelStyle:{color:"#94b5d8",fontWeight:700}};
+  const tProps={contentStyle:ts,itemStyle:{color:"var(--text)"},labelStyle:{color:"var(--text)",fontWeight:700}};
   if (!activeData.length) return <div style={{padding:"2rem 2.2rem"}}><h1 style={{fontWeight:900,fontSize:26,color:"var(--text)",marginBottom:8}}>Statistiche</h1><div style={{textAlign:"center",padding:"5rem",color:"var(--border2)"}}><div style={{fontSize:44,marginBottom:12}}></div><p>Aggiungi prospect per vedere le statistiche</p></div></div>;
   return (
     <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
@@ -1001,7 +1001,7 @@ function Statistiche({ data, dlProspects }) {
           <div style={{display:"flex",background:"var(--bg3)",borderRadius:10,padding:4,border:"1px solid var(--border)"}}>
             {["personale","team"].map(m=>(
               <button key={m} onClick={()=>setStatsMode(m)} className="tabbtn"
-                style={{background:statsMode===m?"#0d1b33":"transparent",color:statsMode===m?"#7dd3fc":"#5278a8",boxShadow:statsMode===m?"inset 0 0 0 1px #2563eb40":"none",fontSize:11,padding:"6px 14px"}}>
+                style={{background:statsMode===m?"var(--bg4)":"transparent",color:statsMode===m?"var(--a2)":"var(--muted)",boxShadow:statsMode===m?"inset 0 0 0 1px var(--sidebar-border)":"none",fontSize:11,padding:"6px 14px"}}>
                 {m==="personale"?" Personale":" Team"}
               </button>
             ))}
@@ -1025,7 +1025,7 @@ function Statistiche({ data, dlProspects }) {
       </div>
       <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden"}}>
         <div style={{padding:"1.1rem 1.4rem",borderBottom:"1px solid #11203a"}}><div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}> Cicli a confronto</div></div>
-        <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",minWidth:600}}><thead><tr style={{borderBottom:"1px solid #11203a"}}><th style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>Ciclo</th>{FASI_FUNNEL.map(f=><th key={f} style={{textAlign:"center",color:FASE_CLR[f],fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 10px"}}>{FASE_LABEL[f]}</th>)}<th style={{textAlign:"center",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>Conv%</th></tr></thead><tbody>{tableRows.map(r=>(<tr key={r.c} className="hrow" style={{borderBottom:"1px solid #0d1b3355"}}><td style={{padding:"11px 16px"}}><span style={{background:r.c===CICLO_CORRENTE?"var(--a1-13)":"var(--border)",color:r.c===CICLO_CORRENTE?"#60a5fa":"#5278a8",borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:700}}>C{r.c}</span></td>{FASI_FUNNEL.map(f=><td key={f} style={{textAlign:"center",padding:"11px 10px",fontWeight:700,fontSize:13,color:r[f]>0?"#eff6ff":"var(--border2)"}}>{r[f]}</td>)}<td style={{textAlign:"center",padding:"11px 16px",fontWeight:800,fontSize:13,color:r.conv>=20?"#10b981":r.conv>=10?"#0ea5e9":"#f59e0b"}}>{r.conv}%</td></tr>))}</tbody></table></div>
+        <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",minWidth:600}}><thead><tr style={{borderBottom:"1px solid #11203a"}}><th style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>Ciclo</th>{FASI_FUNNEL.map(f=><th key={f} style={{textAlign:"center",color:FASE_CLR[f],fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 10px"}}>{FASE_LABEL[f]}</th>)}<th style={{textAlign:"center",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>Conv%</th></tr></thead><tbody>{tableRows.map(r=>(<tr key={r.c} className="hrow" style={{borderBottom:"1px solid #0d1b3355"}}><td style={{padding:"11px 16px"}}><span style={{background:r.c===CICLO_CORRENTE?"var(--a1-13)":"var(--border)",color:r.c===CICLO_CORRENTE?"var(--a2)":"var(--muted)",borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:700}}>C{r.c}</span></td>{FASI_FUNNEL.map(f=><td key={f} style={{textAlign:"center",padding:"11px 10px",fontWeight:700,fontSize:13,color:r[f]>0?"var(--text)":"var(--border2)"}}>{r[f]}</td>)}<td style={{textAlign:"center",padding:"11px 16px",fontWeight:800,fontSize:13,color:r.conv>=20?"#10b981":r.conv>=10?"var(--a2)":"#f59e0b"}}>{r.conv}%</td></tr>))}</tbody></table></div>
       </div>
     </div>
   );
@@ -1045,7 +1045,7 @@ function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, s
             <div style={{display:"flex",background:"var(--bg3)",borderRadius:10,padding:4,border:"1px solid var(--border)"}}>
               {["personale","team"].map(m=>(
                 <button key={m} onClick={()=>setListaMode(m)}
-                  style={{padding:"6px 14px",borderRadius:8,border:"none",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"inherit",background:listaMode===m?"#0d1b33":"transparent",color:listaMode===m?"#7dd3fc":"#5278a8",boxShadow:listaMode===m?"inset 0 0 0 1px #2563eb40":"none"}}>
+                  style={{padding:"6px 14px",borderRadius:8,border:"none",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"inherit",background:listaMode===m?"var(--bg4)":"transparent",color:listaMode===m?"var(--a2)":"var(--muted)",boxShadow:listaMode===m?"inset 0 0 0 1px var(--sidebar-border)":"none"}}>
                   {m==="personale"?" Personale":" Team"}
                 </button>
               ))}
@@ -1077,13 +1077,13 @@ function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, s
             <tbody>{prospects.map(p=>{
               const c=cicloOfDate(p.conosciutoAt);
               const badge=profiloBadge(p);
-              const bc=badge.compilati===0?"var(--border2)":badge.positivi>=6?"#10b981":badge.positivi>=3?"#0ea5e9":"#f59e0b";
+              const bc=badge.compilati===0?"var(--border2)":badge.positivi>=6?"#10b981":badge.positivi>=3?"var(--a2)":"#f59e0b";
               const jung=p.profilazione?.jung?JUNG.find(j=>j.key===p.profilazione.jung):null;
               return (
                 <tr key={p.id} className="hrow" onClick={()=>onOpen(p)} style={{cursor:"pointer",borderBottom:"1px solid #0d1b3355"}}>
                   <td style={{padding:"12px 16px"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Av n={p.nome} c={p.cognome} color={FASE_CLR[p.fase]}/><span style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{p.nome} {p.cognome}</span></div></td>
                   {listaMode==="team"&&<td style={{padding:"12px 16px"}}><span style={{fontSize:11,color:"#8b5cf6",fontWeight:700,background:"#8b5cf618",borderRadius:6,padding:"2px 8px"}}>{p._ownerName||"\u2014"}</span></td>}
-                  <td style={{padding:"12px 16px"}}>{c?<span style={{background:c===CICLO_CORRENTE?"var(--a1-13)":"var(--border)",color:c===CICLO_CORRENTE?"#60a5fa":"var(--muted)",borderRadius:6,padding:"2px 8px",fontSize:11,fontWeight:700}}>C{c}</span>:<span style={{color:"var(--border2)"}}>\u2014</span>}</td>
+                  <td style={{padding:"12px 16px"}}>{c?<span style={{background:c===CICLO_CORRENTE?"var(--a1-13)":"var(--border)",color:c===CICLO_CORRENTE?"var(--a2)":"var(--muted)",borderRadius:6,padding:"2px 8px",fontSize:11,fontWeight:700}}>C{c}</span>:<span style={{color:"var(--border2)"}}>\u2014</span>}</td>
                   <td style={{padding:"12px 16px",color:"var(--muted)",fontSize:12}}>{fmt(p.conosciutoAt)}</td>
                   <td style={{padding:"12px 16px",color:"var(--muted)",fontSize:12}}>{FONTE_ICO[p.fonte]} {p.fonte}</td>
                   <td style={{padding:"12px 16px"}}><span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:700,color:"#fff",background:FASE_CLR[p.fase],boxShadow:"0 0 8px "+FASE_CLR[p.fase]+"35"}}>{FASE_LABEL[p.fase]}</span></td>
@@ -1150,7 +1150,7 @@ function FormModal({ form, setForm, onSave, onClose, onDelete, isEdit }) {
               const color=INTERESSE_CLR[v];
               return(
                 <button key={v} onClick={()=>set("interesse",active?null:v)}
-                  style={{flex:1,padding:"9px",background:active?color+"25":"#0a1426",border:"2px solid "+(active?color:"var(--border2)"),borderRadius:9,cursor:"pointer",color:active?color:"var(--muted)",fontWeight:700,fontSize:13,fontFamily:"inherit",transition:"all .2s"}}>
+                  style={{flex:1,padding:"9px",background:active?color+"25":"var(--bg3)",border:"2px solid "+(active?color:"var(--border2)"),borderRadius:9,cursor:"pointer",color:active?color:"var(--muted)",fontWeight:700,fontSize:13,fontFamily:"inherit",transition:"all .2s"}}>
                   {v}
                 </button>
               );
@@ -1196,7 +1196,7 @@ function ProfilazioneTab({ p, onUpdateProfilo }) {
             const val=pr[section]?.[f.key]??null;const clr=TC[val]||TC.null;
             return(
               <div key={f.key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--bg3)",borderRadius:9,padding:"9px 12px",border:"1px solid "+(val!=null?clr+"40":"var(--border)")}}>
-                <span style={{fontSize:12,color:val!=null?"#eff6ff":"#5278a8",fontWeight:val!=null?600:400}}>{f.label}</span>
+                <span style={{fontSize:12,color:val!=null?"var(--text)":"var(--muted)",fontWeight:val!=null?600:400}}>{f.label}</span>
                 <div style={{display:"flex",gap:5}}>
                   {TV.filter(v=>v!==null).map(v=>{
                     const active=val===v;
@@ -1208,7 +1208,7 @@ function ProfilazioneTab({ p, onUpdateProfilo }) {
                           const updSection = {...(pr[section]||{}), [f.key]: next};
                           onUpdateProfilo({pleasures:{...pr.pleasures}, forza:{...pr.forza}, jung:pr.jung, [section]:updSection});
                         }}
-                        style={{background:active?vc+"33":"#0d1b33",color:active?vc:"var(--muted)",border:"1.5px solid "+(active?vc:"var(--border2)"),boxShadow:active?"0 0 8px "+vc+"40":"none"}}
+                        style={{background:active?vc+"33":"var(--bg4)",color:active?vc:"var(--muted)",border:"1.5px solid "+(active?vc:"var(--border2)"),boxShadow:active?"0 0 8px "+vc+"40":"none"}}
                         title={v==="-"?"No":v==="."?"Forse":"Si"}>
                         {TL[v]}
                       </button>
@@ -1222,7 +1222,7 @@ function ProfilazioneTab({ p, onUpdateProfilo }) {
       </div>
     );
   }
-  const badge=profiloBadge(p);const pct=Math.round(badge.positivi/PROFILO_TOTAL*100);const bc=pct>=60?"#10b981":pct>=30?"#0ea5e9":"#f59e0b";
+  const badge=profiloBadge(p);const pct=Math.round(badge.positivi/PROFILO_TOTAL*100);const bc=pct>=60?"#10b981":pct>=30?"var(--a2)":"#f59e0b";
   const sj=pr.jung||null;const jd=JUNG.find(j=>j.key===sj);
   return(
     <div>
@@ -1236,7 +1236,7 @@ function ProfilazioneTab({ p, onUpdateProfilo }) {
       <div style={{marginBottom:4}}>
         <div style={{fontSize:10,fontWeight:800,color:"var(--muted)",textTransform:"uppercase",letterSpacing:1.2,marginBottom:10,display:"flex",alignItems:"center",gap:6}}><span></span>Personalita — Colori Jung</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:10}}>
-          {JUNG.map(j=>{const active=sj===j.key;return(<button key={j.key} onClick={()=>selectJung(j.key)} style={{background:active?j.bg:"#0a1426",border:"2px solid "+(active?j.border:"var(--border2)"),borderRadius:12,padding:"14px 14px 12px",cursor:"pointer",textAlign:"left",transition:"all .2s",boxShadow:active?"0 0 18px "+j.glow:"none",position:"relative",overflow:"hidden"}}>{active&&<div style={{position:"absolute",top:8,right:10,width:18,height:18,borderRadius:"50%",background:"#ffffff33",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:900,color:"#fff"}}></div>}<div style={{fontWeight:900,fontSize:14,color:active?"#fff":j.border,marginBottom:3}}>{j.label}</div><div style={{fontSize:10,fontWeight:700,color:active?"rgba(255,255,255,.85)":"#5278a8",marginBottom:5}}>{j.sub}</div><div style={{fontSize:10,color:active?"rgba(255,255,255,.65)":"var(--muted)",lineHeight:1.45}}>{j.desc}</div></button>);})}
+          {JUNG.map(j=>{const active=sj===j.key;return(<button key={j.key} onClick={()=>selectJung(j.key)} style={{background:active?j.bg:"var(--bg3)",border:"2px solid "+(active?j.border:"var(--border2)"),borderRadius:12,padding:"14px 14px 12px",cursor:"pointer",textAlign:"left",transition:"all .2s",boxShadow:active?"0 0 18px "+j.glow:"none",position:"relative",overflow:"hidden"}}>{active&&<div style={{position:"absolute",top:8,right:10,width:18,height:18,borderRadius:"50%",background:"#ffffff33",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:900,color:"#fff"}}></div>}<div style={{fontWeight:900,fontSize:14,color:active?"#fff":j.border,marginBottom:3}}>{j.label}</div><div style={{fontSize:10,fontWeight:700,color:active?"rgba(255,255,255,.85)":"var(--muted)",marginBottom:5}}>{j.sub}</div><div style={{fontSize:10,color:active?"rgba(255,255,255,.65)":"var(--muted)",lineHeight:1.45}}>{j.desc}</div></button>);})}
         </div>
         {jd&&<div style={{background:jd.border+"15",border:"1px solid "+jd.border+"35",borderRadius:10,padding:"10px 13px",display:"flex",alignItems:"center",gap:10}}><div style={{width:10,height:10,borderRadius:"50%",background:jd.border,flexShrink:0,boxShadow:"0 0 8px "+jd.border}}/><div><span style={{fontSize:11,fontWeight:800,color:jd.border}}>{jd.label}</span><span style={{fontSize:11,color:"var(--muted)",marginLeft:6}}>{"\u00b7"} {jd.sub}</span></div></div>}
         {!sj&&<div style={{background:"var(--bg3)",borderRadius:9,padding:"9px 12px",border:"1px dashed #1e3a5f",textAlign:"center"}}><span style={{fontSize:11,color:"var(--border2)"}}>Nessun colore selezionato</span></div>}
@@ -1265,7 +1265,7 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onRiattiva, o
             <div style={{color:"var(--muted)",fontSize:12,marginTop:2}}>{p.citta||"\u2014"} {"\u00b7"} {FONTE_ICO[p.fonte]} {p.fonte}</div>
             <div style={{display:"flex",gap:6,marginTop:7,flexWrap:"wrap"}}>
               <span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"2px 9px",fontSize:11,fontWeight:700,color:"#fff",background:clr,boxShadow:"0 0 10px "+clr+"45"}}>{FASE_LABEL[p.fase]}</span>
-              {ciclo&&<span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"2px 9px",fontSize:11,fontWeight:700,color:"#fff",background:ciclo===CICLO_CORRENTE?"#2563eb":"var(--border2)"}}>Ciclo {ciclo}</span>}
+              {ciclo&&<span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"2px 9px",fontSize:11,fontWeight:700,color:"#fff",background:ciclo===CICLO_CORRENTE?"var(--a1)":"var(--border2)"}}>Ciclo {ciclo}</span>}
               {badge.compilati>0&&<span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"2px 9px",fontSize:11,fontWeight:700,color:"#10b981",background:"#10b98118",border:"1px solid #10b98130"}}> {badge.positivi}/{PROFILO_TOTAL}</span>}
               {p._ownerName&&<span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"2px 9px",fontSize:11,fontWeight:700,color:"#8b5cf6",background:"#8b5cf618",border:"1px solid #8b5cf630"}}> {p._ownerName.trim()}</span>}
               {p.interesse&&<span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"2px 9px",fontSize:11,fontWeight:700,color:INTERESSE_CLR[p.interesse],background:INTERESSE_CLR[p.interesse]+"18",border:"1px solid "+INTERESSE_CLR[p.interesse]+"30"}}>{p.interesse}</span>}
@@ -1276,7 +1276,7 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onRiattiva, o
       </div>
       <div style={{display:"flex",gap:6,marginBottom:16,background:"var(--bg3)",padding:4,borderRadius:10,border:"1px solid var(--border)"}}>
         {[{id:"dettagli",label:" Dettagli"},{id:"profilazione",label:" Profilazione"}].map(t=>(
-          <button key={t.id} className="tabbtn" onClick={()=>setActiveTab(t.id)} style={{flex:1,background:activeTab===t.id?"#0d1b33":"transparent",color:activeTab===t.id?"#7dd3fc":"#5278a8",boxShadow:activeTab===t.id?"inset 0 0 0 1px #2563eb40":"none"}}>{t.label}</button>
+          <button key={t.id} className="tabbtn" onClick={()=>setActiveTab(t.id)} style={{flex:1,background:activeTab===t.id?"var(--bg4)":"transparent",color:activeTab===t.id?"var(--a2)":"var(--muted)",boxShadow:activeTab===t.id?"inset 0 0 0 1px var(--sidebar-border)":"none"}}>{t.label}</button>
         ))}
       </div>
       {activeTab==="dettagli"&&(
@@ -1285,14 +1285,14 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onRiattiva, o
             <div style={{display:"flex",alignItems:"center",marginBottom:20,overflowX:"auto",paddingBottom:4}}>
               {FASI_FUNNEL.map((f,i)=>(
                 <div key={f} style={{display:"flex",alignItems:"center",flex:i<FASI_FUNNEL.length-1?1:"none"}}>
-                  <div style={{width:38,height:38,borderRadius:"50%",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:i<=ci?FASE_CLR[f]:"#0d1b33",border:"2px solid "+(i===ci?FASE_CLR[f]:i<ci?FASE_CLR[f]+"66":"var(--border2)"),color:i<=ci?"#fff":"var(--muted)",fontSize:7.5,fontWeight:900,boxShadow:i===ci?"0 0 18px "+FASE_CLR[f]+"66":"none",transition:"all .3s"}}>{FASE_LABEL[f]}</div>
-                  {i<FASI_FUNNEL.length-1&&<div style={{flex:1,height:3,background:i<ci?FASE_CLR[FASI_FUNNEL[i+1]]+"66":"#0d1b33",margin:"0 3px",minWidth:4,borderRadius:99}}/>}
+                  <div style={{width:38,height:38,borderRadius:"50%",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:i<=ci?FASE_CLR[f]:"var(--bg4)",border:"2px solid "+(i===ci?FASE_CLR[f]:i<ci?FASE_CLR[f]+"66":"var(--border2)"),color:i<=ci?"#fff":"var(--muted)",fontSize:7.5,fontWeight:900,boxShadow:i===ci?"0 0 18px "+FASE_CLR[f]+"66":"none",transition:"all .3s"}}>{FASE_LABEL[f]}</div>
+                  {i<FASI_FUNNEL.length-1&&<div style={{flex:1,height:3,background:i<ci?FASE_CLR[FASI_FUNNEL[i+1]]+"66":"var(--bg4)",margin:"0 3px",minWidth:4,borderRadius:99}}/>}
                 </div>
               ))}
             </div>
           )}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:9}}>
-            {[{l:"Fase ora",v:FASE_LABEL[p.fase],color:clr},{l:"Ciclo conoscenza",v:ciclo?"Ciclo "+ciclo:"\u2014",color:ciclo===CICLO_CORRENTE?"#2563eb":undefined},{l:"Conosciuto il",v:fmt(p.conosciutoAt)},{l:"Follow-up",v:p.followUp?(od?"Scaduto \u00b7 ":dt?"Oggi \u00b7 ":"")+fmt(p.followUp):"Non impostato",color:od?"#f87171":dt?"#fbbf24":undefined}].map(({l,v,color:col})=>(<div key={l} style={box}><div style={lbl}>{l}</div><div style={{color:col||"#eff6ff",fontWeight:700,fontSize:13}}>{v}</div></div>))}
+            {[{l:"Fase ora",v:FASE_LABEL[p.fase],color:clr},{l:"Ciclo conoscenza",v:ciclo?"Ciclo "+ciclo:"\u2014",color:ciclo===CICLO_CORRENTE?"var(--a1)":undefined},{l:"Conosciuto il",v:fmt(p.conosciutoAt)},{l:"Follow-up",v:p.followUp?(od?"Scaduto \u00b7 ":dt?"Oggi \u00b7 ":"")+fmt(p.followUp):"Non impostato",color:od?"#f87171":dt?"#fbbf24":undefined}].map(({l,v,color:col})=>(<div key={l} style={box}><div style={lbl}>{l}</div><div style={{color:col||"var(--text)",fontWeight:700,fontSize:13}}>{v}</div></div>))}
             {p.telefono&&(
               <div style={box}>
                 <div style={lbl}> Telefono</div>
@@ -1316,7 +1316,7 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onRiattiva, o
             )}
           </div>
           {storico.length>0&&(<div style={{...box,marginBottom:9}}><div style={lbl}> Storico percorso</div><div style={{display:"flex",flexDirection:"column",gap:6,marginTop:8}}>{storico.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:9}}><span style={{width:8,height:8,borderRadius:99,background:FASE_CLR[s.fase],flexShrink:0,boxShadow:"0 0 6px "+FASE_CLR[s.fase]+"70"}}/><span style={{fontSize:12.5,fontWeight:700,color:"var(--text)",minWidth:64}}>{FASE_LABEL[s.fase]}</span><span style={{fontSize:11,color:"var(--muted)"}}>{fmt(s.data)}</span><span style={{fontSize:10,color:"var(--muted)",marginLeft:"auto"}}>Ciclo {cicloOfDate(s.data)||"\u2014"}</span></div>))}</div></div>)}
-          {p.note&&<div style={{...box,marginBottom:9}}><div style={lbl}> Note</div><p style={{color:"#94b5d8",lineHeight:1.6,fontSize:13,marginTop:4}}>{p.note}</p></div>}
+          {p.note&&<div style={{...box,marginBottom:9}}><div style={lbl}> Note</div><p style={{color:"var(--text)",lineHeight:1.6,fontSize:13,marginTop:4}}>{p.note}</p></div>}
           {p.fase==="SUB"&&(
             <div style={{...box,marginBottom:9}}>
               <div style={lbl}>Checklist</div>
@@ -1325,7 +1325,7 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onRiattiva, o
                   const done=p.checklist?.[key]||false;
                   return(
                     <button key={key} onClick={()=>onUpdateChecklist({...p.checklist,[key]:!done})}
-                      style={{display:"flex",alignItems:"center",gap:7,padding:"8px 14px",background:done?"#10b98118":"#0a1426",border:"1.5px solid "+(done?"#10b981":"var(--border2)"),borderRadius:9,cursor:"pointer",color:done?"#10b981":"#5278a8",fontWeight:700,fontSize:12,transition:"all .2s"}}>
+                      style={{display:"flex",alignItems:"center",gap:7,padding:"8px 14px",background:done?"#10b98118":"var(--bg3)",border:"1.5px solid "+(done?"#10b981":"var(--border2)"),borderRadius:9,cursor:"pointer",color:done?"#10b981":"var(--muted)",fontWeight:700,fontSize:12,transition:"all .2s"}}>
                       <div style={{width:16,height:16,borderRadius:4,border:"1.5px solid "+(done?"#10b981":"var(--muted)"),background:done?"#10b981":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                         {done&&<span style={{color:"#fff",fontSize:10,fontWeight:900,lineHeight:1}}>{"\u2713"}</span>}
                       </div>

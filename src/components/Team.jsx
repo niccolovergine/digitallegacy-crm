@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 
 const FASI_DASH = ["FUP1","FUP2","PACK","CLOSING","SUB"];
-const FASE_CLR = {INVITO:"#8b5cf6",FUP1:"#2563eb",FUP2:"#3b82f6",PACK:"#0ea5e9",CLOSING:"#22d3ee",SUB:"#10b981",FOLLOW_UP:"#f59e0b",NON_INT:"#6b7280"};
+const FASE_CLR = {INVITO:"#8b5cf6",FUP1:"var(--a1)",FUP2:"#3b82f6",PACK:"var(--a2)",CLOSING:"#22d3ee",SUB:"#10b981",FOLLOW_UP:"#f59e0b",NON_INT:"#6b7280"};
 const FASE_LABEL = {INVITO:"Invito",FUP1:"FUP 1",FUP2:"FUP 2",PACK:"Pack",CLOSING:"Closing",SUB:"Iscritto",FOLLOW_UP:"Follow Up",NON_INT:"Non Int."};
 const PACCHETTI = [{key:"starter",label:"Starter",bv:100},{key:"standard",label:"Standard",bv:250},{key:"premium",label:"Premium",bv:550},{key:"signature",label:"Signature",bv:1025}];
 function bvOfPacchetto(key){const p=PACCHETTI.find(x=>x.key===key);return p?p.bv:0;}
@@ -59,7 +59,7 @@ function TreeNode({memberId,memberNome,memberCognome,memberEmail,allMembers,dlPr
         <span style={{fontSize:10,color:"var(--border2)"}}>vuoto</span>
       </div>
     );
-    const color=team==="sinistra"?"#2563eb":"#10b981";
+    const color=team==="sinistra"?"var(--a1)":"#10b981";
     return(
       <div onClick={()=>onPlaceHere&&onPlaceHere(memberId,team)}
         style={{width:120,height:44,border:"2px dashed "+color,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",background:color+"12",transition:"all .2s"}}>
@@ -71,8 +71,8 @@ function TreeNode({memberId,memberNome,memberCognome,memberEmail,allMembers,dlPr
   return(
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",minWidth:160}}>
       <div onClick={()=>!isRoot&&onSelect&&onSelect(allMembers.find(m=>m.id===memberId))}
-        style={{background:isRoot?"linear-gradient(135deg,var(--a1),var(--a2))":"#0d1b33",border:"2px solid "+(isRoot?"#2563eb":"var(--border2)"),borderRadius:12,padding:"10px 16px",textAlign:"center",cursor:isRoot?"default":"pointer",minWidth:130,boxShadow:isRoot?"0 0 20px #2563eb40":"none",marginBottom:4}}>
-        <div style={{fontWeight:800,fontSize:12,color:isRoot?"#fff":"#eff6ff"}}>{memberNome||memberEmail} {memberCognome||""}</div>
+        style={{background:isRoot?"linear-gradient(135deg,var(--a1),var(--a2))":"var(--bg4)",border:"2px solid "+(isRoot?"var(--a1)":"var(--border2)"),borderRadius:12,padding:"10px 16px",textAlign:"center",cursor:isRoot?"default":"pointer",minWidth:130,boxShadow:isRoot?"0 0 20px var(--a1-25)":"none",marginBottom:4}}>
+        <div style={{fontWeight:800,fontSize:12,color:isRoot?"#fff":"var(--text)"}}>{memberNome||memberEmail} {memberCognome||""}</div>
         {!isRoot&&<div style={{fontSize:10,color:"var(--muted)",marginTop:2}}>{ms.sub} iscr {"\u00b7"} {ms.bv} BV</div>}
       </div>
       <div style={{width:2,height:16,background:"var(--border2)"}}/>
@@ -151,14 +151,14 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
   const statsS=squadraStats(sinistra);
   const statsD=squadraStats(destra);
   const statsTot=teamStats(dlByCiclo);
-  const convColor=v=>v>=20?"#10b981":v>=10?"#0ea5e9":"#f59e0b";
+  const convColor=v=>v>=20?"#10b981":v>=10?"var(--a2)":"#f59e0b";
   const compareData=[{name:"In percorso",sinistra:statsS.act,destra:statsD.act},{name:"Iscritti",sinistra:statsS.sub,destra:statsD.sub},{name:"BV",sinistra:statsS.bv,destra:statsD.bv}];
   const ts={background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:8,color:"var(--text)",fontSize:12};
 
   if(selectedMember){
     const mP=getMemberProspects(selectedMember.id);
     const ms=teamStats(mP);
-    const teamColor=getTeamForMe(selectedMember)==="sinistra"?"#2563eb":getTeamForMe(selectedMember)==="destra"?"#10b981":"#6b7280";
+    const teamColor=getTeamForMe(selectedMember)==="sinistra"?"var(--a1)":getTeamForMe(selectedMember)==="destra"?"#10b981":"#6b7280";
     return(
       <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
         <button onClick={()=>setSelectedMember(null)} style={{display:"flex",alignItems:"center",gap:8,background:"none",border:"none",color:"var(--a2)",cursor:"pointer",fontSize:13,fontWeight:700,marginBottom:20}}>
@@ -177,7 +177,7 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
           </div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}}>
-          {[{label:"Prospect",value:ms.total,color:"var(--a1)",icon:""},{label:"Iscritti",value:ms.sub,color:"#10b981",icon:""},{label:"In percorso",value:ms.act,color:"#0ea5e9",icon:""},{label:"BV prodotti",value:ms.bv,color:"#f59e0b",icon:""}].map((k,i)=>(
+          {[{label:"Prospect",value:ms.total,color:"var(--a1)",icon:""},{label:"Iscritti",value:ms.sub,color:"#10b981",icon:""},{label:"In percorso",value:ms.act,color:"var(--a2)",icon:""},{label:"BV prodotti",value:ms.bv,color:"#f59e0b",icon:""}].map((k,i)=>(
             <div key={i} style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"16px 18px",position:"relative",overflow:"hidden"}}>
               <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"linear-gradient(90deg,"+k.color+","+k.color+"44)",borderRadius:"14px 14px 0 0"}}/>
               <div style={{fontSize:10,color:"var(--muted)",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>{k.label}</div>
@@ -243,7 +243,7 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
         </div>
         {referralLink
           ?<div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
-            <div style={{flex:1,background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:9,padding:"9px 13px",fontSize:12,color:"#94b5d8",fontFamily:"monospace",minWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{referralLink}</div>
+            <div style={{flex:1,background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:9,padding:"9px 13px",fontSize:12,color:"var(--text)",fontFamily:"monospace",minWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{referralLink}</div>
             <button onClick={copyLink} style={{padding:"9px 18px",background:copied?"#10b98120":"linear-gradient(135deg,var(--a1),var(--a2))",color:copied?"#10b981":"#fff",border:copied?"1px solid #10b98140":"none",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:12,whiteSpace:"nowrap"}}>{copied?"Copiato!":"Copia link"}</button>
           </div>
           :<div style={{fontSize:12,color:"var(--muted)"}}>Caricamento...</div>
@@ -288,7 +288,7 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
       <div style={{display:"flex",background:"var(--bg3)",borderRadius:10,padding:4,marginBottom:16,border:"1px solid var(--border)"}}>
         {[{id:"dashboard",label:"Dashboard"},{id:"albero",label:"Albero"},{id:"membri",label:"Membri"}].map(t=>(
           <button key={t.id} onClick={()=>setActiveTeamTab(t.id)}
-            style={{flex:1,padding:"8px 16px",borderRadius:8,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"inherit",transition:"all .2s",background:activeTeamTab===t.id?"#0d1b33":"transparent",color:activeTeamTab===t.id?"#7dd3fc":"#5278a8",boxShadow:activeTeamTab===t.id?"inset 0 0 0 1px #2563eb40":"none"}}>
+            style={{flex:1,padding:"8px 16px",borderRadius:8,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"inherit",transition:"all .2s",background:activeTeamTab===t.id?"var(--bg4)":"transparent",color:activeTeamTab===t.id?"var(--a2)":"var(--muted)",boxShadow:activeTeamTab===t.id?"inset 0 0 0 1px var(--sidebar-border)":"none"}}>
             {t.label}
           </button>
         ))}
@@ -305,11 +305,11 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
               <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                 {inAttesa.map(m=>{
                   const team=getTeamForMe(m);
-                  const color=team==="sinistra"?"#2563eb":"#10b981";
+                  const color=team==="sinistra"?"var(--a1)":"#10b981";
                   const isSelected=selectedForPlacement?.id===m.id;
                   return(
                     <button key={m.id} onClick={()=>setSelectedForPlacement(isSelected?null:m)}
-                      style={{padding:"8px 14px",background:isSelected?color+"30":"#0a1426",border:"2px solid "+(isSelected?color:"var(--border2)"),borderRadius:9,cursor:"pointer",color:isSelected?color:"var(--text)",fontWeight:700,fontSize:12,transition:"all .2s"}}>
+                      style={{padding:"8px 14px",background:isSelected?color+"30":"var(--bg3)",border:"2px solid "+(isSelected?color:"var(--border2)"),borderRadius:9,cursor:"pointer",color:isSelected?color:"var(--text)",fontWeight:700,fontSize:12,transition:"all .2s"}}>
                       {m.nome||m.email} {m.cognome||""} <span style={{fontSize:10,color:color,marginLeft:4}}>{team}</span>
                     </button>
                   );
@@ -391,9 +391,9 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
                           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false}/>
                           <XAxis dataKey="name" stroke="var(--muted)" fontSize={12}/>
                           <YAxis stroke="var(--muted)" fontSize={12} allowDecimals={false}/>
-                          <Tooltip contentStyle={ts} itemStyle={{color:"var(--text)"}} labelStyle={{color:"#94b5d8",fontWeight:700}}/>
+                          <Tooltip contentStyle={ts} itemStyle={{color:"var(--text)"}} labelStyle={{color:"var(--text)",fontWeight:700}}/>
                           <Legend wrapperStyle={{fontSize:11}}/>
-                          <Bar dataKey="sinistra" name="Sinistra" fill="#2563eb" radius={[4,4,0,0]}/>
+                          <Bar dataKey="sinistra" name="Sinistra" fill="var(--a1)" radius={[4,4,0,0]}/>
                           <Bar dataKey="destra" name="Destra" fill="#10b981" radius={[4,4,0,0]}/>
                         </BarChart>
                       </ResponsiveContainer>
@@ -413,7 +413,7 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
               <div style={{display:"flex",gap:6}}>
                 {["all","sinistra","destra","nessuna"].map(f=>(
                   <button key={f} onClick={()=>setTeamFilter(f)}
-                    style={{padding:"5px 12px",borderRadius:8,border:teamFilter===f?"1px solid #2563eb40":"1px solid transparent",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"inherit",transition:"all .2s",background:teamFilter===f?"#0d1b33":"transparent",color:teamFilter===f?"#7dd3fc":"#5278a8"}}>
+                    style={{padding:"5px 12px",borderRadius:8,border:teamFilter===f?"1px solid #2563eb40":"1px solid transparent",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"inherit",transition:"all .2s",background:teamFilter===f?"var(--bg4)":"transparent",color:teamFilter===f?"var(--a2)":"var(--muted)"}}>
                     {f==="all"?"Tutti":f==="nessuna"?"Non assegnati":f.charAt(0).toUpperCase()+f.slice(1)}
                   </button>
                 ))}
@@ -427,7 +427,7 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
                   const mP=getMemberProspects(m.id);
                   const ms=teamStats(mP);
                   const myTeam=getTeamForMe(m);
-                  const teamColor=myTeam==="sinistra"?"#2563eb":myTeam==="destra"?"#10b981":"#6b7280";
+                  const teamColor=myTeam==="sinistra"?"var(--a1)":myTeam==="destra"?"#10b981":"#6b7280";
                   const isMyDirect=m.positioned_under===auth.userId;
                   return(
                     <tr key={m.id} style={{borderBottom:"1px solid #0d1b3355"}}>

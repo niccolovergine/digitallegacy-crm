@@ -55,7 +55,7 @@ const today = () => new Date().toISOString().split("T")[0];
 
 function Av({ n, c, size=34 }) {
   return (
-    <div style={{width:size,height:size,borderRadius:"50%",flexShrink:0,background:"linear-gradient(135deg,var(--a1),var(--a2))",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:900,fontSize:size*0.32,boxShadow:"0 0 10px #2563eb35"}}>
+    <div style={{width:size,height:size,borderRadius:"50%",flexShrink:0,background:"linear-gradient(135deg,var(--a1),var(--a2))",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:900,fontSize:size*0.32,boxShadow:"0 0 10px var(--a1-18)"}}>
       {(n||"?")[0]}{(c||"")[0]}
     </div>
   );
@@ -85,7 +85,7 @@ function ProfilazionePanel({ profilazione, onChange }) {
             const clr = TC[val] || TC.null;
             return (
               <div key={f.key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--bg3)",borderRadius:9,padding:"8px 11px",border:"1px solid "+(val!=null?clr+"40":"var(--border)")}}>
-                <span style={{fontSize:12,color:val!=null?"#eff6ff":"#5278a8"}}>{f.label}</span>
+                <span style={{fontSize:12,color:val!=null?"var(--text)":"var(--muted)"}}>{f.label}</span>
                 <div style={{display:"flex",gap:5}}>
                   {TV.filter(v=>v!==null).map(v => {
                     const active = val === v;
@@ -95,7 +95,7 @@ function ProfilazionePanel({ profilazione, onChange }) {
                         const next = active ? null : v;
                         onChange({ ...pr, [section]: { ...(pr[section]||{}), [f.key]: next } });
                       }}
-                        style={{width:28,height:26,borderRadius:6,border:"1.5px solid "+(active?vc:"var(--border2)"),cursor:"pointer",fontSize:13,fontWeight:900,fontFamily:"inherit",background:active?vc+"33":"#0d1b33",color:active?vc:"var(--muted)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                        style={{width:28,height:26,borderRadius:6,border:"1.5px solid "+(active?vc:"var(--border2)"),cursor:"pointer",fontSize:13,fontWeight:900,fontFamily:"inherit",background:active?vc+"33":"var(--bg4)",color:active?vc:"var(--muted)",display:"flex",alignItems:"center",justifyContent:"center"}}>
                         {TL[v]}
                       </button>
                     );
@@ -123,9 +123,9 @@ function ProfilazionePanel({ profilazione, onChange }) {
             const active = sj === j.key;
             return (
               <button key={j.key} onClick={() => selectJung(j.key)}
-                style={{background:active?j.bg:"#0a1426",border:"2px solid "+(active?j.border:"var(--border2)"),borderRadius:10,padding:"10px 12px",cursor:"pointer",textAlign:"left",transition:"all .2s"}}>
+                style={{background:active?j.bg:"var(--bg3)",border:"2px solid "+(active?j.border:"var(--border2)"),borderRadius:10,padding:"10px 12px",cursor:"pointer",textAlign:"left",transition:"all .2s"}}>
                 <div style={{fontWeight:900,fontSize:13,color:active?"#fff":j.border}}>{j.label}</div>
-                <div style={{fontSize:10,color:active?"rgba(255,255,255,.8)":"#5278a8",marginTop:2}}>{j.sub}</div>
+                <div style={{fontSize:10,color:active?"rgba(255,255,255,.8)":"var(--muted)",marginTop:2}}>{j.sub}</div>
               </button>
             );
           })}
@@ -151,7 +151,7 @@ function PersonaModal({ persona, onSave, onClose, onDelete, onInvita, isEdit }) 
       <div style={{display:"flex",background:"var(--bg3)",borderRadius:10,padding:4,marginBottom:16,border:"1px solid var(--border)"}}>
         {[{id:"dati",label:"Dati"},{id:"profilazione",label:"Profilazione"}].map(t=>(
           <button key={t.id} onClick={()=>setTab(t.id)}
-            style={{flex:1,padding:"7px",borderRadius:8,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"inherit",background:tab===t.id?"#0d1b33":"transparent",color:tab===t.id?"#7dd3fc":"#5278a8",boxShadow:tab===t.id?"inset 0 0 0 1px #2563eb40":"none"}}>
+            style={{flex:1,padding:"7px",borderRadius:8,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"inherit",background:tab===t.id?"var(--bg4)":"transparent",color:tab===t.id?"var(--a2)":"var(--muted)",boxShadow:tab===t.id?"inset 0 0 0 1px var(--sidebar-border)":"none"}}>
             {t.label}
           </button>
         ))}
@@ -173,7 +173,7 @@ function PersonaModal({ persona, onSave, onClose, onDelete, onInvita, isEdit }) 
                 const color=TEMP_CLR[t];
                 return(
                   <button key={t} onClick={()=>setForm(f=>({...f,temperatura:active?null:t}))}
-                    style={{flex:1,padding:"9px",background:active?color+"25":"#0a1426",border:"2px solid "+(active?color:"var(--border2)"),borderRadius:9,cursor:"pointer",color:active?color:"var(--muted)",fontWeight:700,fontSize:13,fontFamily:"inherit",transition:"all .2s"}}>
+                    style={{flex:1,padding:"9px",background:active?color+"25":"var(--bg3)",border:"2px solid "+(active?color:"var(--border2)"),borderRadius:9,cursor:"pointer",color:active?color:"var(--muted)",fontWeight:700,fontSize:13,fontFamily:"inherit",transition:"all .2s"}}>
                     {t}
                   </button>
                 );

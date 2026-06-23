@@ -4,7 +4,7 @@ const SB_URL = "https://kuxrpbsvnkxhsicbyupp.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1eHJwYnN2bmt4aHNpY2J5dXBwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwNzMwODIsImV4cCI6MjA5NzY0OTA4Mn0.s_lqOUC8939I2Wgf-Qkcq9WaiH1Nxze1uv4-PIV6s7I";
 
 const TEMI = {
-  blu:   { label:"Blu",   preview:"linear-gradient(135deg,#1e40af,#0ea5e9)", vars:{"--bg":"#060b18","--bg2":"#080f1f","--bg3":"#0a1426","--bg4":"#0d1b33","--border":"#11203a","--border2":"#1e3a5f","--a1":"#2563eb","--a2":"#0ea5e9","--a1-10":"#2563eb1a","--a1-12":"#2563eb1f","--a1-13":"#2563eb21","--a1-18":"#2563eb2e","--a1-25":"#2563eb40","--a1-31":"#2563eb4f","--text":"#eff6ff","--muted":"#5278a8","--muted2":"#2a4060","--sidebar-active":"#0d1b33","--sidebar-border":"#2563eb40"} },
+  blu:   { label:"Blu",   preview:"linear-gradient(135deg,#1e40af,#0ea5e9)", vars:{"--bg":"var(--bg)","--bg2":"var(--bg2)","--bg3":"var(--bg3)","--bg4":"var(--bg4)","--border":"var(--border)","--border2":"var(--border2)","--a1":"var(--a1)","--a2":"var(--a2)","--a1-10":"#2563eb1a","--a1-12":"#2563eb1f","--a1-13":"#2563eb21","--a1-18":"#2563eb2e","--a1-25":"#2563eb40","--a1-31":"#2563eb4f","--text":"var(--text)","--muted":"var(--muted)","--muted2":"var(--muted2)","--sidebar-active":"var(--bg4)","--sidebar-border":"#2563eb40"} },
   verde: { label:"Verde", preview:"linear-gradient(135deg,#065f46,#10b981)", vars:{"--bg":"#030d08","--bg2":"#041208","--bg3":"#06180d","--bg4":"#082014","--border":"#0a2a14","--border2":"#134d28","--a1":"#059669","--a2":"#10b981","--a1-10":"#0596691a","--a1-12":"#0596691f","--a1-13":"#05966921","--a1-18":"#0596692e","--a1-25":"#05966940","--a1-31":"#0596694f","--text":"#ecfdf5","--muted":"#3d7a5a","--muted2":"#1a3d2a","--sidebar-active":"#082014","--sidebar-border":"#05966940"} },
   viola: { label:"Viola", preview:"linear-gradient(135deg,#4c1d95,#a78bfa)", vars:{"--bg":"#06030f","--bg2":"#0a0518","--bg3":"#0f0820","--bg4":"#140b2a","--border":"#1a1035","--border2":"#2e1a55","--a1":"#7c3aed","--a2":"#a78bfa","--a1-10":"#7c3aed1a","--a1-12":"#7c3aed1f","--a1-13":"#7c3aed21","--a1-18":"#7c3aed2e","--a1-25":"#7c3aed40","--a1-31":"#7c3aed4f","--text":"#f5f3ff","--muted":"#6b5a9a","--muted2":"#2d1a55","--sidebar-active":"#140b2a","--sidebar-border":"#7c3aed40"} },
   rosa:  { label:"Rosa",  preview:"linear-gradient(135deg,#9d174d,#f472b6)", vars:{"--bg":"#0f0308","--bg2":"#180510","--bg3":"#200718","--bg4":"#2a0a20","--border":"#380d2a","--border2":"#5a1a42","--a1":"#db2777","--a2":"#f472b6","--a1-10":"#db27771a","--a1-12":"#db27771f","--a1-13":"#db277721","--a1-18":"#db27772e","--a1-25":"#db277740","--a1-31":"#db27774f","--text":"#fdf2f8","--muted":"#8a4a6b","--muted2":"#4a1530","--sidebar-active":"#2a0a20","--sidebar-border":"#db277740"} },
@@ -87,25 +87,25 @@ export function ProfiloView({ auth, onUpdateProfile, downlineCount }) {
         </div>
       )}
 
-      <h1 style={{ fontWeight: 900, fontSize: 26, color: "#eff6ff", letterSpacing: -0.8, marginBottom: 4 }}>Il tuo profilo</h1>
+      <h1 style={{ fontWeight: 900, fontSize: 26, color: "var(--text)", letterSpacing: -0.8, marginBottom: 4 }}>Il tuo profilo</h1>
       <p style={{ color: "var(--muted)", fontSize: 12, marginBottom: 24 }}>Le tue informazioni personali</p>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 28, background: "#080f1f", border: "1px solid #11203a", borderRadius: 14, padding: "1.4rem" }}>
-        <div style={{ width: 64, height: 64, borderRadius: "50%", background: "linear-gradient(135deg,var(--a1),var(--a2))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 900, color: "#fff", flexShrink: 0, boxShadow: "0 0 20px #2563eb40" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 28, background: "var(--bg2)", border: "1px solid #11203a", borderRadius: 14, padding: "1.4rem" }}>
+        <div style={{ width: 64, height: 64, borderRadius: "50%", background: "linear-gradient(135deg,var(--a1),var(--a2))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 900, color: "#fff", flexShrink: 0, boxShadow: "0 0 20px var(--a1-25)" }}>
           {(nome || auth.email || "?")[0].toUpperCase()}
         </div>
         <div>
-          <div style={{ fontWeight: 900, fontSize: 18, color: "#eff6ff" }}>{nome || "\u2014"} {cognome || ""}</div>
-          <div style={{ fontSize: 12, color: "#5278a8", marginTop: 3 }}>{auth.email}</div>
+          <div style={{ fontWeight: 900, fontSize: 18, color: "var(--text)" }}>{nome || "\u2014"} {cognome || ""}</div>
+          <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>{auth.email}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
             <span style={{ fontSize: 10, color: "var(--muted)" }}>Il tuo ID:</span>
-            <span style={{ background: "var(--a1-12)", color: "#60a5fa", borderRadius: 6, padding: "2px 10px", fontSize: 12, fontWeight: 800, fontFamily: "monospace" }}>{p.referral_code || "..."}</span>
+            <span style={{ background: "var(--a1-12)", color: "var(--a2)", borderRadius: 6, padding: "2px 10px", fontSize: 12, fontWeight: 800, fontFamily: "monospace" }}>{p.referral_code || "..."}</span>
           </div>
         </div>
       </div>
 
-      <div style={{ background: "#080f1f", border: "1px solid #11203a", borderRadius: 14, padding: "1.4rem", marginBottom: 16 }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: "#eff6ff", marginBottom: 16 }}>Dati personali</div>
+      <div style={{ background: "var(--bg2)", border: "1px solid #11203a", borderRadius: 14, padding: "1.4rem", marginBottom: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text)", marginBottom: 16 }}>Dati personali</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
           <div><label style={lbl}>Nome</label><input value={nome} onChange={e => setNome(e.target.value)} placeholder="Luigi" /></div>
           <div><label style={lbl}>Cognome</label><input value={cognome} onChange={e => setCognome(e.target.value)} placeholder="Rossi" /></div>
@@ -127,8 +127,8 @@ export function ProfiloView({ auth, onUpdateProfile, downlineCount }) {
         </div>
       </div>
 
-      <div style={{ background: "#080f1f", border: "1px solid #1e3a5f", borderRadius: 14, padding: "1.4rem", marginBottom: 16 }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: "#eff6ff", marginBottom: 12 }}>Tema colori</div>
+      <div style={{ background: "var(--bg2)", border: "1px solid #1e3a5f", borderRadius: 14, padding: "1.4rem", marginBottom: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text)", marginBottom: 12 }}>Tema colori</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10 }}>
           {Object.entries(TEMI).map(([key, t]) => {
             const active = (p.tema || "blu") === key;
@@ -146,8 +146,8 @@ export function ProfiloView({ auth, onUpdateProfile, downlineCount }) {
         </div>
       </div>
 
-      <div style={{ background: "#080f1f", border: "1px solid #1e3a5f", borderRadius: 14, padding: "1.4rem" }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: "#eff6ff", marginBottom: 4 }}>Il tuo sponsor</div>
+      <div style={{ background: "var(--bg2)", border: "1px solid #1e3a5f", borderRadius: 14, padding: "1.4rem" }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text)", marginBottom: 4 }}>Il tuo sponsor</div>
         {downlineCount > 0 ? (
           <>
             <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 12, lineHeight: 1.6 }}>
@@ -168,7 +168,7 @@ export function ProfiloView({ auth, onUpdateProfile, downlineCount }) {
                 <input value={sponsorId} onChange={e => setSponsorId(e.target.value)} placeholder="es. mario_abc123" onKeyDown={e => e.key === "Enter" && saveSponsor()} />
               </div>
               <button onClick={saveSponsor} disabled={savingSponsor || !sponsorId.trim()}
-                style={{ padding: "9px 18px", background: sponsorId.trim() ? "linear-gradient(135deg,var(--a1),var(--a2))" : "#0d1b33", color: sponsorId.trim() ? "#fff" : "var(--muted)", border: "none", borderRadius: 9, cursor: sponsorId.trim() && !savingSponsor ? "pointer" : "not-allowed", fontWeight: 800, fontSize: 13, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 7, opacity: savingSponsor ? 0.7 : 1 }}>
+                style={{ padding: "9px 18px", background: sponsorId.trim() ? "linear-gradient(135deg,var(--a1),var(--a2))" : "var(--bg4)", color: sponsorId.trim() ? "#fff" : "var(--muted)", border: "none", borderRadius: 9, cursor: sponsorId.trim() && !savingSponsor ? "pointer" : "not-allowed", fontWeight: 800, fontSize: 13, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 7, opacity: savingSponsor ? 0.7 : 1 }}>
                 {savingSponsor && <span style={{ width: 14, height: 14, border: "2px solid #ffffff44", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block", animation: "spin .7s linear infinite" }} />}
                 Aggiorna
               </button>
