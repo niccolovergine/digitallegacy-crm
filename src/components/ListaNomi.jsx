@@ -88,7 +88,10 @@ function ProfilazionePanel({ profilazione, onChange }) {
                     const active = val === v;
                     const vc = TC[v];
                     return (
-                      <button key={v} onClick={() => toggle(section, f.key)}
+                      <button key={v} onClick={() => {
+                        const next = active ? null : v;
+                        onChange({ ...pr, [section]: { ...(pr[section]||{}), [f.key]: next } });
+                      }}
                         style={{width:28,height:26,borderRadius:6,border:"1.5px solid "+(active?vc:"#1e3a5f"),cursor:"pointer",fontSize:13,fontWeight:900,fontFamily:"inherit",background:active?vc+"33":"#0d1b33",color:active?vc:"#3b5478",display:"flex",alignItems:"center",justifyContent:"center"}}>
                         {TL[v]}
                       </button>
