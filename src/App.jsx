@@ -194,6 +194,31 @@ function teamStats(prospects) {
   return { total, sub, act, conv, bv };
 }
 
+const TEMI = {
+  blu:   { label:"Blu",   bg:"#060b18", bg2:"#080f1f", bg3:"#0a1426", bg4:"#0d1b33", border:"#11203a", border2:"#1e3a5f", a1:"#2563eb", a2:"#0ea5e9", text:"#dbeafe", textMuted:"#5278a8", glow:"#2563eb" },
+  verde: { label:"Verde", bg:"#040e08", bg2:"#061410", bg3:"#08190e", bg4:"#0a2012", border:"#0f2a18", border2:"#1a4028", a1:"#059669", a2:"#10b981", text:"#d1fae5", textMuted:"#4a7a60", glow:"#059669" },
+  viola: { label:"Viola", bg:"#070412", bg2:"#0c0618", bg3:"#110820", bg4:"#160a28", border:"#1a0f35", border2:"#2d1a55", a1:"#7c3aed", a2:"#a78bfa", text:"#ede9fe", textMuted:"#6b5a8a", glow:"#7c3aed" },
+  rosa:  { label:"Rosa",  bg:"#120408", bg2:"#180610", bg3:"#200818", bg4:"#280a20", border:"#350f28", border2:"#551a40", a1:"#db2777", a2:"#f472b6", text:"#fce7f3", textMuted:"#8a4a6b", glow:"#db2777" },
+  oro:   { label:"Oro",   bg:"#080600", bg2:"#0f0d00", bg3:"#161200", bg4:"#1e1800", border:"#2a2200", border2:"#3d3200", a1:"#d97706", a2:"#fbbf24", text:"#fef3c7", textMuted:"#7a6530", glow:"#d97706" },
+};
+
+function applyTema(temaKey) {
+  const t = TEMI[temaKey] || TEMI.blu;
+  const root = document.documentElement;
+  root.style.setProperty("--bg",      t.bg);
+  root.style.setProperty("--bg2",     t.bg2);
+  root.style.setProperty("--bg3",     t.bg3);
+  root.style.setProperty("--bg4",     t.bg4);
+  root.style.setProperty("--border",  t.border);
+  root.style.setProperty("--border2", t.border2);
+  root.style.setProperty("--a1",      t.a1);
+  root.style.setProperty("--a2",      t.a2);
+  root.style.setProperty("--text",    t.text);
+  root.style.setProperty("--muted",   t.textMuted);
+  root.style.setProperty("--glow",    t.glow);
+  document.body.style.background = t.bg;
+}
+
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -394,8 +419,13 @@ export default function App() {
     const el=document.createElement("style");
     el.textContent=CSS;
     document.head.appendChild(el);
+    applyTema("blu"); // default
     return ()=>document.head.removeChild(el);
   },[]);
+
+  useEffect(()=>{
+    if (auth?.profile?.tema) applyTema(auth.profile.tema);
+  },[auth?.profile?.tema]);
 
   useEffect(()=>{
     if (!auth) { setData([]); setReady(true); return; }

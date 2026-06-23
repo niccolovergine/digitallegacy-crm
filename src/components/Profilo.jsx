@@ -3,6 +3,28 @@ import { useState } from "react";
 const SB_URL = "https://kuxrpbsvnkxhsicbyupp.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1eHJwYnN2bmt4aHNpY2J5dXBwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwNzMwODIsImV4cCI6MjA5NzY0OTA4Mn0.s_lqOUC8939I2Wgf-Qkcq9WaiH1Nxze1uv4-PIV6s7I";
 
+const TEMI = {
+  blu:   { label:"Blu",   a1:"#2563eb", a2:"#0ea5e9", preview:"linear-gradient(135deg,#2563eb,#0ea5e9)" },
+  verde: { label:"Verde", a1:"#059669", a2:"#10b981", preview:"linear-gradient(135deg,#059669,#10b981)" },
+  viola: { label:"Viola", a1:"#7c3aed", a2:"#a78bfa", preview:"linear-gradient(135deg,#7c3aed,#a78bfa)" },
+  rosa:  { label:"Rosa",  a1:"#db2777", a2:"#f472b6", preview:"linear-gradient(135deg,#db2777,#f472b6)" },
+  oro:   { label:"Oro",   a1:"#d97706", a2:"#fbbf24", preview:"linear-gradient(135deg,#d97706,#fbbf24)" },
+};
+
+function applyTema(temaKey) {
+  const tAll = {
+    blu:   { bg:"#060b18", bg2:"#080f1f", bg3:"#0a1426", bg4:"#0d1b33", border:"#11203a", border2:"#1e3a5f", a1:"#2563eb", a2:"#0ea5e9", text:"#dbeafe", textMuted:"#5278a8", glow:"#2563eb" },
+    verde: { bg:"#040e08", bg2:"#061410", bg3:"#08190e", bg4:"#0a2012", border:"#0f2a18", border2:"#1a4028", a1:"#059669", a2:"#10b981", text:"#d1fae5", textMuted:"#4a7a60", glow:"#059669" },
+    viola: { bg:"#070412", bg2:"#0c0618", bg3:"#110820", bg4:"#160a28", border:"#1a0f35", border2:"#2d1a55", a1:"#7c3aed", a2:"#a78bfa", text:"#ede9fe", textMuted:"#6b5a8a", glow:"#7c3aed" },
+    rosa:  { bg:"#120408", bg2:"#180610", bg3:"#200818", bg4:"#280a20", border:"#350f28", border2:"#551a40", a1:"#db2777", a2:"#f472b6", text:"#fce7f3", textMuted:"#8a4a6b", glow:"#db2777" },
+    oro:   { bg:"#080600", bg2:"#0f0d00", bg3:"#161200", bg4:"#1e1800", border:"#2a2200", border2:"#3d3200", a1:"#d97706", a2:"#fbbf24", text:"#fef3c7", textMuted:"#7a6530", glow:"#d97706" },
+  };
+  const t = tAll[temaKey] || tAll.blu;
+  const root = document.documentElement;
+  Object.entries({ "--bg":t.bg, "--bg2":t.bg2, "--bg3":t.bg3, "--bg4":t.bg4, "--border":t.border, "--border2":t.border2, "--a1":t.a1, "--a2":t.a2, "--text":t.text, "--muted":t.textMuted, "--glow":t.glow }).forEach(([k,v])=>root.style.setProperty(k,v));
+  document.body.style.background = t.bg;
+}
+
 async function sbFetch(path, opts = {}) {
   const res = await fetch(SB_URL + path, {
     ...opts,
@@ -109,6 +131,25 @@ export function ProfiloView({ auth, onUpdateProfile, downlineCount }) {
             {saving && <span style={{ width: 14, height: 14, border: "2px solid #ffffff44", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block", animation: "spin .7s linear infinite" }} />}
             Salva
           </button>
+        </div>
+      </div>
+
+      <div style={{ background: "#080f1f", border: "1px solid #1e3a5f", borderRadius: 14, padding: "1.4rem", marginBottom: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: "#eff6ff", marginBottom: 12 }}>Tema colori</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10 }}>
+          {Object.entries(TEMI).map(([key, t]) => {
+            const active = (p.tema || "blu") === key;
+            return (
+              <button key={key} onClick={async () => {
+                applyTema(key);
+                await onUpdateProfile({ tema: key });
+              }}
+                style={{ padding: "12px 8px", borderRadius: 10, border: "2px solid " + (active ? t.a1 : "#1e3a5f"), cursor: "pointer", background: active ? t.a1+"18" : "#0a1426", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, transition: "all .2s" }}>
+                <div style={{ width: 36, height: 36, borderRadius: "50%", background: t.preview, boxShadow: active ? "0 0 12px " + t.a1 + "80" : "none" }} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: active ? t.a1 : "#5278a8" }}>{t.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
