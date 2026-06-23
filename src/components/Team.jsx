@@ -298,7 +298,7 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
           {activeTeamTab==="dashboard"&&(
             <>
               <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12,marginBottom:16}}>
-                {[{label:"Membri",value:downline.length,color:"#8b5cf6",icon:"\u25c8"},{label:"In percorso",value:statsTot.act,color:"#2563eb",icon:""},{label:"Iscritti",value:statsTot.sub,color:"#10b981",icon:""},{label:"Conv. team",value:statsTot.conv+"%",color:convColor(statsTot.conv),icon:""},{label:"BV team",value:statsTot.bv,color:"#f59e0b",icon:""}].map((k,i)=>(
+                {[{label:"Membri",value:downline.length,color:"#8b5cf6",icon:""},{label:"In percorso",value:statsTot.act,color:"#2563eb",icon:""},{label:"Iscritti",value:statsTot.sub,color:"#10b981",icon:""},{label:"Conv. team",value:statsTot.conv+"%",color:convColor(statsTot.conv),icon:""},{label:"BV team",value:statsTot.bv,color:"#f59e0b",icon:""}].map((k,i)=>(
                   <div key={i} style={{background:"#080f1f",border:"1px solid #11203a",borderRadius:14,padding:"16px 18px",position:"relative",overflow:"hidden"}}>
                     <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"linear-gradient(90deg,"+k.color+","+k.color+"44)",borderRadius:"14px 14px 0 0"}}/>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
