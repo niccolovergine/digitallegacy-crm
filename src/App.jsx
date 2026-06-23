@@ -696,9 +696,8 @@ function Sidebar({ view, setView, data, urgenti, onAdd, onExport, auth, onLogout
   ];
   return (
     <aside style={{width:222,minWidth:222,background:"#080f1f",borderRight:"1px solid #11203a",padding:"1.5rem .9rem",display:"flex",flexDirection:"column",gap:4,height:"100vh",overflowY:"auto"}}>
-      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:24,paddingLeft:4}}>
-        <div style={{width:34,height:34,borderRadius:10,background:"linear-gradient(135deg,#2563eb,#0ea5e9)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,boxShadow:"0 0 16px #2563eb50"}}></div>
-        <div style={{fontWeight:900,fontSize:14,color:"#bfdbfe",lineHeight:1.2}}>BE Club<br/>CRM</div>
+      <div style={{marginBottom:24,paddingLeft:4}}>
+        <div style={{fontWeight:900,fontSize:15,color:"#bfdbfe",lineHeight:1.2}}>BE Club CRM</div>
       </div>
 
       {navs.map(item=>(
