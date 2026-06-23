@@ -157,7 +157,12 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
           <Av n={selectedMember.nome||selectedMember.email} c={selectedMember.cognome} color={teamColor} size={50}/>
           <div>
             <h2 style={{fontWeight:900,fontSize:22,color:"#eff6ff"}}>{selectedMember.nome||selectedMember.email} {selectedMember.cognome||""}</h2>
-            <div style={{fontSize:12,color:"#5278a8",marginTop:3}}>{selectedMember.email}</div>
+            {selectedMember.citta&&<div style={{fontSize:12,color:"#5278a8",marginTop:3}}>{selectedMember.citta}</div>}
+            <div style={{display:"flex",gap:12,marginTop:8,flexWrap:"wrap"}}>
+              <a href={"mailto:"+selectedMember.email} style={{color:"#60a5fa",fontSize:12,textDecoration:"none",display:"flex",alignItems:"center",gap:4}}>✉️ {selectedMember.email}</a>
+              {selectedMember.telefono&&<a href={"tel:"+selectedMember.telefono} style={{color:"#60a5fa",fontSize:12,textDecoration:"none",display:"flex",alignItems:"center",gap:4}}>📞 {selectedMember.telefono}</a>}
+              {selectedMember.instagram&&<a href={"https://instagram.com/"+selectedMember.instagram.replace("@","")} target="_blank" rel="noreferrer" style={{color:"#c084fc",fontSize:12,textDecoration:"none",display:"flex",alignItems:"center",gap:4}}>📸 {selectedMember.instagram.startsWith("@")?selectedMember.instagram:"@"+selectedMember.instagram}</a>}
+            </div>
           </div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}}>
@@ -365,9 +370,7 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
                     <tr key={m.id} style={{borderBottom:"1px solid #0d1b3355"}}>
                       <td style={{padding:"12px 16px"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Av n={m.nome||m.email} c={m.cognome} color={teamColor}/><div>
                         <div style={{color:"#eff6ff",fontWeight:700,fontSize:13}}>{m.nome||m.email} {m.cognome||""}</div>
-                        <div style={{color:"#3b5478",fontSize:11}}>{m.email}</div>
-                        {m.telefono&&<a href={"tel:"+m.telefono} style={{color:"#60a5fa",fontSize:11,textDecoration:"none",display:"block"}}>{m.telefono}</a>}
-                        {m.instagram&&<a href={"https://instagram.com/"+m.instagram.replace("@","")} target="_blank" rel="noreferrer" style={{color:"#c084fc",fontSize:11,textDecoration:"none",display:"block"}}>{m.instagram.startsWith("@")?m.instagram:"@"+m.instagram}</a>}
+                        {m.citta&&<div style={{color:"#5278a8",fontSize:11}}>{m.citta}</div>}
                       </div></div></td>
                       <td style={{padding:"12px 16px"}}>
                         {isMyDirect
