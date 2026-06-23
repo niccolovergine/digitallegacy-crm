@@ -82,7 +82,7 @@ const FASI_DASH     = ["FUP1","FUP2","PACK","CLOSING","SUB"];
 const FASI_SPECIALI = ["FOLLOW_UP","NON_INT"];
 const FASI          = [...FASI_FUNNEL, ...FASI_SPECIALI];
 const FONTI         = ["Instagram","TikTok","Offline","Referenza"];
-const FONTE_ICO     = { Instagram:"📸", TikTok:"🎵", Offline:"🤝", Referenza:"👥" };
+const FONTE_ICO     = { Instagram:"", TikTok:"", Offline:"", Referenza:"" };
 
 const FASE_CLR = {
   INVITO:"#8b5cf6", FUP1:"#2563eb", FUP2:"#3b82f6", PACK:"#0ea5e9",
@@ -224,7 +224,7 @@ function Av({ n, c, color, size=34 }) {
   );
 }
 
-// ─── AUTH SCREEN ──────────────────────────────────────────────────────────────
+//  AUTH SCREEN 
 function AuthScreen({ onAuth }) {
   const [mode, setMode]     = useState("login");
   const [email, setEmail]   = useState("");
@@ -303,7 +303,7 @@ function AuthScreen({ onAuth }) {
     <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",background:"#060b18",padding:16}}>
       <div className="pop" style={{width:"100%",maxWidth:400,background:"#080f1f",border:"1px solid #1e3a5f",borderRadius:20,padding:"2.2rem",boxShadow:"0 20px 70px #000000aa"}}>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:28}}>
-          <div style={{width:40,height:40,borderRadius:12,background:"linear-gradient(135deg,#2563eb,#0ea5e9)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,boxShadow:"0 0 20px #2563eb50"}}>◆</div>
+          <div style={{width:40,height:40,borderRadius:12,background:"linear-gradient(135deg,#2563eb,#0ea5e9)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,boxShadow:"0 0 20px #2563eb50"}}></div>
           <div>
             <div style={{fontWeight:900,fontSize:17,color:"#eff6ff",lineHeight:1.1}}>BE Club CRM</div>
             <div style={{fontSize:11,color:"#3b5478",marginTop:2}}>Pipeline {"\u00b7"} Profilazione {"\u00b7"} Team</div>
@@ -344,7 +344,7 @@ function AuthScreen({ onAuth }) {
         {mode==="login" && (
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,cursor:"pointer"}} onClick={()=>setRemember(r=>!r)}>
             <div style={{width:18,height:18,borderRadius:5,border:"1.5px solid "+(remember?"#2563eb":"#1e3a5f"),background:remember?"#2563eb":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .2s"}}>
-              {remember && <span style={{color:"#fff",fontSize:11,fontWeight:900}}>✓</span>}
+              {remember && <span style={{color:"#fff",fontSize:11,fontWeight:900}}></span>}
             </div>
             <span style={{fontSize:12,color:"#5278a8",userSelect:"none"}}>Ricordami su questo dispositivo</span>
           </div>
@@ -365,7 +365,7 @@ function AuthScreen({ onAuth }) {
   );
 }
 
-// ─── APP ──────────────────────────────────────────────────────────────────────
+//  APP 
 export default function App() {
   const [auth, setAuth]           = useState(null);
   const [data, setData]           = useState([]);
@@ -468,7 +468,7 @@ export default function App() {
 
   async function saveForm() {
     if (!form.nome?.trim()) return;
-    if (form.fase === "SUB" && !form.pacchetto) { showToast("Seleziona il pacchetto per un iscritto ❌", "#ef4444"); return; }
+    if (form.fase === "SUB" && !form.pacchetto) { showToast("Seleziona il pacchetto per un iscritto ", "#ef4444"); return; }
     setSaving(true);
     try {
       const conosciutoAt = form.conosciutoAt||today();
@@ -480,7 +480,7 @@ export default function App() {
         const np={...record,id:genId()};
         await sbInsert(auth.token,toDB(np,auth.userId));
         setData(d=>[...d,np]);
-        showToast("Prospect aggiunto ✅");
+        showToast("Prospect aggiunto ");
       } else {
         await sbUpdate(auth.token,record.id,toDB(record,ownerId));
         // aggiorna in data (personali) o dlProspects (team)
@@ -489,7 +489,7 @@ export default function App() {
         } else {
           setDlProspects(d=>d.map(p=>p.id===record.id?{...record,_userId:ownerId,_ownerName:p._ownerName}:p));
         }
-        showToast("Aggiornato ✅");
+        showToast("Aggiornato ");
       }
     } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
     setSaving(false); closeModal();
@@ -523,7 +523,7 @@ export default function App() {
     try {
       await sbUpdate(auth.token,p.id,toDB(upd,auth.userId));
       setData(d=>d.map(x=>x.id===p.id?upd:x)); setSel(upd);
-      showToast(fase==="FOLLOW_UP"?"🔥 Follow Up":fase==="NON_INT"?"❌ Non interessato":"↩ Riattivato",
+      showToast(fase==="FOLLOW_UP"?" Follow Up":fase==="NON_INT"?" Non interessato":"↩ Riattivato",
         fase==="FOLLOW_UP"?"#f59e0b":fase==="NON_INT"?"#6b7280":"#2563eb");
     } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
   }
@@ -562,7 +562,7 @@ export default function App() {
         if (saved) localStorage.setItem("becrm_session", JSON.stringify(updated));
         return updated;
       });
-      showToast("Profilo aggiornato ✅");
+      showToast("Profilo aggiornato ");
       // Se cambia positioned_under ricarica la downline
       if (fields.positioned_under !== undefined) {
         const allProfiles = await sbGetAllProfiles(auth.token);
@@ -585,24 +585,24 @@ export default function App() {
         const filtered = p.filter(x => !(x.upline_id===auth.userId && x.member_id===memberId));
         return [...filtered, { upline_id:auth.userId, member_id:memberId, team }];
       });
-      showToast("Squadra aggiornata ✅");
+      showToast("Squadra aggiornata ");
     } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
   }
 
   async function addDownlineManually(referralCode, positionedUnder, team) {
     try {
       const profiles = await sbGetProfileByRef(auth.token, referralCode.trim().toLowerCase());
-      if (!profiles || profiles.length === 0) { showToast("Nessun account trovato con questo ID ❌","#ef4444"); return false; }
+      if (!profiles || profiles.length === 0) { showToast("Nessun account trovato con questo ID ","#ef4444"); return false; }
       const target = profiles[0];
-      if (target.id === auth.userId) { showToast("Non puoi aggiungere te stesso ❌","#ef4444"); return false; }
-      if (downline.some(m=>m.id===target.id)) { showToast("Questo membro è già nel tuo team ❌","#ef4444"); return false; }
+      if (target.id === auth.userId) { showToast("Non puoi aggiungere te stesso ","#ef4444"); return false; }
+      if (downline.some(m=>m.id===target.id)) { showToast("Questo membro è già nel tuo team ","#ef4444"); return false; }
       const posUnder = positionedUnder || auth.userId;
       await sbPositionMember(auth.token, target.id, posUnder);
       if (team) await sbSetPosition(auth.token, posUnder, target.id, team);
       const updated = { ...target, positioned_under: posUnder };
       setDownline(d=>[...d, updated]);
       if (team) setPositions(p=>[...p, { upline_id:posUnder, member_id:target.id, team }]);
-      showToast((target.nome||target.email)+" aggiunto al team ✅");
+      showToast((target.nome||target.email)+" aggiunto al team ");
       return true;
     } catch(e) { showToast("Errore: "+e.message,"#ef4444"); return false; }
   }
@@ -615,7 +615,7 @@ export default function App() {
       a.href=u; a.download="becrm_backup_"+today()+".json";
       document.body.appendChild(a); a.click();
       setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(u);},800);
-      showToast("Backup esportato ✅");
+      showToast("Backup esportato ");
     } catch(e) { showToast("Errore export","#ef4444"); }
   }
 
@@ -685,19 +685,19 @@ export default function App() {
   );
 }
 
-// ─── SIDEBAR ──────────────────────────────────────────────────────────────────
+//  SIDEBAR 
 function Sidebar({ view, setView, data, urgenti, onAdd, onExport, auth, onLogout, downlineCount }) {
   const navs = [
-    { id:"dash",    icon:"▦", label:"Dashboard" },
-    { id:"lista",   icon:"☰", label:"Prospect", badge:data.length },
-    { id:"stats",   icon:"◪", label:"Statistiche" },
-    { id:"team",    icon:"◈", label:"Team", badge:downlineCount||0 },
-    { id:"profilo", icon:"◉", label:"Profilo" },
+    { id:"dash",    icon:"", label:"Dashboard" },
+    { id:"lista",   icon:"", label:"Prospect", badge:data.length },
+    { id:"stats",   icon:"", label:"Statistiche" },
+    { id:"team",    icon:"", label:"Team", badge:downlineCount||0 },
+    { id:"profilo", icon:"", label:"Profilo" },
   ];
   return (
     <aside style={{width:222,minWidth:222,background:"#080f1f",borderRight:"1px solid #11203a",padding:"1.5rem .9rem",display:"flex",flexDirection:"column",gap:4,height:"100vh",overflowY:"auto"}}>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:24,paddingLeft:4}}>
-        <div style={{width:34,height:34,borderRadius:10,background:"linear-gradient(135deg,#2563eb,#0ea5e9)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,boxShadow:"0 0 16px #2563eb50"}}>◆</div>
+        <div style={{width:34,height:34,borderRadius:10,background:"linear-gradient(135deg,#2563eb,#0ea5e9)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,boxShadow:"0 0 16px #2563eb50"}}></div>
         <div style={{fontWeight:900,fontSize:14,color:"#bfdbfe",lineHeight:1.2}}>BE Club<br/>CRM</div>
       </div>
 
@@ -715,13 +715,13 @@ function Sidebar({ view, setView, data, urgenti, onAdd, onExport, auth, onLogout
 
       {urgenti.length>0 && (
         <div className="pulse" style={{marginTop:8,background:"#ef444412",border:"1px solid #ef444435",borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",gap:8,color:"#f87171",fontSize:12,fontWeight:700}}>
-          🔔 {urgenti.length} urgent{urgenti.length===1?"e":"i"}
+           {urgenti.length} urgent{urgenti.length===1?"e":"i"}
         </div>
       )}
 
       <div style={{borderTop:"1px solid #11203a",paddingTop:14,marginTop:16,display:"flex",flexDirection:"column",gap:7}}>
         <div style={{fontSize:10,fontWeight:800,color:"#2a4060",textTransform:"uppercase",letterSpacing:1.2,marginBottom:2}}>Backup</div>
-        <button onClick={onExport} style={{padding:"8px 10px",background:"#0d1b33",color:"#60a5fa",border:"1px solid #1e3a5f",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:12,textAlign:"left"}}>⬇ Esporta JSON</button>
+        <button onClick={onExport} style={{padding:"8px 10px",background:"#0d1b33",color:"#60a5fa",border:"1px solid #1e3a5f",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:12,textAlign:"left"}}> Esporta JSON</button>
       </div>
 
       <div style={{marginTop:14,borderTop:"1px solid #11203a",paddingTop:14}}>
@@ -747,15 +747,15 @@ function Sidebar({ view, setView, data, urgenti, onAdd, onExport, auth, onLogout
   );
 }
 
-// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+//  DASHBOARD 
 function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, funnelCounts, funnelMax, urgenti, dashCiclo, setDashCiclo, onOpen, dashMode, setDashMode, hasTeam }) {
   const cc = v => v>=20?"#10b981":v>=10?"#0ea5e9":"#f59e0b";
   const bvCiclo = cdSub.reduce((acc,p)=>acc+bvOfPacchetto(p.pacchetto),0);
   const kpis = [
-    {label:"In percorso",value:cdAct.length,icon:"📊",color:"#2563eb",sub:cd.length+" totali nel ciclo",detail:"FUP1 → Closing"},
-    {label:"Conv. ciclo",value:cdConv+"%",icon:"🎯",color:cc(cdConv),sub:cdSub.length+" iscritti / "+cd.length,detail:cdConv>=20?"Ottimo 🔥":cdConv>=10?"Nella media":"Da migliorare"},
-    {label:"Iscritti ciclo",value:cdSub.length,icon:"✅",color:"#10b981",sub:"su "+cd.length+" conosciuti",detail:"questo ciclo"},
-    {label:"BV ciclo",value:bvCiclo,icon:"🏆",color:"#f59e0b",sub:"da "+cdSub.length+" iscritti",detail:"Business Volume"},
+    {label:"In percorso",value:cdAct.length,icon:"",color:"#2563eb",sub:cd.length+" totali nel ciclo",detail:"FUP1 → Closing"},
+    {label:"Conv. ciclo",value:cdConv+"%",icon:"",color:cc(cdConv),sub:cdSub.length+" iscritti / "+cd.length,detail:cdConv>=20?"Ottimo ":cdConv>=10?"Nella media":"Da migliorare"},
+    {label:"Iscritti ciclo",value:cdSub.length,icon:"",color:"#10b981",sub:"su "+cd.length+" conosciuti",detail:"questo ciclo"},
+    {label:"BV ciclo",value:bvCiclo,icon:"",color:"#f59e0b",sub:"da "+cdSub.length+" iscritti",detail:"Business Volume"},
   ];
   return (
     <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
@@ -772,7 +772,7 @@ function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, f
               {["personale","team"].map(m=>(
                 <button key={m} onClick={()=>setDashMode(m)} className="tabbtn"
                   style={{background:dashMode===m?"#0d1b33":"transparent",color:dashMode===m?"#7dd3fc":"#5278a8",boxShadow:dashMode===m?"inset 0 0 0 1px #2563eb40":"none",fontSize:11,padding:"6px 14px"}}>
-                  {m==="personale"?"👤 Personale":"◈ Team"}
+                  {m==="personale"?" Personale":" Team"}
                 </button>
               ))}
             </div>
@@ -837,7 +837,7 @@ function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, f
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
             {cdFU.length>0&&(
               <div style={{background:"#080f1f",border:"1px solid #f59e0b28",borderRadius:14,padding:"1.2rem",flex:1}}>
-                <div style={{fontSize:10,fontWeight:700,color:"#fbbf24",textTransform:"uppercase",letterSpacing:1.2,marginBottom:12}}>🔥 Da ricontattare</div>
+                <div style={{fontSize:10,fontWeight:700,color:"#fbbf24",textTransform:"uppercase",letterSpacing:1.2,marginBottom:12}}> Da ricontattare</div>
                 <div style={{display:"flex",flexDirection:"column",gap:7,maxHeight:170,overflowY:"auto"}}>
                   {cdFU.map(p=>(
                     <div key={p.id} className="hrow" onClick={()=>onOpen(p)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"#f59e0b09",border:"1px solid #f59e0b1e",borderRadius:9,padding:"8px 11px",cursor:"pointer"}}>
@@ -853,7 +853,7 @@ function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, f
             )}
             {urgenti.length>0&&(
               <div style={{background:"#080f1f",border:"1px solid #ef444422",borderRadius:14,padding:"1.2rem",flex:1}}>
-                <div style={{fontSize:10,fontWeight:700,color:"#f87171",textTransform:"uppercase",letterSpacing:1.2,marginBottom:12}}>🔔 Follow-up urgenti</div>
+                <div style={{fontSize:10,fontWeight:700,color:"#f87171",textTransform:"uppercase",letterSpacing:1.2,marginBottom:12}}> Follow-up urgenti</div>
                 <div style={{display:"flex",flexDirection:"column",gap:7,maxHeight:200,overflowY:"auto"}}>
                   {urgenti.map(p=>(
                     <div key={p.id} className="hrow" onClick={()=>onOpen(p)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"#ef44440b",border:"1px solid #ef44441e",borderRadius:9,padding:"8px 11px",cursor:"pointer"}}>
@@ -861,7 +861,7 @@ function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, f
                         <Av n={p.nome} c={p.cognome} color={FASE_CLR[p.fase]} />
                         <div>
                           <div style={{fontWeight:700,color:"#eff6ff",fontSize:12}}>{p.nome} {p.cognome}</div>
-                          <div style={{fontSize:10,color:isOver(p.followUp)?"#f87171":"#fbbf24",marginTop:1,fontWeight:600}}>{isOver(p.followUp)?"⚠️ Scaduto":"📅 Oggi"}</div>
+                          <div style={{fontSize:10,color:isOver(p.followUp)?"#f87171":"#fbbf24",marginTop:1,fontWeight:600}}>{isOver(p.followUp)?" Scaduto":" Oggi"}</div>
                         </div>
                       </div>
                       <span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"2px 8px",fontSize:10,fontWeight:700,color:"#fff",background:FASE_CLR[p.fase]}}>{FASE_LABEL[p.fase]}</span>
@@ -877,7 +877,7 @@ function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, f
   );
 }
 
-// ─── STATISTICHE ──────────────────────────────────────────────────────────────
+//  STATISTICHE 
 function Statistiche({ data, dlProspects }) {
   const [linePhase, setLinePhase] = useState("FUP1");
   const [barCiclo,  setBarCiclo]  = useState("ALL");
@@ -893,7 +893,7 @@ function Statistiche({ data, dlProspects }) {
   const tableRows=[...cicli].sort((a,b)=>b-a).map(c=>{const r={c};FASI_FUNNEL.forEach(f=>{r[f]=activeData.filter(p=>reachedInCiclo(p,f,c)).length;});r.conv=r.INVITO>0?Math.round(r.SUB/r.INVITO*100):r.FUP1>0?Math.round(r.SUB/r.FUP1*100):0;return r;});
   const ts={background:"#0a1426",border:"1px solid #1e3a5f",borderRadius:8,color:"#dbeafe",fontSize:12};
   const tProps={contentStyle:ts,itemStyle:{color:"#dbeafe"},labelStyle:{color:"#94b5d8",fontWeight:700}};
-  if (!activeData.length) return <div style={{padding:"2rem 2.2rem"}}><h1 style={{fontWeight:900,fontSize:26,color:"#eff6ff",marginBottom:8}}>Statistiche</h1><div style={{textAlign:"center",padding:"5rem",color:"#1e3a5f"}}><div style={{fontSize:44,marginBottom:12}}>◪</div><p>Aggiungi prospect per vedere le statistiche</p></div></div>;
+  if (!activeData.length) return <div style={{padding:"2rem 2.2rem"}}><h1 style={{fontWeight:900,fontSize:26,color:"#eff6ff",marginBottom:8}}>Statistiche</h1><div style={{textAlign:"center",padding:"5rem",color:"#1e3a5f"}}><div style={{fontSize:44,marginBottom:12}}></div><p>Aggiungi prospect per vedere le statistiche</p></div></div>;
   return (
     <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
       <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:24,gap:12,flexWrap:"wrap"}}>
@@ -906,7 +906,7 @@ function Statistiche({ data, dlProspects }) {
             {["personale","team"].map(m=>(
               <button key={m} onClick={()=>setStatsMode(m)} className="tabbtn"
                 style={{background:statsMode===m?"#0d1b33":"transparent",color:statsMode===m?"#7dd3fc":"#5278a8",boxShadow:statsMode===m?"inset 0 0 0 1px #2563eb40":"none",fontSize:11,padding:"6px 14px"}}>
-                {m==="personale"?"👤 Personale":"◈ Team"}
+                {m==="personale"?" Personale":" Team"}
               </button>
             ))}
           </div>
@@ -914,28 +914,28 @@ function Statistiche({ data, dlProspects }) {
       </div>
       <div style={{background:"#080f1f",border:"1px solid #11203a",borderRadius:14,padding:"1.4rem",marginBottom:16}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:10}}>
-          <div><div style={{fontSize:13,fontWeight:800,color:"#eff6ff"}}>📈 Andamento nei cicli</div><div style={{fontSize:11,color:"#3b5478",marginTop:2}}>Quanti ne fai per ciclo</div></div>
+          <div><div style={{fontSize:13,fontWeight:800,color:"#eff6ff"}}> Andamento nei cicli</div><div style={{fontSize:11,color:"#3b5478",marginTop:2}}>Quanti ne fai per ciclo</div></div>
           <select value={linePhase} onChange={e=>setLinePhase(e.target.value)} style={{width:"auto",minWidth:160}}><option value="ALL">Tutte le fasi</option>{FASI_FUNNEL.map(f=><option key={f} value={f}>{FASE_LABEL[f]}</option>)}</select>
         </div>
         <div style={{height:300}}><ResponsiveContainer width="100%" height="100%"><LineChart data={lineData} margin={{top:5,right:10,left:-15,bottom:5}}><CartesianGrid strokeDasharray="3 3" stroke="#11203a"/><XAxis dataKey="ciclo" stroke="#3b5478" fontSize={12}/><YAxis stroke="#3b5478" fontSize={12} allowDecimals={false}/><Tooltip {...tProps} cursor={{stroke:"#1e3a5f"}}/>{linePhase==="ALL"?FASI_FUNNEL.map(f=><Line key={f} type="monotone" dataKey={f} name={FASE_LABEL[f]} stroke={FASE_CLR[f]} strokeWidth={2} dot={{r:3}}/>):<Line type="monotone" dataKey={linePhase} name={FASE_LABEL[linePhase]} stroke={FASE_CLR[linePhase]} strokeWidth={3} dot={{r:4}} activeDot={{r:6}}/>}{linePhase==="ALL"&&<Legend wrapperStyle={{fontSize:11}}/>}</LineChart></ResponsiveContainer></div>
       </div>
       <div style={{background:"#080f1f",border:"1px solid #11203a",borderRadius:14,padding:"1.4rem",marginBottom:16}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:10}}>
-          <div><div style={{fontSize:13,fontWeight:800,color:"#eff6ff"}}>📊 Conversione del percorso</div></div>
+          <div><div style={{fontSize:13,fontWeight:800,color:"#eff6ff"}}> Conversione del percorso</div></div>
           <select value={barCiclo} onChange={e=>setBarCiclo(e.target.value)} style={{width:"auto",minWidth:160}}><option value="ALL">Tutti i cicli</option>{[...cicli].sort((a,b)=>b-a).map(c=><option key={c} value={c}>Ciclo {c}</option>)}</select>
         </div>
         <div style={{height:300}}><ResponsiveContainer width="100%" height="100%"><BarChart data={barData} margin={{top:5,right:10,left:-15,bottom:5}}><CartesianGrid strokeDasharray="3 3" stroke="#11203a" vertical={false}/><XAxis dataKey="fase" stroke="#3b5478" fontSize={12}/><YAxis stroke="#3b5478" fontSize={12} allowDecimals={false}/><Tooltip {...tProps} cursor={{fill:"#0d1b3360"}}/><Bar dataKey="count" name="Raggiunti" radius={[6,6,0,0]}>{barData.map((e,i)=><Cell key={i} fill={e.fill}/>)}</Bar></BarChart></ResponsiveContainer></div>
         <div style={{display:"flex",gap:8,marginTop:14,flexWrap:"wrap"}}>{barData.slice(0,-1).map((b,i)=>{const next=barData[i+1];const rate=b.count>0?Math.round(next.count/b.count*100):0;return(<div key={i} style={{flex:"1 1 120px",background:"#0a1426",border:"1px solid #11203a",borderRadius:9,padding:"9px 11px"}}><div style={{fontSize:10,color:"#3b5478",fontWeight:600}}>{b.fase} → {next.fase}</div><div style={{fontSize:18,fontWeight:900,color:next.fill,marginTop:2}}>{rate}%</div></div>);})}</div>
       </div>
       <div style={{background:"#080f1f",border:"1px solid #11203a",borderRadius:14,overflow:"hidden"}}>
-        <div style={{padding:"1.1rem 1.4rem",borderBottom:"1px solid #11203a"}}><div style={{fontSize:13,fontWeight:800,color:"#eff6ff"}}>📋 Cicli a confronto</div></div>
+        <div style={{padding:"1.1rem 1.4rem",borderBottom:"1px solid #11203a"}}><div style={{fontSize:13,fontWeight:800,color:"#eff6ff"}}> Cicli a confronto</div></div>
         <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",minWidth:600}}><thead><tr style={{borderBottom:"1px solid #11203a"}}><th style={{textAlign:"left",color:"#3b5478",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>Ciclo</th>{FASI_FUNNEL.map(f=><th key={f} style={{textAlign:"center",color:FASE_CLR[f],fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 10px"}}>{FASE_LABEL[f]}</th>)}<th style={{textAlign:"center",color:"#3b5478",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>Conv%</th></tr></thead><tbody>{tableRows.map(r=>(<tr key={r.c} className="hrow" style={{borderBottom:"1px solid #0d1b3355"}}><td style={{padding:"11px 16px"}}><span style={{background:r.c===CICLO_CORRENTE?"#2563eb22":"#11203a",color:r.c===CICLO_CORRENTE?"#60a5fa":"#5278a8",borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:700}}>C{r.c}</span></td>{FASI_FUNNEL.map(f=><td key={f} style={{textAlign:"center",padding:"11px 10px",fontWeight:700,fontSize:13,color:r[f]>0?"#eff6ff":"#2a4060"}}>{r[f]}</td>)}<td style={{textAlign:"center",padding:"11px 16px",fontWeight:800,fontSize:13,color:r.conv>=20?"#10b981":r.conv>=10?"#0ea5e9":"#f59e0b"}}>{r.conv}%</td></tr>))}</tbody></table></div>
       </div>
     </div>
   );
 }
 
-// ─── LISTA ────────────────────────────────────────────────────────────────────
+//  LISTA 
 function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, setFFonte, fCiclo, setFCiclo, onOpen, onAdd, listaMode, setListaMode, hasTeam }) {
   return (
     <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
@@ -950,7 +950,7 @@ function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, s
               {["personale","team"].map(m=>(
                 <button key={m} onClick={()=>setListaMode(m)}
                   style={{padding:"6px 14px",borderRadius:8,border:"none",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"inherit",background:listaMode===m?"#0d1b33":"transparent",color:listaMode===m?"#7dd3fc":"#5278a8",boxShadow:listaMode===m?"inset 0 0 0 1px #2563eb40":"none"}}>
-                  {m==="personale"?"👤 Personale":"◈ Team"}
+                  {m==="personale"?" Personale":" Team"}
                 </button>
               ))}
             </div>
@@ -969,7 +969,7 @@ function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, s
         <select value={fCiclo} onChange={e=>setFCiclo(e.target.value)} style={{flex:1,minWidth:140}}><option value="">Tutti i cicli</option>{CICLO_NUMS.map(c=><option key={c} value={c}>Ciclo {c}</option>)}</select>
       </div>
       {prospects.length===0
-        ?<div style={{textAlign:"center",padding:"4rem",color:"#1e3a5f"}}><div style={{fontSize:44,marginBottom:12}}>◆</div><p style={{fontSize:14,marginBottom:14}}>Nessun prospect trovato</p><button onClick={onAdd} style={{padding:"9px 20px",fontSize:13,fontWeight:800,background:"linear-gradient(135deg,#2563eb,#0ea5e9)",color:"#fff",border:"none",borderRadius:10,cursor:"pointer"}}>Aggiungi il primo</button></div>
+        ?<div style={{textAlign:"center",padding:"4rem",color:"#1e3a5f"}}><div style={{fontSize:44,marginBottom:12}}></div><p style={{fontSize:14,marginBottom:14}}>Nessun prospect trovato</p><button onClick={onAdd} style={{padding:"9px 20px",fontSize:13,fontWeight:800,background:"linear-gradient(135deg,#2563eb,#0ea5e9)",color:"#fff",border:"none",borderRadius:10,cursor:"pointer"}}>Aggiungi il primo</button></div>
         :<div style={{background:"#080f1f",border:"1px solid #11203a",borderRadius:14,overflow:"hidden"}}>
           <table style={{width:"100%",borderCollapse:"collapse"}}>
             <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Prospect",...(listaMode==="team"?["Di"]:[]),"Ciclo","Conosciuto","Fonte","Fase","Checklist","Profilo","Pers.",""].map(h=>(<th key={h} style={{textAlign:"left",color:"#3b5478",fontWeight:700,fontSize:10,textTransform:"uppercase",letterSpacing:.8,padding:"12px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
@@ -995,7 +995,7 @@ function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, s
                       })}
                     </div>
                   </td>
-                  <td style={{padding:"12px 16px"}}>{badge.compilati===0?<span style={{color:"#2a4060",fontSize:11}}>\u2014</span>:<span style={{display:"inline-flex",alignItems:"center",gap:4,borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:800,color:bc,background:bc+"18",border:"1px solid "+bc+"30"}}>🎯 {badge.positivi}/{PROFILO_TOTAL}</span>}</td>
+                  <td style={{padding:"12px 16px"}}>{badge.compilati===0?<span style={{color:"#2a4060",fontSize:11}}>\u2014</span>:<span style={{display:"inline-flex",alignItems:"center",gap:4,borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:800,color:bc,background:bc+"18",border:"1px solid "+bc+"30"}}> {badge.positivi}/{PROFILO_TOTAL}</span>}</td>
                   <td style={{padding:"12px 16px"}}>{jung?<span title={jung.sub} style={{display:"inline-flex",alignItems:"center",gap:6,borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:800,color:jung.border,background:jung.border+"18",border:"1px solid "+jung.border+"35"}}><span style={{width:8,height:8,borderRadius:"50%",background:jung.border,flexShrink:0,boxShadow:"0 0 6px "+jung.border}}/>{jung.label}</span>:<span style={{color:"#2a4060",fontSize:11}}>\u2014</span>}</td>
                   <td style={{padding:"12px 16px",color:"#1e3a5f",fontSize:16}}>{"\u203a"}</td>
                 </tr>
@@ -1008,7 +1008,7 @@ function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, s
   );
 }
 
-// ─── FORM MODAL ───────────────────────────────────────────────────────────────
+//  FORM MODAL 
 function FormModal({ form, setForm, onSave, onClose, onDelete, isEdit }) {
   const set=(k,v)=>setForm(f=>({...f,[k]:v}));
   const lbl={fontSize:11,fontWeight:700,color:"#3b5478",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"};
@@ -1018,8 +1018,8 @@ function FormModal({ form, setForm, onSave, onClose, onDelete, isEdit }) {
   return (
     <div style={{background:"#080f1f",border:"1px solid #1e3a5f",borderRadius:16,padding:"1.6rem",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 20px 70px #000000aa"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-        <h2 style={{fontWeight:900,fontSize:17,color:"#eff6ff"}}>{isEdit?"✏️ Modifica":"+ Nuovo Prospect"}</h2>
-        <button onClick={onClose} style={{background:"#0d1b33",color:"#7da8d8",border:"1px solid #1e3a5f",borderRadius:8,cursor:"pointer",padding:"4px 10px",fontSize:14}}>✕</button>
+        <h2 style={{fontWeight:900,fontSize:17,color:"#eff6ff"}}>{isEdit?" Modifica":"+ Nuovo Prospect"}</h2>
+        <button onClick={onClose} style={{background:"#0d1b33",color:"#7da8d8",border:"1px solid #1e3a5f",borderRadius:8,cursor:"pointer",padding:"4px 10px",fontSize:14}}></button>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
         <div><label style={lbl}>Nome *</label><input value={form.nome||""} onChange={e=>set("nome",e.target.value)} placeholder="Nome" /></div>
@@ -1041,7 +1041,7 @@ function FormModal({ form, setForm, onSave, onClose, onDelete, isEdit }) {
             </select>
             {form.pacchetto && (
               <div style={{marginTop:8,background:"#10b98115",border:"1px solid #10b98130",borderRadius:9,padding:"8px 12px",fontSize:12,color:"#10b981",fontWeight:700}}>
-                🏆 {bvOfPacchetto(form.pacchetto)} BV prodotti
+                 {bvOfPacchetto(form.pacchetto)} BV prodotti
               </div>
             )}
           </div>
@@ -1057,7 +1057,7 @@ function FormModal({ form, setForm, onSave, onClose, onDelete, isEdit }) {
   );
 }
 
-// ─── PROFILAZIONE ─────────────────────────────────────────────────────────────
+//  PROFILAZIONE 
 function ProfilazioneTab({ p, onUpdateProfilo }) {
   const pr=p.profilazione||{pleasures:{},forza:{}};
   function toggle(section,key){const current=pr[section]?.[key]??null;const next=nextToggle(current);onUpdateProfilo({pleasures:{...pr.pleasures},forza:{...pr.forza},[section]:{...(pr[section]||{}),[key]:next}});}
@@ -1102,16 +1102,16 @@ function ProfilazioneTab({ p, onUpdateProfilo }) {
   return(
     <div>
       <div style={{background:"#0a1426",borderRadius:10,padding:"12px 14px",marginBottom:16,border:"1px solid #11203a"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><span style={{fontSize:11,fontWeight:700,color:"#3b5478",textTransform:"uppercase",letterSpacing:.8}}>Score profilazione</span><span style={{fontWeight:900,fontSize:16,color:bc}}>🎯 {badge.positivi}/{PROFILO_TOTAL}</span></div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><span style={{fontSize:11,fontWeight:700,color:"#3b5478",textTransform:"uppercase",letterSpacing:.8}}>Score profilazione</span><span style={{fontWeight:900,fontSize:16,color:bc}}> {badge.positivi}/{PROFILO_TOTAL}</span></div>
         <div style={{height:6,background:"#0d1b33",borderRadius:99,overflow:"hidden"}}><div style={{height:"100%",width:pct+"%",background:"linear-gradient(90deg,"+bc+"88,"+bc+")",borderRadius:99,transition:"width .4s ease",boxShadow:"0 0 8px "+bc+"50"}}/></div>
         <div style={{display:"flex",justifyContent:"space-between",marginTop:5}}><span style={{fontSize:10,color:"#3b5478"}}>{badge.compilati}/{PROFILO_TOTAL} compilati</span><span style={{fontSize:10,color:bc,fontWeight:700}}>{pct}% positivi</span></div>
       </div>
-      <ToggleGroup title="Pleasures — Cosa lo motiva" icon="✨" fields={PLEASURES} section="pleasures"/>
-      <ToggleGroup title="Punti di Forza — Cosa ha gia" icon="💪" fields={FORZA} section="forza"/>
+      <ToggleGroup title="Pleasures — Cosa lo motiva" icon="" fields={PLEASURES} section="pleasures"/>
+      <ToggleGroup title="Punti di Forza — Cosa ha gia" icon="" fields={FORZA} section="forza"/>
       <div style={{marginBottom:4}}>
-        <div style={{fontSize:10,fontWeight:800,color:"#3b5478",textTransform:"uppercase",letterSpacing:1.2,marginBottom:10,display:"flex",alignItems:"center",gap:6}}><span>🎨</span>Personalita — Colori Jung</div>
+        <div style={{fontSize:10,fontWeight:800,color:"#3b5478",textTransform:"uppercase",letterSpacing:1.2,marginBottom:10,display:"flex",alignItems:"center",gap:6}}><span></span>Personalita — Colori Jung</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:10}}>
-          {JUNG.map(j=>{const active=sj===j.key;return(<button key={j.key} onClick={()=>selectJung(j.key)} style={{background:active?j.bg:"#0a1426",border:"2px solid "+(active?j.border:"#1e3a5f"),borderRadius:12,padding:"14px 14px 12px",cursor:"pointer",textAlign:"left",transition:"all .2s",boxShadow:active?"0 0 18px "+j.glow:"none",position:"relative",overflow:"hidden"}}>{active&&<div style={{position:"absolute",top:8,right:10,width:18,height:18,borderRadius:"50%",background:"#ffffff33",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:900,color:"#fff"}}>✓</div>}<div style={{fontWeight:900,fontSize:14,color:active?"#fff":j.border,marginBottom:3}}>{j.label}</div><div style={{fontSize:10,fontWeight:700,color:active?"rgba(255,255,255,.85)":"#5278a8",marginBottom:5}}>{j.sub}</div><div style={{fontSize:10,color:active?"rgba(255,255,255,.65)":"#3b5478",lineHeight:1.45}}>{j.desc}</div></button>);})}
+          {JUNG.map(j=>{const active=sj===j.key;return(<button key={j.key} onClick={()=>selectJung(j.key)} style={{background:active?j.bg:"#0a1426",border:"2px solid "+(active?j.border:"#1e3a5f"),borderRadius:12,padding:"14px 14px 12px",cursor:"pointer",textAlign:"left",transition:"all .2s",boxShadow:active?"0 0 18px "+j.glow:"none",position:"relative",overflow:"hidden"}}>{active&&<div style={{position:"absolute",top:8,right:10,width:18,height:18,borderRadius:"50%",background:"#ffffff33",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:900,color:"#fff"}}></div>}<div style={{fontWeight:900,fontSize:14,color:active?"#fff":j.border,marginBottom:3}}>{j.label}</div><div style={{fontSize:10,fontWeight:700,color:active?"rgba(255,255,255,.85)":"#5278a8",marginBottom:5}}>{j.sub}</div><div style={{fontSize:10,color:active?"rgba(255,255,255,.65)":"#3b5478",lineHeight:1.45}}>{j.desc}</div></button>);})}
         </div>
         {jd&&<div style={{background:jd.border+"15",border:"1px solid "+jd.border+"35",borderRadius:10,padding:"10px 13px",display:"flex",alignItems:"center",gap:10}}><div style={{width:10,height:10,borderRadius:"50%",background:jd.border,flexShrink:0,boxShadow:"0 0 8px "+jd.border}}/><div><span style={{fontSize:11,fontWeight:800,color:jd.border}}>{jd.label}</span><span style={{fontSize:11,color:"#5278a8",marginLeft:6}}>{"\u00b7"} {jd.sub}</span></div></div>}
         {!sj&&<div style={{background:"#0a1426",borderRadius:9,padding:"9px 12px",border:"1px dashed #1e3a5f",textAlign:"center"}}><span style={{fontSize:11,color:"#2a4060"}}>Nessun colore selezionato</span></div>}
@@ -1121,7 +1121,7 @@ function ProfilazioneTab({ p, onUpdateProfilo }) {
   );
 }
 
-// ─── DETAIL MODAL ─────────────────────────────────────────────────────────────
+//  DETAIL MODAL 
 function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onRiattiva, onClose, onUpdateProfilo, onUpdateChecklist }) {
   const [activeTab,setActiveTab]=useState("dettagli");
   const clr=FASE_CLR[p.fase];const ci=FASI_FUNNEL.indexOf(p.fase);const isSpeciale=FASI_SPECIALI.includes(p.fase);
@@ -1141,15 +1141,15 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onRiattiva, o
             <div style={{display:"flex",gap:6,marginTop:7,flexWrap:"wrap"}}>
               <span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"2px 9px",fontSize:11,fontWeight:700,color:"#fff",background:clr,boxShadow:"0 0 10px "+clr+"45"}}>{FASE_LABEL[p.fase]}</span>
               {ciclo&&<span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"2px 9px",fontSize:11,fontWeight:700,color:"#fff",background:ciclo===CICLO_CORRENTE?"#2563eb":"#1e3a5f"}}>Ciclo {ciclo}</span>}
-              {badge.compilati>0&&<span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"2px 9px",fontSize:11,fontWeight:700,color:"#10b981",background:"#10b98118",border:"1px solid #10b98130"}}>🎯 {badge.positivi}/{PROFILO_TOTAL}</span>}
-              {p._ownerName&&<span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"2px 9px",fontSize:11,fontWeight:700,color:"#8b5cf6",background:"#8b5cf618",border:"1px solid #8b5cf630"}}>👤 {p._ownerName.trim()}</span>}
+              {badge.compilati>0&&<span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"2px 9px",fontSize:11,fontWeight:700,color:"#10b981",background:"#10b98118",border:"1px solid #10b98130"}}> {badge.positivi}/{PROFILO_TOTAL}</span>}
+              {p._ownerName&&<span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"2px 9px",fontSize:11,fontWeight:700,color:"#8b5cf6",background:"#8b5cf618",border:"1px solid #8b5cf630"}}> {p._ownerName.trim()}</span>}
             </div>
           </div>
         </div>
-        <button onClick={onClose} style={{background:"#0d1b33",color:"#7da8d8",border:"1px solid #1e3a5f",borderRadius:8,cursor:"pointer",padding:"4px 10px",fontSize:14}}>✕</button>
+        <button onClick={onClose} style={{background:"#0d1b33",color:"#7da8d8",border:"1px solid #1e3a5f",borderRadius:8,cursor:"pointer",padding:"4px 10px",fontSize:14}}></button>
       </div>
       <div style={{display:"flex",gap:6,marginBottom:16,background:"#0a1426",padding:4,borderRadius:10,border:"1px solid #11203a"}}>
-        {[{id:"dettagli",label:"📋 Dettagli"},{id:"profilazione",label:"🎯 Profilazione"}].map(t=>(
+        {[{id:"dettagli",label:" Dettagli"},{id:"profilazione",label:" Profilazione"}].map(t=>(
           <button key={t.id} className="tabbtn" onClick={()=>setActiveTab(t.id)} style={{flex:1,background:activeTab===t.id?"#0d1b33":"transparent",color:activeTab===t.id?"#7dd3fc":"#5278a8",boxShadow:activeTab===t.id?"inset 0 0 0 1px #2563eb40":"none"}}>{t.label}</button>
         ))}
       </div>
@@ -1169,13 +1169,13 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onRiattiva, o
             {[{l:"Fase ora",v:FASE_LABEL[p.fase],color:clr},{l:"Ciclo conoscenza",v:ciclo?"Ciclo "+ciclo:"\u2014",color:ciclo===CICLO_CORRENTE?"#2563eb":undefined},{l:"Conosciuto il",v:fmt(p.conosciutoAt)},{l:"Follow-up",v:p.followUp?(od?"\u26a0\ufe0f Scaduto \u00b7 ":dt?"\ud83d\udcc5 Oggi \u00b7 ":"\u2705 ")+fmt(p.followUp):"Non impostato",color:od?"#f87171":dt?"#fbbf24":undefined}].map(({l,v,color:col})=>(<div key={l} style={box}><div style={lbl}>{l}</div><div style={{color:col||"#eff6ff",fontWeight:700,fontSize:13}}>{v}</div></div>))}
             {p.telefono&&(
               <div style={box}>
-                <div style={lbl}>📞 Telefono</div>
+                <div style={lbl}> Telefono</div>
                 <a href={"tel:"+p.telefono} style={{color:"#60a5fa",fontWeight:700,fontSize:13,textDecoration:"none"}}>{p.telefono}</a>
               </div>
             )}
             {p.instagram&&(
               <div style={box}>
-                <div style={lbl}>📸 Instagram</div>
+                <div style={lbl}> Instagram</div>
                 <a href={"https://instagram.com/"+p.instagram.replace("@","")} target="_blank" rel="noreferrer" style={{color:"#c084fc",fontWeight:700,fontSize:13,textDecoration:"none"}}>{p.instagram.startsWith("@")?p.instagram:"@"+p.instagram}</a>
               </div>
             )}
@@ -1184,13 +1184,13 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onRiattiva, o
                 <div style={lbl}>Pacchetto</div>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                   <span style={{color:"#10b981",fontWeight:800,fontSize:13}}>{p.pacchetto?PACCHETTI.find(x=>x.key===p.pacchetto)?.label||"\u2014":"Non impostato"}</span>
-                  {p.pacchetto&&<span style={{fontWeight:900,fontSize:16,color:"#10b981"}}>🏆 {bvOfPacchetto(p.pacchetto)} BV</span>}
+                  {p.pacchetto&&<span style={{fontWeight:900,fontSize:16,color:"#10b981"}}> {bvOfPacchetto(p.pacchetto)} BV</span>}
                 </div>
               </div>
             )}
           </div>
-          {storico.length>0&&(<div style={{...box,marginBottom:9}}><div style={lbl}>🛤️ Storico percorso</div><div style={{display:"flex",flexDirection:"column",gap:6,marginTop:8}}>{storico.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:9}}><span style={{width:8,height:8,borderRadius:99,background:FASE_CLR[s.fase],flexShrink:0,boxShadow:"0 0 6px "+FASE_CLR[s.fase]+"70"}}/><span style={{fontSize:12.5,fontWeight:700,color:"#eff6ff",minWidth:64}}>{FASE_LABEL[s.fase]}</span><span style={{fontSize:11,color:"#5278a8"}}>{fmt(s.data)}</span><span style={{fontSize:10,color:"#3b5478",marginLeft:"auto"}}>Ciclo {cicloOfDate(s.data)||"\u2014"}</span></div>))}</div></div>)}
-          {p.note&&<div style={{...box,marginBottom:9}}><div style={lbl}>📝 Note</div><p style={{color:"#94b5d8",lineHeight:1.6,fontSize:13,marginTop:4}}>{p.note}</p></div>}
+          {storico.length>0&&(<div style={{...box,marginBottom:9}}><div style={lbl}> Storico percorso</div><div style={{display:"flex",flexDirection:"column",gap:6,marginTop:8}}>{storico.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:9}}><span style={{width:8,height:8,borderRadius:99,background:FASE_CLR[s.fase],flexShrink:0,boxShadow:"0 0 6px "+FASE_CLR[s.fase]+"70"}}/><span style={{fontSize:12.5,fontWeight:700,color:"#eff6ff",minWidth:64}}>{FASE_LABEL[s.fase]}</span><span style={{fontSize:11,color:"#5278a8"}}>{fmt(s.data)}</span><span style={{fontSize:10,color:"#3b5478",marginLeft:"auto"}}>Ciclo {cicloOfDate(s.data)||"\u2014"}</span></div>))}</div></div>)}
+          {p.note&&<div style={{...box,marginBottom:9}}><div style={lbl}> Note</div><p style={{color:"#94b5d8",lineHeight:1.6,fontSize:13,marginTop:4}}>{p.note}</p></div>}
           <div style={{...box,marginBottom:9}}>
             <div style={lbl}>Checklist</div>
             <div style={{display:"flex",gap:10,marginTop:8}}>
@@ -1211,9 +1211,9 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onRiattiva, o
           <div style={{display:"flex",gap:9,marginTop:16,flexWrap:"wrap"}}>
             {!isSpeciale&&ci<FASI_FUNNEL.length-1&&<button onClick={onAdvance} style={{padding:"9px 16px",background:"linear-gradient(135deg,"+FASE_CLR[FASI_FUNNEL[ci+1]]+","+FASE_CLR[FASI_FUNNEL[ci+1]]+"bb)",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:12}}>Avanza → {FASE_LABEL[FASI_FUNNEL[ci+1]]}</button>}
             {isSpeciale&&<button onClick={onRiattiva} style={{padding:"9px 16px",background:"linear-gradient(135deg,#2563eb,#0ea5e9)",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:12}}>↩ Riattiva nel Funnel</button>}
-            <button onClick={onEdit} style={{padding:"9px 16px",background:"#0d1b33",color:"#7da8d8",border:"1px solid #1e3a5f",borderRadius:9,cursor:"pointer",fontWeight:600,fontSize:12}}>✏️ Modifica</button>
+            <button onClick={onEdit} style={{padding:"9px 16px",background:"#0d1b33",color:"#7da8d8",border:"1px solid #1e3a5f",borderRadius:9,cursor:"pointer",fontWeight:600,fontSize:12}}> Modifica</button>
           </div>
-          {!isSpeciale&&(<div style={{borderTop:"1px solid #0d1b33",marginTop:13,paddingTop:13,display:"flex",gap:9,flexWrap:"wrap"}}><div style={{fontSize:10,color:"#2a4060",width:"100%",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:2}}>Stato speciale</div>{p.fase!=="FOLLOW_UP"&&<button onClick={onFollowUp} style={{padding:"8px 13px",background:"#f59e0b16",color:"#fbbf24",border:"1px solid #f59e0b38",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:12}}>🔥 Follow Up caldo</button>}{p.fase!=="NON_INT"&&<button onClick={onNonInt} style={{padding:"8px 13px",background:"#ef444414",color:"#f87171",border:"1px solid #ef444436",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:12}}>❌ Non interessato</button>}</div>)}
+          {!isSpeciale&&(<div style={{borderTop:"1px solid #0d1b33",marginTop:13,paddingTop:13,display:"flex",gap:9,flexWrap:"wrap"}}><div style={{fontSize:10,color:"#2a4060",width:"100%",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:2}}>Stato speciale</div>{p.fase!=="FOLLOW_UP"&&<button onClick={onFollowUp} style={{padding:"8px 13px",background:"#f59e0b16",color:"#fbbf24",border:"1px solid #f59e0b38",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:12}}> Follow Up caldo</button>}{p.fase!=="NON_INT"&&<button onClick={onNonInt} style={{padding:"8px 13px",background:"#ef444414",color:"#f87171",border:"1px solid #ef444436",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:12}}> Non interessato</button>}</div>)}
         </>
       )}
       {activeTab==="profilazione"&&<ProfilazioneTab p={p} onUpdateProfilo={onUpdateProfilo}/>}

@@ -159,14 +159,14 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
             <h2 style={{fontWeight:900,fontSize:22,color:"#eff6ff"}}>{selectedMember.nome||selectedMember.email} {selectedMember.cognome||""}</h2>
             {selectedMember.citta&&<div style={{fontSize:12,color:"#5278a8",marginTop:3}}>{selectedMember.citta}</div>}
             <div style={{display:"flex",gap:12,marginTop:8,flexWrap:"wrap"}}>
-              <a href={"mailto:"+selectedMember.email} style={{color:"#60a5fa",fontSize:12,textDecoration:"none",display:"flex",alignItems:"center",gap:4}}>✉️ {selectedMember.email}</a>
-              {selectedMember.telefono&&<a href={"tel:"+selectedMember.telefono} style={{color:"#60a5fa",fontSize:12,textDecoration:"none",display:"flex",alignItems:"center",gap:4}}>📞 {selectedMember.telefono}</a>}
-              {selectedMember.instagram&&<a href={"https://instagram.com/"+selectedMember.instagram.replace("@","")} target="_blank" rel="noreferrer" style={{color:"#c084fc",fontSize:12,textDecoration:"none",display:"flex",alignItems:"center",gap:4}}>📸 {selectedMember.instagram.startsWith("@")?selectedMember.instagram:"@"+selectedMember.instagram}</a>}
+              <a href={"mailto:"+selectedMember.email} style={{color:"#60a5fa",fontSize:12,textDecoration:"none",display:"flex",alignItems:"center",gap:4}}> {selectedMember.email}</a>
+              {selectedMember.telefono&&<a href={"tel:"+selectedMember.telefono} style={{color:"#60a5fa",fontSize:12,textDecoration:"none",display:"flex",alignItems:"center",gap:4}}> {selectedMember.telefono}</a>}
+              {selectedMember.instagram&&<a href={"https://instagram.com/"+selectedMember.instagram.replace("@","")} target="_blank" rel="noreferrer" style={{color:"#c084fc",fontSize:12,textDecoration:"none",display:"flex",alignItems:"center",gap:4}}> {selectedMember.instagram.startsWith("@")?selectedMember.instagram:"@"+selectedMember.instagram}</a>}
             </div>
           </div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}}>
-          {[{label:"Prospect",value:ms.total,color:"#2563eb",icon:"👥"},{label:"Iscritti",value:ms.sub,color:"#10b981",icon:"\u2705"},{label:"In percorso",value:ms.act,color:"#0ea5e9",icon:"\ud83d\udcca"},{label:"BV prodotti",value:ms.bv,color:"#f59e0b",icon:"\ud83c\udfc6"}].map((k,i)=>(
+          {[{label:"Prospect",value:ms.total,color:"#2563eb",icon:""},{label:"Iscritti",value:ms.sub,color:"#10b981",icon:"\u2705"},{label:"In percorso",value:ms.act,color:"#0ea5e9",icon:"\ud83d\udcca"},{label:"BV prodotti",value:ms.bv,color:"#f59e0b",icon:"\ud83c\udfc6"}].map((k,i)=>(
             <div key={i} style={{background:"#080f1f",border:"1px solid #11203a",borderRadius:14,padding:"16px 18px",position:"relative",overflow:"hidden"}}>
               <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"linear-gradient(90deg,"+k.color+","+k.color+"44)",borderRadius:"14px 14px 0 0"}}/>
               <div style={{fontSize:10,color:"#3b5478",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>{k.label}</div>
