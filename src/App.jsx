@@ -302,12 +302,8 @@ function AuthScreen({ onAuth }) {
   return (
     <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",background:"#060b18",padding:16}}>
       <div className="pop" style={{width:"100%",maxWidth:400,background:"#080f1f",border:"1px solid #1e3a5f",borderRadius:20,padding:"2.2rem",boxShadow:"0 20px 70px #000000aa"}}>
-        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:28}}>
-          <div style={{width:40,height:40,borderRadius:12,background:"linear-gradient(135deg,#2563eb,#0ea5e9)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,boxShadow:"0 0 20px #2563eb50"}}></div>
-          <div>
-            <div style={{fontWeight:900,fontSize:17,color:"#eff6ff",lineHeight:1.1}}>BE Club CRM</div>
-            <div style={{fontSize:11,color:"#3b5478",marginTop:2}}>Pipeline {"\u00b7"} Profilazione {"\u00b7"} Team</div>
-          </div>
+        <div style={{textAlign:"center",marginBottom:28}}>
+          <div style={{fontWeight:900,fontSize:20,color:"#eff6ff",letterSpacing:-0.5}}>BE Club CRM</div>
         </div>
         <div style={{display:"flex",background:"#0a1426",borderRadius:10,padding:4,marginBottom:24,border:"1px solid #11203a"}}>
           {["login","signup"].map(m=>(
