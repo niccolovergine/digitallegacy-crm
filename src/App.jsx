@@ -385,6 +385,7 @@ export default function App() {
   const [dlProspects, setDlProspects] = useState([]);
   const [positions, setPositions] = useState([]);
   const [dashMode, setDashMode]   = useState("personale");
+  const [listaMode, setListaMode] = useState("personale");
 
   useEffect(()=>{
     const el=document.createElement("style");
@@ -441,7 +442,20 @@ export default function App() {
   }
 
   function showToast(msg,color="#22d3ee") { setToast({msg,color}); setTimeout(()=>setToast(null),2800); }
-  function closeModal() { setModal(null); setSel(null); setForm({}); }
+  function updateLocalProspect(upd) {
+    if (data.find(x=>x.id===upd.id)) {
+      setData(d=>d.map(x=>x.id===upd.id?upd:x));
+    } else {
+      setDlProspects(d=>d.map(x=>x.id===upd.id?{...upd,_userId:x._userId,_ownerName:x._ownerName}:x));
+    }
+    setSel(upd);
+  }
+
+  function getProspectById(id) {
+    return data.find(x=>x.id===id) || dlProspects.find(x=>x.id===id);
+  }
+
+  function getOwnerToken() { return auth.token; }
   function openAdd()    { setForm({fase:"INVITO",fonte:"Instagram",conosciutoAt:today()}); setModal("add"); }
   function openDetail(p){ setSel(p); setModal("detail"); }
 
@@ -459,14 +473,21 @@ export default function App() {
       const conosciutoAt = form.conosciutoAt||today();
       const storico = buildStorico({...form,conosciutoAt},form.fase,conosciutoAt);
       const record  = {...form,conosciutoAt,storico};
+      // usa l'owner originale se è un prospect del team, altrimenti auth.userId
+      const ownerId = form._userId || auth.userId;
       if (modal==="add") {
         const np={...record,id:genId()};
         await sbInsert(auth.token,toDB(np,auth.userId));
         setData(d=>[...d,np]);
         showToast("Prospect aggiunto ✅");
       } else {
-        await sbUpdate(auth.token,record.id,toDB(record,auth.userId));
-        setData(d=>d.map(p=>p.id===record.id?record:p));
+        await sbUpdate(auth.token,record.id,toDB(record,ownerId));
+        // aggiorna in data (personali) o dlProspects (team)
+        if (data.find(p=>p.id===record.id)) {
+          setData(d=>d.map(p=>p.id===record.id?record:p));
+        } else {
+          setDlProspects(d=>d.map(p=>p.id===record.id?{...record,_userId:ownerId,_ownerName:p._ownerName}:p));
+        }
         showToast("Aggiornato ✅");
       }
     } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
@@ -507,20 +528,26 @@ export default function App() {
   }
 
   async function updateProfilo(id,profilazione) {
-    const p=data.find(x=>x.id===id); if (!p) return;
+    const p=data.find(x=>x.id===id)||dlProspects.find(x=>x.id===id); if (!p) return;
+    const ownerId=p._userId||auth.userId;
     const upd={...p,profilazione};
     try {
-      await sbUpdate(auth.token,id,toDB(upd,auth.userId));
-      setData(d=>d.map(x=>x.id===id?upd:x)); setSel(upd);
+      await sbUpdate(auth.token,id,toDB(upd,ownerId));
+      if (data.find(x=>x.id===id)) setData(d=>d.map(x=>x.id===id?upd:x));
+      else setDlProspects(d=>d.map(x=>x.id===id?{...upd,_userId:ownerId,_ownerName:x._ownerName}:x));
+      setSel(upd);
     } catch(e) { showToast("Errore salvataggio","#ef4444"); }
   }
 
   async function updateChecklist(id, checklist) {
-    const p=data.find(x=>x.id===id); if (!p) return;
+    const p=data.find(x=>x.id===id)||dlProspects.find(x=>x.id===id); if (!p) return;
+    const ownerId=p._userId||auth.userId;
     const upd={...p,checklist};
     try {
-      await sbUpdate(auth.token,id,toDB(upd,auth.userId));
-      setData(d=>d.map(x=>x.id===id?upd:x)); setSel(upd);
+      await sbUpdate(auth.token,id,toDB(upd,ownerId));
+      if (data.find(x=>x.id===id)) setData(d=>d.map(x=>x.id===id?upd:x));
+      else setDlProspects(d=>d.map(x=>x.id===id?{...upd,_userId:ownerId,_ownerName:x._ownerName}:x));
+      setSel(upd);
     } catch(e) { showToast("Errore salvataggio","#ef4444"); }
   }
 
@@ -605,7 +632,15 @@ export default function App() {
   const urgenti = data.filter(p=>(isOver(p.followUp)||isToday(p.followUp))&&p.fase!=="NON_INT");
   const funnelCounts=FASI_DASH.map(f=>({f,n:cd.filter(p=>p.fase===f).length}));
   const funnelMax=Math.max(...funnelCounts.map(x=>x.n),1);
-  const listaData=data.filter(p=>{
+
+  // Prospect del team con owner name
+  const teamProspects = dlProspects.map(p => {
+    const owner = downline.find(m => m.id === p._userId);
+    return { ...p, _ownerName: owner ? (owner.nome||owner.email)+" "+(owner.cognome||"") : "" };
+  });
+
+  const listaSource = listaMode === "team" ? teamProspects : data;
+  const listaData=listaSource.filter(p=>{
     const q=search.toLowerCase();
     return (!q||(p.nome+" "+p.cognome+" "+(p.citta||"")).toLowerCase().includes(q))
       &&(!fFase||p.fase===fFase)&&(!fFonte||p.fonte===fFonte)
@@ -629,7 +664,7 @@ export default function App() {
 
       <main style={{flex:1,overflowY:"auto",height:"100vh"}}>
         {view==="dash"  && <Dash cd={cd} cdSub={cdSub} cdAct={cdAct} cdFU={cdFU} cdNI={cdNI} cdConv={cdConv} totSub={totSub} totConv={totConv} totAll={dashData.length} funnelCounts={funnelCounts} funnelMax={funnelMax} urgenti={urgenti} dashCiclo={dashCiclo} setDashCiclo={setDashCiclo} onOpen={openDetail} dashMode={dashMode} setDashMode={setDashMode} hasTeam={dlProspects.length>0} />}
-        {view==="lista" && <Lista prospects={listaData} total={data.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} onOpen={openDetail} onAdd={openAdd} />}
+        {view==="lista" && <Lista prospects={listaData} total={listaMode==="team"?teamProspects.length:data.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} onOpen={openDetail} onAdd={openAdd} listaMode={listaMode} setListaMode={setListaMode} hasTeam={dlProspects.length>0} />}
         {view==="stats"   && <Statistiche data={data} dlProspects={dlProspects} />}
         {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} />}
         {view==="profilo" && <ProfiloView auth={auth} onUpdateProfile={updateProfile} downline={downline} showToast={showToast} />}
@@ -900,15 +935,30 @@ function Statistiche({ data, dlProspects }) {
 }
 
 // ─── LISTA ────────────────────────────────────────────────────────────────────
-function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, setFFonte, fCiclo, setFCiclo, onOpen, onAdd }) {
+function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, setFFonte, fCiclo, setFCiclo, onOpen, onAdd, listaMode, setListaMode, hasTeam }) {
   return (
     <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1.4rem"}}>
-        <div><h1 style={{fontWeight:900,fontSize:26,color:"#eff6ff",letterSpacing:-0.8}}>Prospect</h1><p style={{color:"#3b5478",fontSize:12,marginTop:3}}>{prospects.length} di {total} visualizzati</p></div>
-        <button onClick={onAdd} style={{padding:"9px 18px",fontSize:13,fontWeight:800,background:"linear-gradient(135deg,#2563eb,#0ea5e9)",color:"#fff",border:"none",borderRadius:10,cursor:"pointer"}}>+ Aggiungi</button>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1.4rem",flexWrap:"wrap",gap:12}}>
+        <div>
+          <h1 style={{fontWeight:900,fontSize:26,color:"#eff6ff",letterSpacing:-0.8}}>Prospect</h1>
+          <p style={{color:"#3b5478",fontSize:12,marginTop:3}}>{prospects.length} di {total} visualizzati</p>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          {hasTeam && (
+            <div style={{display:"flex",background:"#0a1426",borderRadius:10,padding:4,border:"1px solid #11203a"}}>
+              {["personale","team"].map(m=>(
+                <button key={m} onClick={()=>setListaMode(m)}
+                  style={{padding:"6px 14px",borderRadius:8,border:"none",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"inherit",background:listaMode===m?"#0d1b33":"transparent",color:listaMode===m?"#7dd3fc":"#5278a8",boxShadow:listaMode===m?"inset 0 0 0 1px #2563eb40":"none"}}>
+                  {m==="personale"?"👤 Personale":"◈ Team"}
+                </button>
+              ))}
+            </div>
+          )}
+          <button onClick={onAdd} style={{padding:"9px 18px",fontSize:13,fontWeight:800,background:"linear-gradient(135deg,#2563eb,#0ea5e9)",color:"#fff",border:"none",borderRadius:10,cursor:"pointer"}}>+ Aggiungi</button>
+        </div>
       </div>
       <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap"}}>
-        <input placeholder="🔍 Cerca..." value={search} onChange={e=>setSearch(e.target.value)} style={{flex:2,minWidth:200}} />
+        <input placeholder="Cerca..." value={search} onChange={e=>setSearch(e.target.value)} style={{flex:2,minWidth:200}} />
         <select value={fFase} onChange={e=>setFFase(e.target.value)} style={{flex:1,minWidth:130}}>
           <option value="">Tutte le fasi</option>
           <optgroup label="Funnel">{FASI_FUNNEL.map(f=><option key={f} value={f}>{FASE_LABEL[f]}</option>)}</optgroup>
@@ -921,7 +971,7 @@ function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, s
         ?<div style={{textAlign:"center",padding:"4rem",color:"#1e3a5f"}}><div style={{fontSize:44,marginBottom:12}}>◆</div><p style={{fontSize:14,marginBottom:14}}>Nessun prospect trovato</p><button onClick={onAdd} style={{padding:"9px 20px",fontSize:13,fontWeight:800,background:"linear-gradient(135deg,#2563eb,#0ea5e9)",color:"#fff",border:"none",borderRadius:10,cursor:"pointer"}}>Aggiungi il primo</button></div>
         :<div style={{background:"#080f1f",border:"1px solid #11203a",borderRadius:14,overflow:"hidden"}}>
           <table style={{width:"100%",borderCollapse:"collapse"}}>
-            <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Prospect","Ciclo","Conosciuto","Fonte","Fase","Checklist","Profilo","Pers.",""].map(h=>(<th key={h} style={{textAlign:"left",color:"#3b5478",fontWeight:700,fontSize:10,textTransform:"uppercase",letterSpacing:.8,padding:"12px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
+            <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Prospect",...(listaMode==="team"?["Di"]:[]),"Ciclo","Conosciuto","Fonte","Fase","Checklist","Profilo","Pers.",""].map(h=>(<th key={h} style={{textAlign:"left",color:"#3b5478",fontWeight:700,fontSize:10,textTransform:"uppercase",letterSpacing:.8,padding:"12px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
             <tbody>{prospects.map(p=>{
               const c=cicloOfDate(p.conosciutoAt);
               const badge=profiloBadge(p);
@@ -930,6 +980,7 @@ function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, s
               return (
                 <tr key={p.id} className="hrow" onClick={()=>onOpen(p)} style={{cursor:"pointer",borderBottom:"1px solid #0d1b3355"}}>
                   <td style={{padding:"12px 16px"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Av n={p.nome} c={p.cognome} color={FASE_CLR[p.fase]}/><span style={{color:"#eff6ff",fontWeight:700,fontSize:13}}>{p.nome} {p.cognome}</span></div></td>
+                  {listaMode==="team"&&<td style={{padding:"12px 16px"}}><span style={{fontSize:11,color:"#8b5cf6",fontWeight:700,background:"#8b5cf618",borderRadius:6,padding:"2px 8px"}}>{p._ownerName||"\u2014"}</span></td>}
                   <td style={{padding:"12px 16px"}}>{c?<span style={{background:c===CICLO_CORRENTE?"#2563eb22":"#11203a",color:c===CICLO_CORRENTE?"#60a5fa":"#3b5478",borderRadius:6,padding:"2px 8px",fontSize:11,fontWeight:700}}>C{c}</span>:<span style={{color:"#2a4060"}}>\u2014</span>}</td>
                   <td style={{padding:"12px 16px",color:"#5278a8",fontSize:12}}>{fmt(p.conosciutoAt)}</td>
                   <td style={{padding:"12px 16px",color:"#5278a8",fontSize:12}}>{FONTE_ICO[p.fonte]} {p.fonte}</td>
@@ -945,7 +996,7 @@ function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, s
                   </td>
                   <td style={{padding:"12px 16px"}}>{badge.compilati===0?<span style={{color:"#2a4060",fontSize:11}}>\u2014</span>:<span style={{display:"inline-flex",alignItems:"center",gap:4,borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:800,color:bc,background:bc+"18",border:"1px solid "+bc+"30"}}>🎯 {badge.positivi}/{PROFILO_TOTAL}</span>}</td>
                   <td style={{padding:"12px 16px"}}>{jung?<span title={jung.sub} style={{display:"inline-flex",alignItems:"center",gap:6,borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:800,color:jung.border,background:jung.border+"18",border:"1px solid "+jung.border+"35"}}><span style={{width:8,height:8,borderRadius:"50%",background:jung.border,flexShrink:0,boxShadow:"0 0 6px "+jung.border}}/>{jung.label}</span>:<span style={{color:"#2a4060",fontSize:11}}>\u2014</span>}</td>
-                  <td style={{padding:"12px 16px",color:"#1e3a5f",fontSize:16}}>›</td>
+                  <td style={{padding:"12px 16px",color:"#1e3a5f",fontSize:16}}>{"\u203a"}</td>
                 </tr>
               );
             })}</tbody>
@@ -1090,6 +1141,7 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onRiattiva, o
               <span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"2px 9px",fontSize:11,fontWeight:700,color:"#fff",background:clr,boxShadow:"0 0 10px "+clr+"45"}}>{FASE_LABEL[p.fase]}</span>
               {ciclo&&<span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"2px 9px",fontSize:11,fontWeight:700,color:"#fff",background:ciclo===CICLO_CORRENTE?"#2563eb":"#1e3a5f"}}>Ciclo {ciclo}</span>}
               {badge.compilati>0&&<span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"2px 9px",fontSize:11,fontWeight:700,color:"#10b981",background:"#10b98118",border:"1px solid #10b98130"}}>🎯 {badge.positivi}/{PROFILO_TOTAL}</span>}
+              {p._ownerName&&<span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"2px 9px",fontSize:11,fontWeight:700,color:"#8b5cf6",background:"#8b5cf618",border:"1px solid #8b5cf630"}}>👤 {p._ownerName.trim()}</span>}
             </div>
           </div>
         </div>
