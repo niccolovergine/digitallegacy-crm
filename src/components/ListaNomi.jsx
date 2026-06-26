@@ -72,7 +72,9 @@ function ProfilazionePanel({ profilazione, onChange }) {
   }
 
   function selectJung(key) {
-    onChange({ ...pr, jung: pr.jung === key ? null : key });
+    const current = Array.isArray(pr.jung) ? pr.jung : (pr.jung ? [pr.jung] : []);
+    const next = current.includes(key) ? current.filter(k=>k!==key) : [...current, key];
+    onChange({ ...pr, jung: next.length===0 ? null : next });
   }
 
   function ToggleGroup({ title, fields, section }) {
@@ -109,8 +111,8 @@ function ProfilazionePanel({ profilazione, onChange }) {
     );
   }
 
-  const sj = pr.jung || null;
-  const jd = JUNG.find(j => j.key === sj);
+  const sj = Array.isArray(pr.jung) ? pr.jung : (pr.jung ? [pr.jung] : []);
+  const selectedJungs = JUNG.filter(j => sj.includes(j.key));
 
   return (
     <div>
@@ -345,7 +347,7 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
                           <td style={{padding:"11px 16px",fontSize:12}}>{p.instagram?<a href={"https://instagram.com/"+p.instagram.replace("@","")} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()} style={{color:"#c084fc",textDecoration:"none"}}>{p.instagram.startsWith("@")?p.instagram:"@"+p.instagram}</a>:"\u2014"}</td>
                           <td style={{padding:"11px 16px"}}>{p.temperatura?<span style={{fontSize:11,fontWeight:800,padding:"2px 8px",borderRadius:6,color:TEMP_CLR[p.temperatura],background:TEMP_CLR[p.temperatura]+"20"}}>{p.temperatura}</span>:"\u2014"}</td>
                           <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12,maxWidth:200}}><div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.note||"\u2014"}</div></td>
-                          <td style={{padding:"11px 16px"}}>{jung?<span style={{fontSize:11,fontWeight:800,color:jung.border,background:jung.border+"18",borderRadius:6,padding:"2px 8px"}}>{jung.label}</span>:"\u2014"}</td>
+                          <td style={{padding:"11px 16px"}}>{jung.length>0?jung.map(j=><span key={j.key} style={{fontSize:10,fontWeight:800,color:j.border,background:j.border+"18",borderRadius:6,padding:"2px 7px",marginRight:3}}>{j.label}</span>):"\u2014"}</td>
                           <td style={{padding:"11px 16px",color:"var(--border2)",fontSize:16}}>{"\u203a"}</td>
                         </tr>
                       );
