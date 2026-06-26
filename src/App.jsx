@@ -628,6 +628,41 @@ export default function App() {
     } catch(e) { showToast("Errore salvataggio","#ef4444"); }
   }
 
+  async function deleteStorico(id, faseToRemove) {
+    const p=data.find(x=>x.id===id)||dlProspects.find(x=>x.id===id); if (!p) return;
+    const ownerId=p._userId||auth.userId;
+    const newStorico = p.storico.filter(s=>s.fase!==faseToRemove);
+    // Calcola la nuova fase (l'ultima rimasta nello storico)
+    const FASI_ORDER = ["INVITO","FUP1","FUP2","PACK","CLOSING","SUB","FOLLOW_UP","NON_INT"];
+    const lastFase = newStorico.reduce((best, s) => {
+      const bi = FASI_ORDER.indexOf(best);
+      const si = FASI_ORDER.indexOf(s.fase);
+      return si > bi ? s.fase : best;
+    }, newStorico[0]?.fase || "INVITO");
+    const upd = {...p, storico:newStorico, fase:lastFase};
+    try {
+      await sbUpdate(auth.token,id,toDB(upd,ownerId));
+      if (data.find(x=>x.id===id)) setData(d=>d.map(x=>x.id===id?upd:x));
+      else setDlProspects(d=>d.map(x=>x.id===id?{...upd,_userId:ownerId,_ownerName:x._ownerName}:x));
+      setSel(upd);
+      showToast("Fase rimossa");
+    } catch(e) { showToast("Errore","#ef4444"); }
+  }
+
+  async function updateStoricoData(id, fase, newData) {
+    const p=data.find(x=>x.id===id)||dlProspects.find(x=>x.id===id); if (!p) return;
+    const ownerId=p._userId||auth.userId;
+    const newStorico = p.storico.map(s=>s.fase===fase?{...s,data:newData}:s);
+    const upd = {...p, storico:newStorico};
+    try {
+      await sbUpdate(auth.token,id,toDB(upd,ownerId));
+      if (data.find(x=>x.id===id)) setData(d=>d.map(x=>x.id===id?upd:x));
+      else setDlProspects(d=>d.map(x=>x.id===id?{...upd,_userId:ownerId,_ownerName:x._ownerName}:x));
+      setSel(upd);
+      showToast("Data aggiornata");
+    } catch(e) { showToast("Errore","#ef4444"); }
+  }
+
   async function updateProfile(fields) {
     try {
       await sbUpdateProfile(auth.token, auth.userId, fields);
@@ -788,7 +823,7 @@ export default function App() {
         <div onClick={closeModal} style={{position:"fixed",inset:0,background:"#00000090",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:16,animation:"fadeIn .2s"}}>
           <div className="pop" onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:520}}>
             {modal==="detail"
-              ? <DetailModal p={sel} onEdit={()=>{setForm({...sel});setModal("edit");}} onAdvance={()=>advanceFase(sel)} onFollowUp={()=>moveFase(sel,"FOLLOW_UP")} onNonInt={()=>moveFase(sel,"NON_INT")} onRiattiva={()=>moveFase(sel,"RIATTIVA")} onClose={closeModal} onUpdateProfilo={pr=>updateProfilo(sel.id,pr)} onUpdateChecklist={cl=>updateChecklist(sel.id,cl)} />
+              ? <DetailModal p={sel} onEdit={()=>{setForm({...sel});setModal("edit");}} onAdvance={()=>advanceFase(sel)} onFollowUp={()=>moveFase(sel,"FOLLOW_UP")} onNonInt={()=>moveFase(sel,"NON_INT")} onRiattiva={()=>moveFase(sel,"RIATTIVA")} onClose={closeModal} onUpdateProfilo={pr=>updateProfilo(sel.id,pr)} onUpdateChecklist={cl=>updateChecklist(sel.id,cl)} onDeleteStorico={fase=>deleteStorico(sel.id,fase)} onUpdateStoricoData={(fase,data)=>updateStoricoData(sel.id,fase,data)} />
               : <FormModal form={form} setForm={setForm} onSave={saveForm} onClose={closeModal} onDelete={modal==="edit"?()=>deleteProp(form.id):null} isEdit={modal==="edit"} />
             }
           </div>
@@ -1276,7 +1311,7 @@ function ProfilazioneTab({ p, onUpdateProfilo }) {
 }
 
 //  DETAIL MODAL 
-function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onRiattiva, onClose, onUpdateProfilo, onUpdateChecklist }) {
+function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onRiattiva, onClose, onUpdateProfilo, onUpdateChecklist, onDeleteStorico, onUpdateStoricoData }) {
   const [activeTab,setActiveTab]=useState("dettagli");
   const clr=FASE_CLR[p.fase];const ci=FASI_FUNNEL.indexOf(p.fase);const isSpeciale=FASI_SPECIALI.includes(p.fase);
   const od=isOver(p.followUp);const dt=isToday(p.followUp);const ciclo=cicloOfDate(p.conosciutoAt);
@@ -1344,7 +1379,7 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onRiattiva, o
               </div>
             )}
           </div>
-          {storico.length>0&&(<div style={{...box,marginBottom:9}}><div style={lbl}> Storico percorso</div><div style={{display:"flex",flexDirection:"column",gap:6,marginTop:8}}>{storico.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:9}}><span style={{width:8,height:8,borderRadius:99,background:FASE_CLR[s.fase],flexShrink:0,boxShadow:"0 0 6px "+FASE_CLR[s.fase]+"70"}}/><span style={{fontSize:12.5,fontWeight:700,color:"var(--text)",minWidth:64}}>{FASE_LABEL[s.fase]}</span><span style={{fontSize:11,color:"var(--muted)"}}>{fmt(s.data)}</span><span style={{fontSize:10,color:"var(--muted)",marginLeft:"auto"}}>Ciclo {cicloOfDate(s.data)||"\u2014"}</span></div>))}</div></div>)}
+          {storico.length>0&&(<div style={{...box,marginBottom:9}}><div style={lbl}> Storico percorso</div><div style={{display:"flex",flexDirection:"column",gap:6,marginTop:8}}>{storico.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:9}}><span style={{width:8,height:8,borderRadius:99,background:FASE_CLR[s.fase],flexShrink:0,boxShadow:"0 0 6px "+FASE_CLR[s.fase]+"70"}}/><span style={{fontSize:12.5,fontWeight:700,color:"var(--text)",minWidth:64}}>{FASE_LABEL[s.fase]}</span><input type="date" defaultValue={s.data} onBlur={e=>{if(e.target.value&&e.target.value!==s.data)onUpdateStoricoData(s.fase,e.target.value);}} style={{fontSize:11,padding:"2px 6px",width:"auto",minWidth:0,background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:6,color:"var(--muted)",cursor:"pointer"}}/><span style={{fontSize:10,color:"var(--muted)",marginLeft:"auto"}}>Ciclo {cicloOfDate(s.data)||"\u2014"}</span>{storico.length>1&&<button onClick={()=>onDeleteStorico(s.fase)} style={{background:"#ef444415",border:"1px solid #ef444430",borderRadius:6,color:"#f87171",cursor:"pointer",fontSize:11,fontWeight:800,padding:"2px 7px",marginLeft:4,lineHeight:1}}>x</button>}</div>))}</div></div>)}
           {p.note&&<div style={{...box,marginBottom:9}}><div style={lbl}> Note</div><p style={{color:"var(--text)",lineHeight:1.6,fontSize:13,marginTop:4}}>{p.note}</p></div>}
           {p.fase==="SUB"&&(
             <div style={{...box,marginBottom:9}}>
