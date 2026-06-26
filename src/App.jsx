@@ -229,7 +229,7 @@ body{background:var(--bg);color:var(--text);overflow:hidden}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
 input,select,textarea{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:9px 13px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;width:100%;transition:border .2s}
-input:focus,select:focus,textarea:focus{border-color:var(--a1);box-shadow:0 0 0 3px color-mix(in srgb, var(--a1) 13%, transparent)}
+input:focus,select:focus,textarea:focus{border-color:var(--a1);box-shadow:0 0 0 3px var(--a1-13)}
 input::placeholder,textarea::placeholder{color:var(--muted)}
 select option{background:var(--bg3)}
 input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.6) sepia(1) hue-rotate(180deg);cursor:pointer}
