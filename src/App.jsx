@@ -1285,7 +1285,7 @@ function FormModal({ form, setForm, onSave, onClose, onDelete, isEdit }) {
             {form.pacchetto==="altro" && (
               <div style={{marginTop:8}}>
                 <label style={lbl}>BV prodotti</label>
-                <input type="number" min="0" value={form.bvCustom||""} onChange={e=>set("bvCustom",Number(e.target.value))} placeholder="es. 300" />
+                <input type="number" min="0" step="1" value={form.bvCustom||""} onChange={e=>set("bvCustom",parseInt(e.target.value,10)||0)} placeholder="es. 300" />
               </div>
             )}
             {form.pacchetto && (
