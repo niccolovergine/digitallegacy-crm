@@ -60,7 +60,7 @@ function toApp(r) {
     fonte:r.fonte||"Instagram", fase:r.fase||"INVITO",
     conosciutoAt:r.conosciuto_at||"", followUp:r.follow_up||"",
     note:r.note||"", storico:r.storico||[], profilazione:r.profilazione||{},
-    pacchetto:r.pacchetto||"",
+    pacchetto:r.pacchetto||"", bvCustom:r.bv_custom||0,
     telefono:r.telefono||"", instagram:r.instagram||"",
     checklist:r.checklist||{kyc:false,pandadoc:false,click:false},
     interesse:r.interesse||"",
@@ -71,7 +71,7 @@ function toDB(p, uid) {
     id:p.id, user_id:uid, nome:p.nome, cognome:p.cognome, citta:p.citta,
     fonte:p.fonte, fase:p.fase, conosciuto_at:p.conosciutoAt,
     follow_up:p.followUp||null, note:p.note, storico:p.storico, profilazione:p.profilazione,
-    pacchetto:p.pacchetto||null,
+    pacchetto:p.pacchetto||null, bv_custom:p.bvCustom||null,
     telefono:p.telefono||null, instagram:p.instagram||null,
     checklist:p.checklist||{kyc:false,pandadoc:false,click:false},
     interesse:p.interesse||null,
@@ -83,8 +83,13 @@ const PACCHETTI = [
   { key:"standard",  label:"Standard",  bv:250  },
   { key:"premium",   label:"Premium",   bv:550  },
   { key:"signature", label:"Signature", bv:1025 },
+  { key:"altro",     label:"Altro",     bv:0    },
 ];
-function bvOfPacchetto(key) { const p = PACCHETTI.find(x=>x.key===key); return p?p.bv:0; }
+function bvOfPacchetto(key, bvCustom) {
+  if (key==="altro") return bvCustom||0;
+  const p = PACCHETTI.find(x=>x.key===key);
+  return p?p.bv:0;
+}
 
 const FASI_FUNNEL   = ["INVITO","FUP1","FUP2","PACK","CLOSING","SUB"];
 const FASI_DASH     = ["FUP1","FUP2","PACK","CLOSING","SUB"];
@@ -196,7 +201,7 @@ function teamStats(prospects) {
   const sub   = prospects.filter(p=>p.fase==="SUB").length;
   const act   = prospects.filter(p=>["FUP1","FUP2","PACK","CLOSING"].includes(p.fase)).length;
   const conv  = total>0 ? Math.round(sub/total*100) : 0;
-  const bv    = prospects.filter(p=>p.fase==="SUB").reduce((acc,p)=>acc+bvOfPacchetto(p.pacchetto),0);
+  const bv    = prospects.filter(p=>p.fase==="SUB").reduce((acc,p)=>acc+bvOfPacchetto(p.pacchetto,p.bvCustom),0);
   return { total, sub, act, conv, bv };
 }
 
@@ -954,7 +959,7 @@ function Sidebar({ view, setView, data, urgenti, onAdd, onExport, auth, onLogout
 //  DASHBOARD 
 function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, funnelCounts, funnelMax, urgenti, dashCiclo, setDashCiclo, onOpen, dashMode, setDashMode, hasTeam }) {
   const cc = v => v>=20?"#10b981":v>=10?"var(--a2)":"#f59e0b";
-  const bvCiclo = cdSub.reduce((acc,p)=>acc+bvOfPacchetto(p.pacchetto),0);
+  const bvCiclo = cdSub.reduce((acc,p)=>acc+bvOfPacchetto(p.pacchetto,p.bvCustom),0);
   const kpis = [
     {label:"In percorso",value:cdAct.length,icon:"",color:"var(--a1)",sub:cd.length+" totali nel ciclo",detail:"FUP1 → Closing"},
     {label:"Conv. ciclo",value:cdConv+"%",icon:"",color:cc(cdConv),sub:cdSub.length+" iscritti / "+cd.length,detail:cdConv>=20?"Ottimo ":cdConv>=10?"Nella media":"Da migliorare"},
@@ -1275,11 +1280,17 @@ function FormModal({ form, setForm, onSave, onClose, onDelete, isEdit }) {
             <label style={lbl}>Pacchetto</label>
             <select value={form.pacchetto||""} onChange={e=>set("pacchetto",e.target.value)}>
               <option value="">Seleziona pacchetto...</option>
-              {PACCHETTI.map(p=><option key={p.key} value={p.key}>{p.label} — {p.bv} BV</option>)}
+              {PACCHETTI.map(p=><option key={p.key} value={p.key}>{p.label}{p.key!=="altro"?" — "+p.bv+" BV":""}</option>)}
             </select>
+            {form.pacchetto==="altro" && (
+              <div style={{marginTop:8}}>
+                <label style={lbl}>BV prodotti</label>
+                <input type="number" min="0" value={form.bvCustom||""} onChange={e=>set("bvCustom",Number(e.target.value))} placeholder="es. 300" />
+              </div>
+            )}
             {form.pacchetto && (
               <div style={{marginTop:8,background:"#10b98115",border:"1px solid #10b98130",borderRadius:9,padding:"8px 12px",fontSize:12,color:"#10b981",fontWeight:700}}>
-                 {bvOfPacchetto(form.pacchetto)} BV prodotti
+                {form.pacchetto==="altro" ? (form.bvCustom||0)+" BV prodotti" : bvOfPacchetto(form.pacchetto)+" BV prodotti"}
               </div>
             )}
           </div>
@@ -1468,7 +1479,7 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onRiattiva, o
                 <div style={lbl}>Pacchetto</div>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                   <span style={{color:"#10b981",fontWeight:800,fontSize:13}}>{p.pacchetto?PACCHETTI.find(x=>x.key===p.pacchetto)?.label||"\u2014":"Non impostato"}</span>
-                  {p.pacchetto&&<span style={{fontWeight:900,fontSize:16,color:"#10b981"}}> {bvOfPacchetto(p.pacchetto)} BV</span>}
+                  {p.pacchetto&&<span style={{fontWeight:900,fontSize:16,color:"#10b981"}}> {bvOfPacchetto(p.pacchetto,p.bvCustom)} BV</span>}
                 </div>
               </div>
             )}
