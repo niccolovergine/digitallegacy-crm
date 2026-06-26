@@ -270,7 +270,12 @@ function AuthScreen({ onAuth }) {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const ref = params.get("ref");
-    if (ref) { localStorage.setItem("pending_ref", ref); setMode("signup"); }
+    if (ref) {
+      // Salva ref con timestamp — scade dopo 30 minuti
+      localStorage.setItem("pending_ref", ref);
+      localStorage.setItem("pending_ref_expires", Date.now() + 30 * 60 * 1000);
+      setMode("signup");
+    }
 
     // Auto-restore session
     const saved = localStorage.getItem("becrm_session");
@@ -295,12 +300,14 @@ function AuthScreen({ onAuth }) {
           const tok    = res.access_token;
           const userId = res.user.id;
           const pendingRef = localStorage.getItem("pending_ref");
+          const pendingExpires = localStorage.getItem("pending_ref_expires");
           let uplineId = null;
-          if (pendingRef) {
+          if (pendingRef && pendingExpires && Date.now() < Number(pendingExpires)) {
             const profiles = await sbGetProfileByRef(tok, pendingRef);
             if (profiles && profiles.length > 0) uplineId = profiles[0].id;
-            localStorage.removeItem("pending_ref");
           }
+          localStorage.removeItem("pending_ref");
+          localStorage.removeItem("pending_ref_expires");
           await sbCreateProfile(tok, { id:userId, email, nome:nome.trim(), cognome:cognome.trim(), upline_id:uplineId, positioned_under:uplineId });
           const profile = await sbGetProfile(tok, userId);
           const authData = { token:tok, userId, email, profile:profile?.[0]||null };
