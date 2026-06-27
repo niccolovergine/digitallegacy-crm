@@ -338,7 +338,7 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
                       ))}
                     </tr></thead>
                     <tbody>{daInvitare.map(p=>{
-                      const jung = p.profilazione?.jung ? JUNG.find(j=>j.key===p.profilazione.jung) : null;
+                      const jung = (() => { const j=p.profilazione?.jung; if(!j)return[]; if(Array.isArray(j))return JUNG.filter(x=>j.includes(x.key)); return JUNG.filter(x=>x.key===j); })();
                       return (
                         <tr key={p.id} onClick={()=>{setSel(p);setModal("edit");}} style={{borderBottom:"1px solid #0d1b3355",cursor:"pointer"}} className="hrow">
                           <td style={{padding:"11px 16px"}}><div style={{display:"flex",alignItems:"center",gap:9}}><Av n={p.nome} c={p.cognome}/><span style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{p.nome} {p.cognome}</span></div></td>
