@@ -122,7 +122,7 @@ function ProfilazionePanel({ profilazione, onChange }) {
         <div style={{fontSize:10,fontWeight:800,color:"var(--muted)",textTransform:"uppercase",letterSpacing:1.2,marginBottom:8}}>Personalita Jung</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
           {JUNG.map(j => {
-            const active = sj === j.key;
+            const active = sj.includes(j.key);
             return (
               <button key={j.key} onClick={() => selectJung(j.key)}
                 style={{background:active?j.bg:"var(--bg3)",border:"2px solid "+(active?j.border:"var(--border2)"),borderRadius:10,padding:"10px 12px",cursor:"pointer",textAlign:"left",transition:"all .2s"}}>
@@ -132,7 +132,7 @@ function ProfilazionePanel({ profilazione, onChange }) {
             );
           })}
         </div>
-        {jd && <div style={{background:jd.border+"15",border:"1px solid "+jd.border+"35",borderRadius:9,padding:"8px 12px",fontSize:11,color:jd.border,fontWeight:700}}>{jd.label} {"\u00b7"} {jd.sub}</div>}
+        {selectedJungs.length>0&&<div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{selectedJungs.map(j=><div key={j.key} style={{background:j.border+"15",border:"1px solid "+j.border+"35",borderRadius:9,padding:"6px 11px",fontSize:11,color:j.border,fontWeight:700}}>{j.label} {"\u00b7"} {j.sub}</div>)}</div>}
       </div>
     </div>
   );
