@@ -811,7 +811,7 @@ export default function App() {
   const cd    = dataByCiclo(dashData, dashCiclo);
   const cdSub = cd.filter(p=>p.fase==="SUB");
   const cdAct = cd.filter(p=>["CONOSCITIVA","FUP1","FUP2","PACK","CLOSING"].includes(p.fase));
-  const cdFU  = cd.filter(p=>p.fase==="FOLLOW_UP");
+  const cdFU  = dashData.filter(p=>p.fase==="FOLLOW_UP");
   const cdNI  = cd.filter(p=>p.fase==="NON_INT");
   const cdConv= cd.length?Math.round(cdSub.length/cd.length*100):0;
   const totSub  = dashData.filter(p=>p.fase==="SUB").length;
