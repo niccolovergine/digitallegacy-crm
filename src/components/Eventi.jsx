@@ -43,7 +43,7 @@ function PersonaCard({ p, ownerName, showOwner, onClick, onMarkSold }) {
 
 // ===== modale aggiungi/modifica persona =====
 function PersonaModal({ persona, defaultStato, onSave, onClose, onDelete }) {
-  const [form, setForm] = useState(persona || { nome: "", cognome: "", telefono: "", instagram: "", citta: "", note: "", stato: defaultStato || "in_ballo" });
+  const [form, setForm] = useState(persona || { nome: "", cognome: "", telefono: "", instagram: "", citta: "", note: "", stato: defaultStato || "in_ballo", categoria: "team" });
   const lbl = { fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: .8, marginBottom: 5, display: "block" };
 
   return (
@@ -54,6 +54,13 @@ function PersonaModal({ persona, defaultStato, onSave, onClose, onDelete }) {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
+        <div style={{ gridColumn: "1/-1" }}>
+          <label style={lbl}>Categoria</label>
+          <select value={form.categoria || "team"} onChange={e => setForm(f => ({ ...f, categoria: e.target.value }))}>
+            <option value="team">Team</option>
+            <option value="prospect">Prospect</option>
+          </select>
+        </div>
         <div><label style={lbl}>Nome</label><input value={form.nome || ""} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} placeholder="Mario" /></div>
         <div><label style={lbl}>Cognome</label><input value={form.cognome || ""} onChange={e => setForm(f => ({ ...f, cognome: e.target.value }))} placeholder="Rossi" /></div>
         <div style={{ gridColumn: "1/-1" }}><label style={lbl}>Citta</label><input value={form.citta || ""} onChange={e => setForm(f => ({ ...f, citta: e.target.value }))} placeholder="Milano" /></div>
@@ -139,6 +146,7 @@ export function EventiView({ auth, allProfiles, downline, showToast,
   const [persone, setPersone] = useState([]); // persone dell'evento attivo (tutte quelle leggibili)
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null); // { mode: 'in_ballo'|'venduto', persona }
+  const [filtroVenduti, setFiltroVenduti] = useState("tutti"); // 'tutti' | 'team' | 'prospect'
 
   useEffect(() => {
     if (!auth) return;
@@ -163,8 +171,9 @@ export function EventiView({ auth, allProfiles, downline, showToast,
     [persone, auth.userId]
   );
   const venduti = useMemo(() =>
-    persone.filter(p => p.stato === "venduto" && myTeamIds.has(p.user_id)),
-    [persone, myTeamIds]
+    persone.filter(p => p.stato === "venduto" && myTeamIds.has(p.user_id)
+      && (filtroVenduti === "tutti" || p.categoria === filtroVenduti)),
+    [persone, myTeamIds, filtroVenduti]
   );
 
   function ownerNameOf(userId) {
@@ -233,6 +242,7 @@ export function EventiView({ auth, allProfiles, downline, showToast,
         await sbUpdateEventoPersona(auth.token, form.id, {
           nome: form.nome, cognome: form.cognome || null, telefono: form.telefono || null,
           instagram: form.instagram || null, citta: form.citta || null, note: form.note || null,
+          categoria: form.categoria || "team",
           stato: form.stato, venduto_at: form.stato === "venduto" ? new Date().toISOString() : null,
         });
         setPersone(ps => ps.map(p => p.id === form.id ? { ...p, ...form } : p));
@@ -246,6 +256,7 @@ export function EventiView({ auth, allProfiles, downline, showToast,
           evento_id: eventoAttivo, user_id: auth.userId,
           nome: form.nome, cognome: form.cognome || null, telefono: form.telefono || null,
           instagram: form.instagram || null, citta: form.citta || null, note: form.note || null,
+          categoria: form.categoria || "team",
           stato: form.stato || "in_ballo",
         });
         const created = Array.isArray(row) ? row[0] : row;
@@ -261,6 +272,7 @@ export function EventiView({ auth, allProfiles, downline, showToast,
     try {
       await sbDeleteEventoPersona(auth.token, id);
       setPersone(ps => ps.filter(p => p.id !== id));
+      setTuttiVenduti(tv => tv.filter(p => p.id !== id));
       showToast("Rimosso", "#ef4444");
     } catch (e) { showToast("Errore: " + e.message, "#ef4444"); }
     setModal(null);
@@ -350,7 +362,17 @@ export function EventiView({ auth, allProfiles, downline, showToast,
               </div>
 
               <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: "1.2rem" }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: "#10b981", marginBottom: 12 }}>Ticket venduti {"\u00b7"} {venduti.length}</div>
+                <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 12, gap: 10, flexWrap: "wrap" }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#10b981", textTransform: "uppercase", letterSpacing: .6 }}>Ticket venduti</div>
+                    <div style={{ fontSize: 30, fontWeight: 900, color: "#10b981", lineHeight: 1.1 }}>{venduti.length}</div>
+                  </div>
+                  <select value={filtroVenduti} onChange={e => setFiltroVenduti(e.target.value)} style={{ width: "auto", minWidth: 130, fontSize: 12 }}>
+                    <option value="tutti">Tutti</option>
+                    <option value="team">Solo team</option>
+                    <option value="prospect">Solo prospect</option>
+                  </select>
+                </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 7, maxHeight: 420, overflowY: "auto" }}>
                   {venduti.length === 0
                     ? <div style={{ textAlign: "center", padding: "1.5rem", color: "var(--border2)", fontSize: 12 }}>Nessun ticket venduto ancora</div>
