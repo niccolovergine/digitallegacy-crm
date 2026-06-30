@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 
 const FASI_DASH = ["FUP1","FUP2","PACK","CLOSING","SUB"];
@@ -45,6 +45,147 @@ function Av({n,c,color,size=34}){
     </div>
   );
 }
+
+function PanZoomTree({ children }) {
+  const containerRef = useRef(null);
+  const contentRef = useRef(null);
+  const [scale, setScale] = useState(0.85);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const dragState = useRef({ dragging: false, startX: 0, startY: 0, origX: 0, origY: 0 });
+
+  const clampScale = (s) => Math.min(2, Math.max(0.3, s));
+
+  function zoomBy(delta, clientX, clientY) {
+    setScale(prev => {
+      const next = clampScale(prev + delta);
+      if (containerRef.current && clientX != null) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const cx = clientX - rect.left;
+        const cy = clientY - rect.top;
+        setPos(p => ({
+          x: cx - ((cx - p.x) / prev) * next,
+          y: cy - ((cy - p.y) / prev) * next,
+        }));
+      }
+      return next;
+    });
+  }
+
+  function onWheel(e) {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.08 : 0.08;
+    zoomBy(delta, e.clientX, e.clientY);
+  }
+
+  function onMouseDown(e) {
+    if (e.button !== 0) return;
+    dragState.current = { dragging: true, startX: e.clientX, startY: e.clientY, origX: pos.x, origY: pos.y };
+    if (containerRef.current) containerRef.current.style.cursor = "grabbing";
+  }
+
+  const onMouseMove = useCallback((e) => {
+    if (!dragState.current.dragging) return;
+    const dx = e.clientX - dragState.current.startX;
+    const dy = e.clientY - dragState.current.startY;
+    setPos({ x: dragState.current.origX + dx, y: dragState.current.origY + dy });
+  }, []);
+
+  const onMouseUp = useCallback(() => {
+    dragState.current.dragging = false;
+    if (containerRef.current) containerRef.current.style.cursor = "grab";
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [onMouseMove, onMouseUp]);
+
+  // Touch support (mobile pinch/drag)
+  const touchState = useRef({ lastDist: null, lastMid: null });
+  function touchDist(t) { const dx = t[0].clientX - t[1].clientX, dy = t[0].clientY - t[1].clientY; return Math.hypot(dx, dy); }
+  function touchMid(t) { return { x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 }; }
+
+  function onTouchStart(e) {
+    if (e.touches.length === 1) {
+      dragState.current = { dragging: true, startX: e.touches[0].clientX, startY: e.touches[0].clientY, origX: pos.x, origY: pos.y };
+    } else if (e.touches.length === 2) {
+      touchState.current.lastDist = touchDist(e.touches);
+      touchState.current.lastMid = touchMid(e.touches);
+    }
+  }
+  function onTouchMove(e) {
+    if (e.touches.length === 1 && dragState.current.dragging) {
+      const dx = e.touches[0].clientX - dragState.current.startX;
+      const dy = e.touches[0].clientY - dragState.current.startY;
+      setPos({ x: dragState.current.origX + dx, y: dragState.current.origY + dy });
+    } else if (e.touches.length === 2) {
+      const dist = touchDist(e.touches);
+      if (touchState.current.lastDist) {
+        const ratio = dist / touchState.current.lastDist;
+        setScale(prev => clampScale(prev * ratio));
+      }
+      touchState.current.lastDist = dist;
+    }
+  }
+  function onTouchEnd() {
+    dragState.current.dragging = false;
+    touchState.current.lastDist = null;
+  }
+
+  function resetView() { setScale(0.85); setPos({ x: 0, y: 0 }); }
+
+  return (
+    <div style={{ position: "relative" }}>
+      <div
+        ref={containerRef}
+        onWheel={onWheel}
+        onMouseDown={onMouseDown}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        style={{
+          width: "100%",
+          height: 560,
+          overflow: "hidden",
+          borderRadius: 12,
+          background: "var(--bg3)",
+          cursor: "grab",
+          touchAction: "none",
+          position: "relative",
+        }}
+      >
+        <div
+          ref={contentRef}
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: 24,
+            transform: `translate(${pos.x}px, ${pos.y}px) translateX(-50%) scale(${scale})`,
+            transformOrigin: "top center",
+            transition: dragState.current.dragging ? "none" : "transform .05s linear",
+          }}
+        >
+          {children}
+        </div>
+      </div>
+
+      <div style={{ position: "absolute", bottom: 12, right: 12, display: "flex", flexDirection: "column", gap: 6, background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 10, padding: 6 }}>
+        <button onClick={() => zoomBy(0.15)} style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid var(--border2)", background: "var(--bg4)", color: "var(--text)", fontSize: 16, fontWeight: 800, cursor: "pointer" }}>+</button>
+        <button onClick={() => zoomBy(-0.15)} style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid var(--border2)", background: "var(--bg4)", color: "var(--text)", fontSize: 16, fontWeight: 800, cursor: "pointer" }}>{"\u2212"}</button>
+        <button onClick={resetView} style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid var(--border2)", background: "var(--bg4)", color: "var(--muted)", fontSize: 11, fontWeight: 800, cursor: "pointer" }}>{"\u27f3"}</button>
+      </div>
+
+      <div style={{ position: "absolute", bottom: 12, left: 12, fontSize: 10, color: "var(--muted)", background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 8, padding: "5px 9px" }}>
+        Trascina per spostarti {"\u00b7"} scorri per zoomare
+      </div>
+    </div>
+  );
+}
+
 
 function TreeNode({memberId,memberNome,memberCognome,memberEmail,allMembers,dlProspects,positions,onSelect,depth,selectedForPlacement,onPlaceHere}){
   const children=allMembers.filter(m=>m.positioned_under===memberId);
@@ -324,27 +465,29 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
           )}
 
           {/* Albero */}
-          <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"1.4rem",overflowX:"auto"}}>
+          <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"1.4rem"}}>
             <div style={{fontSize:13,fontWeight:800,color:"var(--text)",marginBottom:20}}>Albero genealogico</div>
             {posizionati.length===0&&inAttesa.length===0
               ?<div style={{textAlign:"center",padding:"3rem",color:"var(--border2)"}}>Nessun membro ancora</div>
-              :<TreeNode
-                memberId={auth.userId}
-                memberNome={auth.profile?.nome||""}
-                memberCognome={auth.profile?.cognome||""}
-                memberEmail={auth.email}
-                allMembers={posizionati}
-                dlProspects={dlProspects}
-                positions={positions}
-                onSelect={setSelectedMember}
-                depth={0}
-                selectedForPlacement={selectedForPlacement}
-                onPlaceHere={async(nodeId,team)=>{
-                  if(!selectedForPlacement)return;
-                  await onPositionInTree(selectedForPlacement.id,nodeId,team);
-                  setSelectedForPlacement(null);
-                }}
-              />
+              :<PanZoomTree>
+                <TreeNode
+                  memberId={auth.userId}
+                  memberNome={auth.profile?.nome||""}
+                  memberCognome={auth.profile?.cognome||""}
+                  memberEmail={auth.email}
+                  allMembers={posizionati}
+                  dlProspects={dlProspects}
+                  positions={positions}
+                  onSelect={setSelectedMember}
+                  depth={0}
+                  selectedForPlacement={selectedForPlacement}
+                  onPlaceHere={async(nodeId,team)=>{
+                    if(!selectedForPlacement)return;
+                    await onPositionInTree(selectedForPlacement.id,nodeId,team);
+                    setSelectedForPlacement(null);
+                  }}
+                />
+              </PanZoomTree>
             }
           </div>
         </div>
