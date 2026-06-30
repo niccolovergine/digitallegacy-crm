@@ -261,13 +261,12 @@ export function EventiView({ auth, allProfiles, downline, showToast,
     <div style={{ padding: "2rem 2.2rem", maxWidth: 1280, margin: "0 auto" }}>
       <div style={{ marginBottom: "1.4rem" }}>
         <h1 style={{ fontWeight: 900, fontSize: 26, color: "var(--text)", letterSpacing: -0.8 }}>Eventi</h1>
-        <p style={{ color: "var(--muted)", fontSize: 12, marginTop: 4 }}>Ticket, leaderboard e andamento del team</p>
       </div>
 
       {/* Leaderboard */}
       <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: "1.6rem", marginBottom: 18 }}>
         <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text)", marginBottom: 18, display: "flex", alignItems: "center", gap: 8 }}>
-          <span>{"\ud83c\udfc6"}</span> Leaderboard generale del team
+          <span>{"\ud83c\udfc6"}</span> Leaderboard
         </div>
         <Leaderboard ranking={ranking} />
       </div>
@@ -278,19 +277,27 @@ export function EventiView({ auth, allProfiles, downline, showToast,
         </div>
       ) : (
         <>
-          {/* Selettore evento */}
-          <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-            {eventi.map(ev => (
-              <button key={ev.id} onClick={() => setEventoAttivo(ev.id)}
-                style={{ padding: "8px 16px", borderRadius: 10, border: "1px solid " + (eventoAttivo === ev.id ? "var(--a1)" : "var(--border2)"), background: eventoAttivo === ev.id ? "var(--a1-13)" : "var(--bg3)", color: eventoAttivo === ev.id ? "var(--a2)" : "var(--muted)", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
-                {ev.nome} <span style={{ opacity: .6, fontSize: 10, marginLeft: 4 }}>{fmtDate(ev.data)}</span>
-              </button>
-            ))}
+          {/* Evento attivo in evidenza */}
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "var(--a2)", textTransform: "uppercase", letterSpacing: 1.4, marginBottom: 4 }}>Evento in corso</div>
+            <h2 style={{ fontWeight: 900, fontSize: 30, color: "var(--text)", letterSpacing: -0.5, lineHeight: 1.1 }}>{evCorrente?.nome}</h2>
           </div>
+
+          {/* Altri eventi (compare solo se ce n'e' piu' di uno) */}
+          {eventi.length > 1 && (
+            <div style={{ display: "flex", gap: 8, marginBottom: 18, flexWrap: "wrap" }}>
+              {eventi.map(ev => (
+                <button key={ev.id} onClick={() => setEventoAttivo(ev.id)}
+                  style={{ padding: "7px 14px", borderRadius: 9, border: "1px solid " + (eventoAttivo === ev.id ? "var(--a1)" : "var(--border2)"), background: eventoAttivo === ev.id ? "var(--a1-13)" : "var(--bg3)", color: eventoAttivo === ev.id ? "var(--a2)" : "var(--muted)", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
+                  {ev.nome}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Grafico andamento */}
           <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: "1.4rem", marginBottom: 18 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text)", marginBottom: 14 }}>Andamento ticket venduti (tu + downline)</div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text)", marginBottom: 14 }}>Andamento</div>
             <div style={{ height: 220 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} margin={{ top: 5, right: 10, left: -15, bottom: 5 }}>
