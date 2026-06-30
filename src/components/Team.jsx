@@ -187,62 +187,169 @@ function PanZoomTree({ children }) {
 }
 
 
-function TreeNode({memberId,memberNome,memberCognome,memberEmail,allMembers,dlProspects,positions,onSelect,depth,selectedForPlacement,onPlaceHere}){
-  const children=allMembers.filter(m=>m.positioned_under===memberId);
-  function getPos(mId,upId){const p=positions.find(p=>p.member_id===mId&&p.upline_id===upId);return p?.team||null;}
-  const sin=children.filter(m=>getPos(m.id,memberId)==="sinistra");
-  const de=children.filter(m=>getPos(m.id,memberId)==="destra");
-  const mP=dlProspects.filter(p=>p._userId===memberId);
-  const ms=teamStats(mP);
-  const isRoot=depth===0;
-  const canPlace=!!selectedForPlacement;
+// ===== ALBERO GENEALOGICO: layout calcolato =====
+// Dimensioni fisse dei nodi e spaziatura, usate per calcolare le posizioni
+const NODE_W = 132;
+const SLOT_W = 120;
+const H_GAP = 22;      // spazio orizzontale minimo tra fratelli (centro a centro extra)
+const V_GAP = 92;      // distanza verticale tra un livello e il successivo
+const LABEL_H = 18;    // spazio per la label "Sinistra/Destra" sopra ogni nodo non-root
 
-  // Slot vuoto cliccabile
-  function EmptySlot({team}){
-    if(!canPlace)return(
-      <div style={{width:120,height:44,border:"2px dashed #1e3a5f",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center"}}>
-        <span style={{fontSize:10,color:"var(--border2)"}}>vuoto</span>
-      </div>
-    );
-    const color=team==="sinistra"?"var(--a1)":"#10b981";
-    return(
-      <div onClick={()=>onPlaceHere&&onPlaceHere(memberId,team)}
-        style={{width:120,height:44,border:"2px dashed "+color,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",background:color+"12",transition:"all .2s"}}>
-        <span style={{fontSize:11,color,fontWeight:700}}>+ Posiziona qui</span>
-      </div>
-    );
+function buildTreeData(memberId, memberNome, memberCognome, memberEmail, allMembers, dlProspects, positions, depth, side) {
+  function getPos(mId, upId) { const p = positions.find(p => p.member_id === mId && p.upline_id === upId); return p?.team || null; }
+  const children = allMembers.filter(m => m.positioned_under === memberId);
+  const sin = children.filter(m => getPos(m.id, memberId) === "sinistra");
+  const de = children.filter(m => getPos(m.id, memberId) === "destra");
+  const mP = dlProspects.filter(p => p._userId === memberId);
+  const ms = teamStats(mP);
+
+  const leftChild = sin.length > 0
+    ? buildTreeData(sin[0].id, sin[0].nome, sin[0].cognome, sin[0].email, allMembers, dlProspects, positions, depth + 1, "sinistra")
+    : { empty: true, side: "sinistra", id: "empty-sin-" + memberId };
+  const rightChild = de.length > 0
+    ? buildTreeData(de[0].id, de[0].nome, de[0].cognome, de[0].email, allMembers, dlProspects, positions, depth + 1, "destra")
+    : { empty: true, side: "destra", id: "empty-de-" + memberId };
+
+  return {
+    id: memberId, nome: memberNome, cognome: memberCognome, email: memberEmail,
+    depth, side, isRoot: depth === 0, ms,
+    left: leftChild, right: rightChild,
+  };
+}
+
+// Calcola larghezza del sottoalbero (in "unita di nodo") ricorsivamente.
+// Una foglia (o slot vuoto) occupa 1 unita; un nodo interno occupa la somma dei suoi figli (min 1).
+function subtreeWidth(node) {
+  if (node.empty) return 1;
+  const lw = subtreeWidth(node.left);
+  const rw = subtreeWidth(node.right);
+  node._w = Math.max(lw + rw, 1);
+  return node._w;
+}
+
+// Assegna coordinate x (in unita) e y (in livelli) a ogni nodo, centrando ogni genitore
+// esattamente tra il centro del proprio sottoalbero sinistro e quello destro.
+function assignPositions(node, xOffset) {
+  if (node.empty) {
+    node._x = xOffset + 0.5;
+    node._y = node.depthForLayout;
+    return;
   }
+  const lw = node.left.empty ? 1 : node.left._w;
+  assignPositions(node.left, xOffset);
+  assignPositions(node.right, xOffset + lw);
+  node._x = (node.left._x + node.right._x) / 2;
+  node._y = node.depth;
+}
 
-  return(
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center",minWidth:160}}>
-      <div onClick={()=>!isRoot&&onSelect&&onSelect(allMembers.find(m=>m.id===memberId))}
-        style={{background:isRoot?"linear-gradient(135deg,var(--a1),var(--a2))":"var(--bg4)",border:"2px solid "+(isRoot?"var(--a1)":"var(--border2)"),borderRadius:12,padding:"10px 16px",textAlign:"center",cursor:isRoot?"default":"pointer",minWidth:130,boxShadow:isRoot?"0 0 20px var(--a1-25)":"none",marginBottom:4}}>
-        <div style={{fontWeight:800,fontSize:12,color:isRoot?"#fff":"var(--text)"}}>{memberNome||memberEmail} {memberCognome||""}</div>
-        {!isRoot&&<div style={{fontSize:10,color:"var(--muted)",marginTop:2}}>{ms.sub} iscr {"\u00b7"} {ms.bv} BV</div>}
-      </div>
-      <div style={{width:2,height:16,background:"var(--border2)"}}/>
-      <div style={{display:"flex",gap:0,alignItems:"flex-start"}}>
-        {/* SINISTRA */}
-        <div style={{display:"flex",flexDirection:"column",alignItems:"center",minWidth:160}}>
-          <div style={{fontSize:9,fontWeight:800,color:"var(--a1)",textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>{"\u2190"} Sinistra</div>
-          {sin.length===0
-            ?<EmptySlot team="sinistra"/>
-            :sin.map(child=><TreeNode key={child.id} memberId={child.id} memberNome={child.nome} memberCognome={child.cognome} memberEmail={child.email} allMembers={allMembers} dlProspects={dlProspects} positions={positions} onSelect={onSelect} depth={depth+1} selectedForPlacement={selectedForPlacement} onPlaceHere={onPlaceHere}/>)
-          }
-        </div>
-        <div style={{width:2,minHeight:60,background:"var(--border2)",margin:"0 8px"}}/>
-        {/* DESTRA */}
-        <div style={{display:"flex",flexDirection:"column",alignItems:"center",minWidth:160}}>
-          <div style={{fontSize:9,fontWeight:800,color:"#10b981",textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Destra {"\u2192"}</div>
-          {de.length===0
-            ?<EmptySlot team="destra"/>
-            :de.map(child=><TreeNode key={child.id} memberId={child.id} memberNome={child.nome} memberCognome={child.cognome} memberEmail={child.email} allMembers={allMembers} dlProspects={dlProspects} positions={positions} onSelect={onSelect} depth={depth+1} selectedForPlacement={selectedForPlacement} onPlaceHere={onPlaceHere}/>)
-          }
-        </div>
-      </div>
+function setDepthForEmpties(node, depth) {
+  if (node.empty) { node.depthForLayout = depth; return; }
+  setDepthForEmpties(node.left, depth + 1);
+  setDepthForEmpties(node.right, depth + 1);
+}
+
+// Raccoglie tutti i nodi (reali + slot vuoti) e i collegamenti (linee) in liste piatte,
+// pronte per essere renderizzate con coordinate pixel assolute.
+function flattenTree(node, nodes, edges, parentPx) {
+  const unitW = NODE_W + H_GAP;
+  const px = { x: node._x * unitW, y: node._y * (V_GAP) };
+
+  if (parentPx) edges.push({ x1: parentPx.x, y1: parentPx.y, x2: px.x, y2: px.y, side: node.side });
+
+  if (node.empty) {
+    nodes.push({ type: "empty", x: px.x, y: px.y, side: node.side, parentId: node.id.replace(/^empty-(sin|de)-/, "") });
+    return;
+  }
+  nodes.push({ type: "member", x: px.x, y: px.y, id: node.id, nome: node.nome, cognome: node.cognome, email: node.email, isRoot: node.isRoot, ms: node.ms, side: node.side });
+  flattenTree(node.left, nodes, edges, px);
+  flattenTree(node.right, nodes, edges, px);
+}
+
+function computeTreeLayout(memberId, memberNome, memberCognome, memberEmail, allMembers, dlProspects, positions) {
+  const root = buildTreeData(memberId, memberNome, memberCognome, memberEmail, allMembers, dlProspects, positions, 0, null);
+  setDepthForEmpties(root, 0);
+  subtreeWidth(root);
+  assignPositions(root, 0);
+  const nodes = [], edges = [];
+  flattenTree(root, nodes, edges, null);
+  const maxX = Math.max(...nodes.map(n => n.x)) + NODE_W;
+  const minX = Math.min(...nodes.map(n => n.x));
+  const maxY = Math.max(...nodes.map(n => n.y)) + V_GAP;
+  return { nodes, edges, width: maxX - minX + 40, height: maxY + 60, offsetX: -minX + 20 };
+}
+
+function TreeCanvas({ memberId, memberNome, memberCognome, memberEmail, allMembers, dlProspects, positions, onSelect, selectedForPlacement, onPlaceHere }) {
+  const layout = computeTreeLayout(memberId, memberNome, memberCognome, memberEmail, allMembers, dlProspects, positions);
+  const canPlace = !!selectedForPlacement;
+
+  return (
+    <div style={{ position: "relative", width: layout.width, height: layout.height }}>
+      <svg width={layout.width} height={layout.height} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none" }}>
+        {layout.edges.map((e, i) => {
+          const x1 = e.x1 + layout.offsetX + NODE_W / 2, y1 = e.y1 + 38;
+          const x2 = e.x2 + layout.offsetX + NODE_W / 2, y2 = e.y2 + LABEL_H;
+          const midY = (y1 + y2) / 2;
+          const color = e.side === "sinistra" ? "var(--a1)" : "#10b981";
+          return (
+            <path key={i}
+              d={`M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}`}
+              stroke={color} strokeOpacity={0.35} strokeWidth={1.5} fill="none" />
+          );
+        })}
+      </svg>
+
+      {layout.nodes.map((n, i) => {
+        const left = n.x + layout.offsetX;
+        if (n.type === "empty") {
+          const labelColor = n.side === "sinistra" ? "var(--a1)" : "#10b981";
+          return (
+            <div key={"e" + i} style={{ position: "absolute", left, top: n.y, width: NODE_W, display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div style={{ fontSize: 9, fontWeight: 800, color: labelColor, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 3, whiteSpace: "nowrap" }}>
+                {n.side === "sinistra" ? "\u2190 Sinistra" : "Destra \u2192"}
+              </div>
+              {!canPlace ? (
+                <div style={{ width: SLOT_W, height: 44, border: "2px dashed var(--border2)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ fontSize: 10, color: "var(--border2)" }}>vuoto</span>
+                </div>
+              ) : (
+                <div onClick={() => onPlaceHere && onPlaceHere(n.parentId, n.side)}
+                  style={{ width: SLOT_W, height: 44, border: "2px dashed " + labelColor, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: labelColor + "12", transition: "all .2s" }}>
+                  <span style={{ fontSize: 11, color: labelColor, fontWeight: 700 }}>+ Posiziona</span>
+                </div>
+              )}
+            </div>
+          );
+        }
+        const labelColor = n.side === "sinistra" ? "var(--a1)" : n.side === "destra" ? "#10b981" : null;
+        return (
+          <div key={n.id} style={{ position: "absolute", left, top: n.y, width: NODE_W, display: "flex", flexDirection: "column", alignItems: "center" }}>
+            {labelColor && (
+              <div style={{ fontSize: 9, fontWeight: 800, color: labelColor, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 3, whiteSpace: "nowrap" }}>
+                {n.side === "sinistra" ? "\u2190 Sinistra" : "Destra \u2192"}
+              </div>
+            )}
+            <div onClick={() => !n.isRoot && onSelect && onSelect(allMembers.find(m => m.id === n.id))}
+              style={{
+                background: n.isRoot ? "linear-gradient(135deg,var(--a1),var(--a2))" : "var(--bg4)",
+                border: "2px solid " + (n.isRoot ? "var(--a1)" : "var(--border2)"),
+                borderRadius: 12, padding: "10px 14px", textAlign: "center",
+                cursor: n.isRoot ? "default" : "pointer", width: NODE_W - 8,
+                boxShadow: n.isRoot ? "0 0 20px var(--a1-25)" : "none",
+              }}>
+              <div style={{ fontWeight: 800, fontSize: 12, color: n.isRoot ? "#fff" : "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {n.nome || n.email} {n.cognome || ""}
+              </div>
+              {!n.isRoot && <div style={{ fontSize: 10, color: n.isRoot ? "rgba(255,255,255,.8)" : "var(--muted)", marginTop: 2 }}>{n.ms.sub} iscr {"\u00b7"} {n.ms.bv} BV</div>}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
+// ===== fine layout albero =====
+
+
 
 export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,positions,onOpenProspect,onPositionInTree}){
   const[selectedMember,setSelectedMember]=useState(null);
@@ -470,7 +577,7 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
             {posizionati.length===0&&inAttesa.length===0
               ?<div style={{textAlign:"center",padding:"3rem",color:"var(--border2)"}}>Nessun membro ancora</div>
               :<PanZoomTree>
-                <TreeNode
+                <TreeCanvas
                   memberId={auth.userId}
                   memberNome={auth.profile?.nome||""}
                   memberCognome={auth.profile?.cognome||""}
@@ -479,7 +586,6 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
                   dlProspects={dlProspects}
                   positions={positions}
                   onSelect={setSelectedMember}
-                  depth={0}
                   selectedForPlacement={selectedForPlacement}
                   onPlaceHere={async(nodeId,team)=>{
                     if(!selectedForPlacement)return;
