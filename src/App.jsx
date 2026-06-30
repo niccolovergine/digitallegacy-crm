@@ -471,6 +471,7 @@ export default function App() {
   const [downline, setDownline]   = useState([]);
   const [allProfiles, setAllProfiles] = useState([]);
   const [showEventoReminder, setShowEventoReminder] = useState(false);
+  const [ticketVendutiCount, setTicketVendutiCount] = useState(0);
   const [dlProspects, setDlProspects] = useState([]);
   const [positions, setPositions] = useState([]);
   const [dashMode, setDashMode]   = useState("personale");
@@ -547,6 +548,15 @@ export default function App() {
       }
     }).catch(()=>{});
   },[auth]);
+
+  useEffect(()=>{
+    if (!auth) { setTicketVendutiCount(0); return; }
+    const myTeamIds = new Set([auth.userId, ...downline.map(d=>d.id)]);
+    sbListEventoPersone(auth.token, null).then(rows=>{
+      const count = (rows||[]).filter(r => r.stato==="venduto" && myTeamIds.has(r.user_id)).length;
+      setTicketVendutiCount(count);
+    }).catch(()=>{});
+  },[auth, downline]);
 
   function isMyDownline(profile, myId, allProfiles) {
     if (profile.positioned_under === myId) return true;
@@ -896,7 +906,7 @@ export default function App() {
       <Sidebar view={view} setView={setView} data={data} urgenti={urgenti} onAdd={openAdd} onExport={onExport} auth={auth} onLogout={handleLogout} downlineCount={downline.length} sidebarMode={sidebarMode} setSidebarMode={setSidebarMode} />
 
       <main className="mc" style={{flex:1,overflowY:"auto",height:"100vh",paddingBottom:0}}>
-        {view==="dash"  && <Dash cd={cd} cdSub={cdSub} cdAct={cdAct} cdFU={cdFU} cdNI={cdNI} cdConv={cdConv} totSub={totSub} totConv={totConv} totAll={dashData.length} funnelCounts={funnelCounts} funnelMax={funnelMax} urgenti={urgenti} dashCiclo={dashCiclo} setDashCiclo={setDashCiclo} onOpen={openDetail} dashMode={dashMode} setDashMode={setDashMode} hasTeam={dlProspects.length>0} />}
+        {view==="dash"  && <Dash cd={cd} cdSub={cdSub} cdAct={cdAct} cdFU={cdFU} cdNI={cdNI} cdConv={cdConv} totSub={totSub} totConv={totConv} totAll={dashData.length} funnelCounts={funnelCounts} funnelMax={funnelMax} urgenti={urgenti} dashCiclo={dashCiclo} setDashCiclo={setDashCiclo} onOpen={openDetail} dashMode={dashMode} setDashMode={setDashMode} hasTeam={dlProspects.length>0} ticketVenduti={ticketVendutiCount} />}
         {view==="lista" && <Lista prospects={listaData} total={listaMode==="team"?teamProspects.length:data.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} fCitta={fCitta} setFCitta={setFCitta} fInteresse={fInteresse} setFInteresse={setFInteresse} onOpen={openDetail} onAdd={openAdd} listaMode={listaMode} setListaMode={setListaMode} hasTeam={dlProspects.length>0} />}
         {view==="stats"   && <Statistiche data={data} dlProspects={dlProspects} />}
         {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} />}
@@ -905,7 +915,7 @@ export default function App() {
           sbListEventi={sbListEventi}
           sbListEventoPersone={sbListEventoPersone} sbInsertEventoPersona={sbInsertEventoPersona}
           sbUpdateEventoPersona={sbUpdateEventoPersona} sbDeleteEventoPersona={sbDeleteEventoPersona}
-          LUDOVICO_ID={LUDOVICO_ID} />}
+          LUDOVICO_ID={LUDOVICO_ID} onTicketCountChange={setTicketVendutiCount} />}
         {view==="profilo" && <ProfiloView auth={auth} onUpdateProfile={updateProfile} downlineCount={downline.length} showToast={showToast} />}
       </main>
 
@@ -1024,7 +1034,7 @@ function Sidebar({ view, setView, data, urgenti, onAdd, onExport, auth, onLogout
 }
 
 //  DASHBOARD 
-function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, funnelCounts, funnelMax, urgenti, dashCiclo, setDashCiclo, onOpen, dashMode, setDashMode, hasTeam }) {
+function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, funnelCounts, funnelMax, urgenti, dashCiclo, setDashCiclo, onOpen, dashMode, setDashMode, hasTeam, ticketVenduti }) {
   const cc = v => v>=20?"#10b981":v>=10?"var(--a2)":"#f59e0b";
   const bvCiclo = cdSub.reduce((acc,p)=>acc+bvOfPacchetto(p.pacchetto,p.bvCustom),0);
   const kpis = [
@@ -1032,6 +1042,7 @@ function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, f
     {label:"Conv. ciclo",value:cdConv+"%",icon:"",color:cc(cdConv),sub:cdSub.length+" iscritti / "+cd.length,detail:cdConv>=20?"Ottimo ":cdConv>=10?"Nella media":"Da migliorare"},
     {label:"Iscritti ciclo",value:cdSub.length,icon:"",color:"#10b981",sub:"su "+cd.length+" conosciuti",detail:"questo ciclo"},
     {label:"BV ciclo",value:bvCiclo,icon:"",color:"#f59e0b",sub:"da "+cdSub.length+" iscritti",detail:"Business Volume"},
+    {label:"Ticket evento",value:ticketVenduti||0,icon:"",color:"#a855f7",sub:"tu + downline",detail:"Venduti"},
   ];
   return (
     <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
@@ -1063,7 +1074,7 @@ function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, f
           </div>
         </div>
       </div>
-      <div className="kpi-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:16}}>
+      <div className="kpi-grid" style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12,marginBottom:16}}>
         {kpis.map((k,i)=>(
           <div key={i} className="kpi" style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"18px 20px",position:"relative",overflow:"hidden"}}>
             <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"linear-gradient(90deg,"+k.color+","+k.color+"44)",borderRadius:"14px 14px 0 0"}} />

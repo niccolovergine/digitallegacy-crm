@@ -139,7 +139,7 @@ function Leaderboard({ ranking }) {
 export function EventiView({ auth, allProfiles, downline, showToast,
   sbListEventi,
   sbListEventoPersone, sbInsertEventoPersona, sbUpdateEventoPersona, sbDeleteEventoPersona,
-  LUDOVICO_ID }) {
+  LUDOVICO_ID, onTicketCountChange }) {
 
   const [eventi, setEventi] = useState([]);
   const [eventoAttivo, setEventoAttivo] = useState(null);
@@ -191,6 +191,13 @@ export function EventiView({ auth, allProfiles, downline, showToast,
       setTuttiVenduti((rows || []).filter(r => r.stato === "venduto"));
     }).catch(() => {});
   }, [auth, LUDOVICO_ID]);
+
+  // notifica App.jsx col conteggio aggiornato (tu + downline), cosi la Dashboard resta in tempo reale
+  useEffect(() => {
+    if (!onTicketCountChange) return;
+    const myCount = tuttiVenduti.filter(p => myTeamIds.has(p.user_id)).length;
+    onTicketCountChange(myCount);
+  }, [tuttiVenduti, myTeamIds, onTicketCountChange]);
 
   const teamDiLudovicoIds = useMemo(() => {
     if (!LUDOVICO_ID) return new Set();
