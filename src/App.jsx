@@ -3,6 +3,7 @@ import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, Cart
 import { TeamView } from "./components/Team";
 import { ProfiloView } from "./components/Profilo";
 import { ListaNomiView } from "./components/ListaNomi";
+import { EventiView } from "./components/Eventi";
 
 const SB_URL = "https://kuxrpbsvnkxhsicbyupp.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1eHJwYnN2bmt4aHNpY2J5dXBwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwNzMwODIsImV4cCI6MjA5NzY0OTA4Mn0.s_lqOUC8939I2Wgf-Qkcq9WaiH1Nxze1uv4-PIV6s7I";
@@ -52,6 +53,16 @@ const sbLinkDownline    = (tok, uid, uplineId) => sbFetch("/rest/v1/profiles?id=
 const sbPositionMember  = (tok, uid, positionedUnder) => sbFetch("/rest/v1/profiles?id=eq."+uid, { method:"PATCH", _token:tok, body:JSON.stringify({ positioned_under:positionedUnder }) });
 const sbGetPositions    = (tok)             => sbFetch("/rest/v1/team_positions?select=*", { _token:tok });
 const sbSetPosition     = (tok, uplineId, memberId, team) => sbFetch("/rest/v1/team_positions", { method:"POST", _token:tok, headers:{"Prefer":"resolution=merge-duplicates"}, body:JSON.stringify({ upline_id:uplineId, member_id:memberId, team }) });
+
+// Eventi helpers
+const LUDOVICO_ID = "6a24d654-bfb2-40c7-86b1-80fe6142e86b";
+const sbListEventi       = (tok)            => sbFetch("/rest/v1/eventi?select=*&order=data.desc", { _token:tok });
+const sbInsertEvento     = (tok, row)       => sbFetch("/rest/v1/eventi", { method:"POST", _token:tok, body:JSON.stringify(row) });
+const sbDeleteEvento     = (tok, id)        => sbFetch("/rest/v1/eventi?id=eq."+id, { method:"DELETE", _token:tok });
+const sbListEventoPersone = (tok, eventoId) => sbFetch("/rest/v1/evento_persone?select=*"+(eventoId?("&evento_id=eq."+eventoId):""), { _token:tok });
+const sbInsertEventoPersona = (tok, row)    => sbFetch("/rest/v1/evento_persone", { method:"POST", _token:tok, body:JSON.stringify(row) });
+const sbUpdateEventoPersona = (tok, id, row) => sbFetch("/rest/v1/evento_persone?id=eq."+id, { method:"PATCH", _token:tok, body:JSON.stringify(row) });
+const sbDeleteEventoPersona = (tok, id)     => sbFetch("/rest/v1/evento_persone?id=eq."+id, { method:"DELETE", _token:tok });
 
 
 function toApp(r) {
@@ -458,6 +469,7 @@ export default function App() {
   const [ready, setReady]         = useState(false);
   const [saving, setSaving]       = useState(false);
   const [downline, setDownline]   = useState([]);
+  const [allProfiles, setAllProfiles] = useState([]);
   const [dlProspects, setDlProspects] = useState([]);
   const [positions, setPositions] = useState([]);
   const [dashMode, setDashMode]   = useState("personale");
@@ -492,9 +504,10 @@ export default function App() {
     Promise.all([
       sbGetAllProfiles(auth.token),
       sbGetPositions(auth.token).catch(()=>[]),
-    ]).then(async ([allProfiles, allPositions]) => {
-      const all = allProfiles || [];
+    ]).then(async ([allProfilesRows, allPositions]) => {
+      const all = allProfilesRows || [];
       const pos = allPositions || [];
+      setAllProfiles(all);
       setPositions(pos);
       function buildFullDownline(parentId) {
         const result = [];
@@ -858,6 +871,11 @@ export default function App() {
         {view==="stats"   && <Statistiche data={data} dlProspects={dlProspects} />}
         {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} />}
         {view==="nomi"    && <ListaNomiView auth={auth} onInvitaProspect={invitaProspect} />}
+        {view==="eventi"  && <EventiView auth={auth} allProfiles={allProfiles} downline={downline} showToast={showToast}
+          sbListEventi={sbListEventi} sbInsertEvento={sbInsertEvento} sbDeleteEvento={sbDeleteEvento}
+          sbListEventoPersone={sbListEventoPersone} sbInsertEventoPersona={sbInsertEventoPersona}
+          sbUpdateEventoPersona={sbUpdateEventoPersona} sbDeleteEventoPersona={sbDeleteEventoPersona}
+          LUDOVICO_ID={LUDOVICO_ID} />}
         {view==="profilo" && <ProfiloView auth={auth} onUpdateProfile={updateProfile} downlineCount={downline.length} showToast={showToast} />}
       </main>
 
@@ -868,6 +886,7 @@ export default function App() {
           {id:"lista",label:"Prospect",badge:data.length},
           {id:"team",label:"Team",badge:downline.length||0},
           {id:"nomi",label:"Lista"},
+          {id:"eventi",label:"Eventi"},
           {id:"profilo",label:"Profilo"},
         ].map(item=>{
           const active=view===item.id;
@@ -907,6 +926,7 @@ function Sidebar({ view, setView, data, urgenti, onAdd, onExport, auth, onLogout
     { id:"stats",   icon:"", label:"Statistiche" },
     { id:"team",    icon:"", label:"Team", badge:downlineCount||0 },
     { id:"nomi",    icon:"", label:"Lista Nomi" },
+    { id:"eventi",  icon:"", label:"Eventi" },
     { id:"profilo", icon:"", label:"Profilo" },
   ];
   return (
