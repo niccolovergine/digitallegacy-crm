@@ -139,6 +139,7 @@ function Leaderboard({ ranking }) {
 export function EventiView({ auth, allProfiles, downline, showToast,
   sbListEventi,
   sbListEventoPersone, sbInsertEventoPersona, sbUpdateEventoPersona, sbDeleteEventoPersona,
+  sbListEventoStatus, sbUpsertEventoStatus,
   LUDOVICO_ID, onTicketCountChange }) {
 
   const [eventi, setEventi] = useState([]);
@@ -147,6 +148,33 @@ export function EventiView({ auth, allProfiles, downline, showToast,
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null); // { mode: 'in_ballo'|'venduto', persona }
   const [filtroVenduti, setFiltroVenduti] = useState("tutti"); // 'tutti' | 'team' | 'prospect'
+  const [statusMembri, setStatusMembri] = useState([]); // righe evento_membri_status per l'evento attivo
+
+  useEffect(() => {
+    if (!auth || !eventoAttivo || !sbListEventoStatus) { setStatusMembri([]); return; }
+    sbListEventoStatus(auth.token, eventoAttivo).then(rows => setStatusMembri(rows || []))
+      .catch(() => {});
+  }, [auth, eventoAttivo]);
+
+  async function aggiornaStatus(memberId, patch) {
+    const existing = statusMembri.find(s => s.user_id === memberId) || {};
+    const merged = {
+      evento_id: eventoAttivo, user_id: memberId,
+      ha_ticket: existing.ha_ticket || false,
+      ticket_extra: existing.ticket_extra || 0,
+      ticket_extra_venduti: existing.ticket_extra_venduti || 0,
+      hotel: existing.hotel || false,
+      viaggio: existing.viaggio || false,
+      ...patch,
+    };
+    setStatusMembri(sm => {
+      const senzaQuesta = sm.filter(s => s.user_id !== memberId);
+      return [...senzaQuesta, merged];
+    });
+    try {
+      await sbUpsertEventoStatus(auth.token, merged);
+    } catch (e) { showToast("Errore: " + e.message, "#ef4444"); }
+  }
 
   useEffect(() => {
     if (!auth) return;
@@ -181,6 +209,34 @@ export function EventiView({ auth, allProfiles, downline, showToast,
     const m = downline.find(d => d.id === userId);
     return m ? (m.nome || "") + " " + (m.cognome || "") : "";
   }
+
+  // Membri del mio team (io + downline) con lo stato ticket/logistica per l'evento attivo
+  const membriEvento = useMemo(() => {
+    const self = { id: auth.userId, nome: auth.profile?.nome || "Tu", cognome: auth.profile?.cognome || "" };
+    const list = [self, ...downline];
+    return list.map(m => {
+      const s = statusMembri.find(x => x.user_id === m.id) || {};
+      return {
+        id: m.id, nome: m.nome, cognome: m.cognome,
+        ha_ticket: s.ha_ticket || false,
+        ticket_extra: s.ticket_extra || 0,
+        ticket_extra_venduti: s.ticket_extra_venduti || 0,
+        hotel: s.hotel || false,
+        viaggio: s.viaggio || false,
+      };
+    });
+  }, [auth, downline, statusMembri]);
+
+  const logisticaStats = useMemo(() => {
+    return membriEvento.reduce((acc, m) => ({
+      conTicket: acc.conTicket + (m.ha_ticket ? 1 : 0),
+      hotelOk: acc.hotelOk + (m.hotel ? 1 : 0),
+      viaggioOk: acc.viaggioOk + (m.viaggio ? 1 : 0),
+      extraTot: acc.extraTot + (Number(m.ticket_extra) || 0),
+      extraVenduti: acc.extraVenduti + (Number(m.ticket_extra_venduti) || 0),
+    }), { conTicket: 0, hotelOk: 0, viaggioOk: 0, extraTot: 0, extraVenduti: 0 });
+  }, [membriEvento]);
+
 
   // tutti i ticket venduti di ogni evento (storico completo) - alimenta sia leaderboard che grafico
   const [tuttiVenduti, setTuttiVenduti] = useState([]);
@@ -386,6 +442,65 @@ export function EventiView({ auth, allProfiles, downline, showToast,
                     : venduti.map(p => <PersonaCard key={p.id} p={p} ownerName={ownerNameOf(p.user_id)} showOwner onClick={() => p.user_id === auth.userId && setModal({ persona: p })} />)
                   }
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Team — Ticket & Logistica */}
+          {evCorrente && (
+            <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: "1.4rem", marginTop: 18 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text)", marginBottom: 14 }}>Team {"\u2014"} Ticket & Logistica</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10, marginBottom: 16 }}>
+                {[
+                  { label: "Con ticket", value: logisticaStats.conTicket + "/" + membriEvento.length, color: "#10b981" },
+                  { label: "Hotel ok", value: logisticaStats.hotelOk + "/" + membriEvento.length, color: "#8b5cf6" },
+                  { label: "Viaggio ok", value: logisticaStats.viaggioOk + "/" + membriEvento.length, color: "#8b5cf6" },
+                  { label: "Ticket extra tot.", value: logisticaStats.extraTot, color: "#f59e0b" },
+                  { label: "Extra venduti", value: logisticaStats.extraVenduti, color: "#10b981" },
+                ].map((k, i) => (
+                  <div key={i} style={{ background: "var(--bg3)", border: "1px solid var(--border)", borderRadius: 10, padding: "10px 12px" }}>
+                    <div style={{ fontSize: 9, color: "var(--muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: .6, marginBottom: 4 }}>{k.label}</div>
+                    <div style={{ fontSize: 20, fontWeight: 900, color: k.color }}>{k.value}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 640 }}>
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid #11203a" }}>
+                      {["Membro", "Ticket proprio", "Ticket extra", "Extra venduti", "Hotel", "Viaggio"].map(h => (
+                        <th key={h} style={{ textAlign: "left", color: "var(--muted)", fontWeight: 700, fontSize: 10, textTransform: "uppercase", padding: "10px 14px", whiteSpace: "nowrap" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {membriEvento.map(m => (
+                      <tr key={m.id} style={{ borderBottom: "1px solid #0d1b3355" }}>
+                        <td style={{ padding: "10px 14px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                            <Av n={m.nome} c={m.cognome} color={m.id === auth.userId ? "var(--a1)" : "#6b7280"} size={28} />
+                            <span style={{ fontWeight: 700, fontSize: 13, color: "var(--text)" }}>{m.id === auth.userId ? "Tu" : (m.nome || "") + " " + (m.cognome || "")}</span>
+                          </div>
+                        </td>
+                        <td style={{ padding: "10px 14px" }}>
+                          <input type="checkbox" checked={m.ha_ticket} onChange={e => aggiornaStatus(m.id, { ha_ticket: e.target.checked })} style={{ width: 18, height: 18, cursor: "pointer" }} />
+                        </td>
+                        <td style={{ padding: "10px 14px" }}>
+                          <input type="number" min="0" value={m.ticket_extra} onChange={e => aggiornaStatus(m.id, { ticket_extra: Math.max(0, Number(e.target.value) || 0) })} style={{ width: 64, fontSize: 12, padding: "5px 8px" }} />
+                        </td>
+                        <td style={{ padding: "10px 14px" }}>
+                          <input type="number" min="0" value={m.ticket_extra_venduti} onChange={e => aggiornaStatus(m.id, { ticket_extra_venduti: Math.max(0, Number(e.target.value) || 0) })} style={{ width: 64, fontSize: 12, padding: "5px 8px" }} />
+                        </td>
+                        <td style={{ padding: "10px 14px" }}>
+                          <input type="checkbox" checked={m.hotel} onChange={e => aggiornaStatus(m.id, { hotel: e.target.checked })} style={{ width: 18, height: 18, cursor: "pointer" }} />
+                        </td>
+                        <td style={{ padding: "10px 14px" }}>
+                          <input type="checkbox" checked={m.viaggio} onChange={e => aggiornaStatus(m.id, { viaggio: e.target.checked })} style={{ width: 18, height: 18, cursor: "pointer" }} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}

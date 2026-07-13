@@ -56,7 +56,7 @@ const sbGetPositions    = (tok)             => sbFetch("/rest/v1/team_positions?
 const sbSetPosition     = (tok, uplineId, memberId, team) => sbFetch("/rest/v1/team_positions", { method:"POST", _token:tok, headers:{"Prefer":"resolution=merge-duplicates"}, body:JSON.stringify({ upline_id:uplineId, member_id:memberId, team }) });
 
 // Eventi helpers
-const LUDOVICO_ID = "6a24d654-bfb2-40c7-86b1-80fe6142e86b";
+const LUDOVICO_ID = "3eeef288-c1f0-409e-bde7-d35cf5694e7d";
 const sbListEventi       = (tok)            => sbFetch("/rest/v1/eventi?select=*&order=data.desc", { _token:tok });
 const sbInsertEvento     = (tok, row)       => sbFetch("/rest/v1/eventi", { method:"POST", _token:tok, body:JSON.stringify(row) });
 const sbDeleteEvento     = (tok, id)        => sbFetch("/rest/v1/eventi?id=eq."+id, { method:"DELETE", _token:tok });
@@ -64,6 +64,8 @@ const sbListEventoPersone = (tok, eventoId) => sbFetch("/rest/v1/evento_persone?
 const sbInsertEventoPersona = (tok, row)    => sbFetch("/rest/v1/evento_persone", { method:"POST", _token:tok, body:JSON.stringify(row) });
 const sbUpdateEventoPersona = (tok, id, row) => sbFetch("/rest/v1/evento_persone?id=eq."+id, { method:"PATCH", _token:tok, body:JSON.stringify(row) });
 const sbDeleteEventoPersona = (tok, id)     => sbFetch("/rest/v1/evento_persone?id=eq."+id, { method:"DELETE", _token:tok });
+const sbListEventoStatus  = (tok, eventoId) => sbFetch("/rest/v1/evento_membri_status?select=*&evento_id=eq."+eventoId, { _token:tok });
+const sbUpsertEventoStatus = (tok, row)     => sbFetch("/rest/v1/evento_membri_status?on_conflict=evento_id,user_id", { method:"POST", _token:tok, headers:{ "Prefer":"resolution=merge-duplicates,return=representation" }, body:JSON.stringify(row) });
 
 
 function toApp(r) {
@@ -947,6 +949,7 @@ export default function App() {
           sbListEventi={sbListEventi}
           sbListEventoPersone={sbListEventoPersone} sbInsertEventoPersona={sbInsertEventoPersona}
           sbUpdateEventoPersona={sbUpdateEventoPersona} sbDeleteEventoPersona={sbDeleteEventoPersona}
+          sbListEventoStatus={sbListEventoStatus} sbUpsertEventoStatus={sbUpsertEventoStatus}
           LUDOVICO_ID={LUDOVICO_ID} onTicketCountChange={setTicketVendutiCount} />}
         {view==="profilo" && <ProfiloView auth={auth} onUpdateProfile={updateProfile} downlineCount={downline.length} showToast={showToast} onUpdateRinnovo={updateRinnovo} />}
       </main>
