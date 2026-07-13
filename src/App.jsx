@@ -176,6 +176,12 @@ function cicloLabel(c) {
   const fd = s => new Date(s+"T12:00:00").toLocaleDateString("it-IT",{day:"numeric",month:"short"});
   return fd(r[1])+" \u2013 "+fd(r[2]);
 }
+function cicloEndDateTime(c) {
+  const r = CICLI.find(x=>x[0]===Number(c));
+  if (!r) return null;
+  // La data fine ciclo nel range CICLI è già il sabato di chiusura; l'orario di chiusura è le 06:00
+  return new Date(r[2]+"T06:00:00");
+}
 function dataByCiclo(arr,c) {
   const r = CICLI.find(x=>x[0]===Number(c));
   if (!r) return [];
@@ -1037,6 +1043,47 @@ function Sidebar({ view, setView, data, urgenti, onAdd, onExport, auth, onLogout
 }
 
 //  DASHBOARD 
+function CountdownCiclo({ ciclo }) {
+  const target = cicloEndDateTime(ciclo);
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  if (!target) return null;
+  const diff = Math.max(0, target.getTime() - now);
+  const giorni = Math.floor(diff / 86400000);
+  const ore = Math.floor((diff % 86400000) / 3600000);
+  const min = Math.floor((diff % 3600000) / 60000);
+  const sec = Math.floor((diff % 60000) / 1000);
+  const totMs = 28*86400000;
+  const elapsedMs = Math.min(totMs, Math.max(0, totMs - diff));
+  const pct = Math.round((elapsedMs/totMs)*100);
+  const giornoNum = Math.min(28, Math.floor(elapsedMs/86400000)+1);
+  const box = v => String(v).padStart(2,"0");
+  return (
+    <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"18px 22px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:16}}>
+      <div style={{flex:1,minWidth:220}}>
+        <div style={{fontSize:10,color:"var(--muted)",fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>Chiusura ciclo</div>
+        <div style={{fontSize:15,fontWeight:800,color:"var(--text)",marginTop:2}}>
+          {target.toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})} alle ore {box(target.getHours())}:{box(target.getMinutes())}
+        </div>
+        <div style={{marginTop:10,height:6,borderRadius:4,background:"var(--bg4)",overflow:"hidden",maxWidth:360}}>
+          <div style={{height:"100%",width:pct+"%",background:"linear-gradient(90deg,var(--a2),var(--a1))",borderRadius:4}} />
+        </div>
+        <div style={{fontSize:11,color:"var(--muted)",marginTop:6}}>Giorno {giornoNum} di 28</div>
+      </div>
+      <div style={{display:"flex",gap:18}}>
+        {[["giorni",giorni],["ore",ore],["min",min],["sec",sec]].map(([label,val])=>(
+          <div key={label} style={{textAlign:"center"}}>
+            <div style={{fontSize:30,fontWeight:900,color:"var(--text)",lineHeight:1}}>{box(val)}</div>
+            <div style={{fontSize:9,color:"var(--muted)",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginTop:2}}>{label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, funnelCounts, funnelMax, urgenti, dashCiclo, setDashCiclo, onOpen, dashMode, setDashMode, hasTeam, ticketVenduti }) {
   const cc = v => v>=20?"#10b981":v>=10?"var(--a2)":"#f59e0b";
   const bvCiclo = cdSub.reduce((acc,p)=>acc+bvOfPacchetto(p.pacchetto,p.bvCustom),0);
@@ -1077,6 +1124,7 @@ function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, f
           </div>
         </div>
       </div>
+      {dashCiclo===CICLO_CORRENTE && <CountdownCiclo ciclo={dashCiclo} />}
       <div className="kpi-grid" style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12,marginBottom:16}}>
         {kpis.map((k,i)=>(
           <div key={i} className="kpi" style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"18px 20px",position:"relative",overflow:"hidden"}}>
