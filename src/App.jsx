@@ -486,6 +486,7 @@ export default function App() {
   const [dashMode, setDashMode]   = useState("personale");
   const [sidebarMode, setSidebarMode] = useState("tutti");
   const [listaMode, setListaMode] = useState("personale");
+  const [fLeg, setFLeg] = useState(""); // "" | "sinistra" | "destra" — solo per vista Team
 
   useEffect(()=>{
     const el=document.createElement("style");
@@ -877,9 +878,17 @@ export default function App() {
   const funnelMax=Math.max(cd.length,1);
 
   // Prospect del team con owner name
+  function getLegForMe(memberId) {
+    const pos = positions.find(p => p.member_id===memberId && p.upline_id===auth.userId);
+    if (pos) return pos.team;
+    const member = downline.find(m => m.id===memberId);
+    const parent = member && downline.find(m => m.id===member.positioned_under);
+    if (parent) return getLegForMe(parent.id);
+    return null;
+  }
   const teamProspects = dlProspects.map(p => {
     const owner = downline.find(m => m.id === p._userId);
-    return { ...p, _ownerName: owner ? (owner.nome||owner.email)+" "+(owner.cognome||"") : "" };
+    return { ...p, _ownerName: owner ? (owner.nome||owner.email)+" "+(owner.cognome||"") : "", _leg: getLegForMe(p._userId) };
   });
 
   const listaSource = listaMode === "team" ? teamProspects : data;
@@ -890,7 +899,8 @@ export default function App() {
       &&(!fCiclo||cicloOfDate(p.conosciutoAt)===Number(fCiclo))
       &&(!fCitta||( p.citta||"").toLowerCase().includes(fCitta.toLowerCase()))
       &&(!fInteresse||p.interesse===fInteresse)
-      &&(!fPercorso||(fPercorso==="in_percorso"?FASI_FUNNEL.includes(p.fase):FASI_SPECIALI.includes(p.fase)));
+      &&(!fPercorso||(fPercorso==="in_percorso"?FASI_FUNNEL.includes(p.fase):FASI_SPECIALI.includes(p.fase)))
+      &&(listaMode!=="team"||!fLeg||p._leg===fLeg);
   });
 
   if (!auth) return <AuthScreen onAuth={setAuth} />;
@@ -929,7 +939,7 @@ export default function App() {
 
       <main className="mc" style={{flex:1,overflowY:"auto",height:"100vh",paddingBottom:0}}>
         {view==="dash"  && <Dash cd={cd} cdSub={cdSub} cdAct={cdAct} cdFU={cdFU} cdNI={cdNI} cdConv={cdConv} totSub={totSub} totConv={totConv} totAll={dashData.length} funnelCounts={funnelCounts} funnelMax={funnelMax} urgenti={urgenti} dashCiclo={dashCiclo} setDashCiclo={setDashCiclo} onOpen={openDetail} dashMode={dashMode} setDashMode={setDashMode} hasTeam={dlProspects.length>0} ticketVenduti={ticketVendutiCount} />}
-        {view==="lista" && <Lista prospects={listaData} total={listaMode==="team"?teamProspects.length:data.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} fCitta={fCitta} setFCitta={setFCitta} fInteresse={fInteresse} setFInteresse={setFInteresse} fPercorso={fPercorso} setFPercorso={setFPercorso} onOpen={openDetail} onAdd={openAdd} listaMode={listaMode} setListaMode={setListaMode} hasTeam={dlProspects.length>0} />}
+        {view==="lista" && <Lista prospects={listaData} total={listaMode==="team"?teamProspects.length:data.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} fCitta={fCitta} setFCitta={setFCitta} fInteresse={fInteresse} setFInteresse={setFInteresse} fPercorso={fPercorso} setFPercorso={setFPercorso} fLeg={fLeg} setFLeg={setFLeg} onOpen={openDetail} onAdd={openAdd} listaMode={listaMode} setListaMode={setListaMode} hasTeam={dlProspects.length>0} />}
         {view==="stats"   && <Statistiche data={data} dlProspects={dlProspects} />}
         {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onUpdateRinnovo={updateRinnovo} />}
         {view==="nomi"    && <ListaNomiView auth={auth} onInvitaProspect={invitaProspect} />}
@@ -1287,7 +1297,7 @@ function Statistiche({ data, dlProspects }) {
 }
 
 //  LISTA 
-function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, setFFonte, fCiclo, setFCiclo, fCitta, setFCitta, fInteresse, setFInteresse, fPercorso, setFPercorso, onOpen, onAdd, listaMode, setListaMode, hasTeam }) {
+function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, setFFonte, fCiclo, setFCiclo, fCitta, setFCitta, fInteresse, setFInteresse, fPercorso, setFPercorso, fLeg, setFLeg, onOpen, onAdd, listaMode, setListaMode, hasTeam }) {
   return (
     <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1.4rem",flexWrap:"wrap",gap:12}}>
@@ -1328,6 +1338,13 @@ function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, s
           <option value="in_percorso">In percorso</option>
           <option value="non_in_percorso">Non in percorso</option>
         </select>
+        {listaMode==="team" && (
+          <select value={fLeg} onChange={e=>setFLeg(e.target.value)} style={{flex:1,minWidth:130}}>
+            <option value="">Tutta la squadra</option>
+            <option value="sinistra">Solo sinistra</option>
+            <option value="destra">Solo destra</option>
+          </select>
+        )}
       </div>
       {prospects.length===0
         ?<div style={{textAlign:"center",padding:"4rem",color:"var(--border2)"}}><div style={{fontSize:44,marginBottom:12}}></div><p style={{fontSize:14,marginBottom:14}}>Nessun prospect trovato</p><button onClick={onAdd} style={{padding:"9px 20px",fontSize:13,fontWeight:800,background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:10,cursor:"pointer"}}>Aggiungi il primo</button></div>
