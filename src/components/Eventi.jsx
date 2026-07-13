@@ -136,7 +136,7 @@ function Leaderboard({ ranking }) {
   );
 }
 
-export function EventiView({ auth, allProfiles, downline, showToast,
+export function EventiView({ auth, allProfiles, downline, positions, showToast,
   sbListEventi,
   sbListEventoPersone, sbInsertEventoPersona, sbUpdateEventoPersona, sbDeleteEventoPersona,
   sbListEventoStatus, sbUpsertEventoStatus,
@@ -210,6 +210,18 @@ export function EventiView({ auth, allProfiles, downline, showToast,
     return m ? (m.nome || "") + " " + (m.cognome || "") : "";
   }
 
+  function getLegForMe(memberId) {
+    if (memberId === auth.userId) return null;
+    const pos = (positions || []).find(p => p.member_id === memberId && p.upline_id === auth.userId);
+    if (pos) return pos.team;
+    const member = downline.find(m => m.id === memberId);
+    const parent = member && downline.find(m => m.id === member.positioned_under);
+    if (parent) return getLegForMe(parent.id);
+    return null;
+  }
+
+  const [fLegEvento, setFLegEvento] = useState(""); // "" | "sinistra" | "destra"
+
   // Membri del mio team (io + downline) con lo stato ticket/logistica per l'evento attivo
   const membriEvento = useMemo(() => {
     const self = { id: auth.userId, nome: auth.profile?.nome || "Tu", cognome: auth.profile?.cognome || "" };
@@ -217,7 +229,7 @@ export function EventiView({ auth, allProfiles, downline, showToast,
     return list.map(m => {
       const s = statusMembri.find(x => x.user_id === m.id) || {};
       return {
-        id: m.id, nome: m.nome, cognome: m.cognome,
+        id: m.id, nome: m.nome, cognome: m.cognome, leg: getLegForMe(m.id),
         ha_ticket: s.ha_ticket || false,
         ticket_extra: s.ticket_extra || 0,
         ticket_extra_venduti: s.ticket_extra_venduti || 0,
@@ -225,17 +237,25 @@ export function EventiView({ auth, allProfiles, downline, showToast,
         viaggio: s.viaggio || false,
       };
     });
-  }, [auth, downline, statusMembri]);
+  }, [auth, downline, positions, statusMembri]);
 
-  const logisticaStats = useMemo(() => {
-    return membriEvento.reduce((acc, m) => ({
+  const membriFiltrati = useMemo(() =>
+    membriEvento.filter(m => !fLegEvento || m.leg === fLegEvento),
+    [membriEvento, fLegEvento]
+  );
+
+  function statsOf(list) {
+    return list.reduce((acc, m) => ({
       conTicket: acc.conTicket + (m.ha_ticket ? 1 : 0),
       hotelOk: acc.hotelOk + (m.hotel ? 1 : 0),
       viaggioOk: acc.viaggioOk + (m.viaggio ? 1 : 0),
       extraTot: acc.extraTot + (Number(m.ticket_extra) || 0),
       extraVenduti: acc.extraVenduti + (Number(m.ticket_extra_venduti) || 0),
     }), { conTicket: 0, hotelOk: 0, viaggioOk: 0, extraTot: 0, extraVenduti: 0 });
-  }, [membriEvento]);
+  }
+  const logisticaStats = useMemo(() => statsOf(membriFiltrati), [membriFiltrati]);
+  const statsSinistra = useMemo(() => statsOf(membriEvento.filter(m => m.leg === "sinistra")), [membriEvento]);
+  const statsDestra = useMemo(() => statsOf(membriEvento.filter(m => m.leg === "destra")), [membriEvento]);
 
 
   // tutti i ticket venduti di ogni evento (storico completo) - alimenta sia leaderboard che grafico
@@ -355,14 +375,6 @@ export function EventiView({ auth, allProfiles, downline, showToast,
         )}
       </div>
 
-      {/* Leaderboard */}
-      <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: "1.6rem", marginBottom: 18 }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text)", marginBottom: 18, display: "flex", alignItems: "center", gap: 8 }}>
-          <span>{"\ud83c\udfc6"}</span> Leaderboard
-        </div>
-        <Leaderboard ranking={ranking} />
-      </div>
-
       {eventi.length === 0 && !loading ? (
         <div style={{ textAlign: "center", padding: "3rem", color: "var(--border2)" }}>
           Nessun evento disponibile al momento.
@@ -386,24 +398,6 @@ export function EventiView({ auth, allProfiles, downline, showToast,
               ))}
             </div>
           )}
-
-          {/* Grafico andamento */}
-          <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: "1.4rem", marginBottom: 18 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text)", marginBottom: 14 }}>Andamento</div>
-            <div style={{ height: 220 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 5, right: 10, left: -15, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                  <XAxis dataKey="nome" stroke="var(--muted)" fontSize={11} />
-                  <YAxis stroke="var(--muted)" fontSize={12} allowDecimals={false} />
-                  <Tooltip contentStyle={{ background: "var(--bg2)", border: "1px solid var(--border2)", borderRadius: 10, fontSize: 12 }} labelStyle={{ color: "var(--text)" }} />
-                  <Bar dataKey="venduti" name="Venduti" radius={[6, 6, 0, 0]} fill="var(--a1)">
-                    {chartData.map((_, i) => <Cell key={i} fill="var(--a1)" />)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
 
           {/* In ballo + venduti */}
           {evCorrente && (
@@ -449,12 +443,36 @@ export function EventiView({ auth, allProfiles, downline, showToast,
           {/* Team — Ticket & Logistica */}
           {evCorrente && (
             <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: "1.4rem", marginTop: 18 }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text)", marginBottom: 14 }}>Team {"\u2014"} Ticket & Logistica</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text)" }}>Team {"\u2014"} Ticket & Logistica</div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {["", "sinistra", "destra"].map(f => (
+                    <button key={f} onClick={() => setFLegEvento(f)}
+                      style={{ padding: "5px 12px", borderRadius: 8, border: fLegEvento === f ? "1px solid #2563eb40" : "1px solid transparent", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "inherit", background: fLegEvento === f ? "var(--bg4)" : "var(--bg3)", color: fLegEvento === f ? "var(--a2)" : "var(--muted)" }}>
+                      {f === "" ? "Tutti" : f.charAt(0).toUpperCase() + f.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+                {[{ label: "Sinistra", s: statsSinistra, color: "var(--a1)" }, { label: "Destra", s: statsDestra, color: "#10b981" }].map(({ label, s, color }) => (
+                  <div key={label} style={{ background: "var(--bg3)", border: "1px solid " + color + "28", borderRadius: 12, padding: "0.9rem 1rem" }}>
+                    <div style={{ fontSize: 12, fontWeight: 900, color, marginBottom: 8 }}>Squadra {label}</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
+                      <div><div style={{ fontSize: 9, color: "var(--muted)" }}>Con ticket</div><div style={{ fontSize: 15, fontWeight: 900, color }}>{s.conTicket}</div></div>
+                      <div><div style={{ fontSize: 9, color: "var(--muted)" }}>Extra tot.</div><div style={{ fontSize: 15, fontWeight: 900, color }}>{s.extraTot}</div></div>
+                      <div><div style={{ fontSize: 9, color: "var(--muted)" }}>Extra venduti</div><div style={{ fontSize: 15, fontWeight: 900, color }}>{s.extraVenduti}</div></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10, marginBottom: 16 }}>
                 {[
-                  { label: "Con ticket", value: logisticaStats.conTicket + "/" + membriEvento.length, color: "#10b981" },
-                  { label: "Hotel ok", value: logisticaStats.hotelOk + "/" + membriEvento.length, color: "#8b5cf6" },
-                  { label: "Viaggio ok", value: logisticaStats.viaggioOk + "/" + membriEvento.length, color: "#8b5cf6" },
+                  { label: "Con ticket", value: logisticaStats.conTicket + "/" + membriFiltrati.length, color: "#10b981" },
+                  { label: "Hotel ok", value: logisticaStats.hotelOk + "/" + membriFiltrati.length, color: "#8b5cf6" },
+                  { label: "Viaggio ok", value: logisticaStats.viaggioOk + "/" + membriFiltrati.length, color: "#8b5cf6" },
                   { label: "Ticket extra tot.", value: logisticaStats.extraTot, color: "#f59e0b" },
                   { label: "Extra venduti", value: logisticaStats.extraVenduti, color: "#10b981" },
                 ].map((k, i) => (
@@ -465,22 +483,27 @@ export function EventiView({ auth, allProfiles, downline, showToast,
                 ))}
               </div>
               <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 640 }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 700 }}>
                   <thead>
                     <tr style={{ borderBottom: "1px solid #11203a" }}>
-                      {["Membro", "Ticket proprio", "Ticket extra", "Extra venduti", "Hotel", "Viaggio"].map(h => (
+                      {["Membro", "Squadra", "Ticket proprio", "Ticket extra", "Extra venduti", "Hotel", "Viaggio"].map(h => (
                         <th key={h} style={{ textAlign: "left", color: "var(--muted)", fontWeight: 700, fontSize: 10, textTransform: "uppercase", padding: "10px 14px", whiteSpace: "nowrap" }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {membriEvento.map(m => (
+                    {membriFiltrati.map(m => {
+                      const legColor = m.leg === "sinistra" ? "var(--a1)" : m.leg === "destra" ? "#10b981" : "#6b7280";
+                      return (
                       <tr key={m.id} style={{ borderBottom: "1px solid #0d1b3355" }}>
                         <td style={{ padding: "10px 14px" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
                             <Av n={m.nome} c={m.cognome} color={m.id === auth.userId ? "var(--a1)" : "#6b7280"} size={28} />
                             <span style={{ fontWeight: 700, fontSize: 13, color: "var(--text)" }}>{m.id === auth.userId ? "Tu" : (m.nome || "") + " " + (m.cognome || "")}</span>
                           </div>
+                        </td>
+                        <td style={{ padding: "10px 14px" }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: legColor }}>{m.leg ? m.leg.charAt(0).toUpperCase() + m.leg.slice(1) : "\u2014"}</span>
                         </td>
                         <td style={{ padding: "10px 14px" }}>
                           <input type="checkbox" checked={m.ha_ticket} onChange={e => aggiornaStatus(m.id, { ha_ticket: e.target.checked })} style={{ width: 18, height: 18, cursor: "pointer" }} />
@@ -498,7 +521,7 @@ export function EventiView({ auth, allProfiles, downline, showToast,
                           <input type="checkbox" checked={m.viaggio} onChange={e => aggiornaStatus(m.id, { viaggio: e.target.checked })} style={{ width: 18, height: 18, cursor: "pointer" }} />
                         </td>
                       </tr>
-                    ))}
+                    );})}
                   </tbody>
                 </table>
               </div>
