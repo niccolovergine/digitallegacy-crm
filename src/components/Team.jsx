@@ -19,6 +19,15 @@ function cicloLabel(c){const r=CICLI.find(x=>x[0]===Number(c));if(!r)return"Cicl
 function dataByCiclo(arr,c){const r=CICLI.find(x=>x[0]===Number(c));if(!r)return[];return arr.filter(p=>p.conosciutoAt&&p.conosciutoAt>=r[1]&&p.conosciutoAt<r[2]);}
 const fmt=d=>d?new Date(d+"T12:00:00").toLocaleDateString("it-IT"):"\u2014";
 
+const RINNOVO_CV={mensile:90,semestrale:75,annuale:75};
+const RINNOVO_LABEL={mensile:"Mensile",semestrale:"Semestrale",annuale:"Annuale"};
+function giorniAlla(dateStr){
+  if(!dateStr)return null;
+  const oggi=new Date();oggi.setHours(0,0,0,0);
+  const target=new Date(dateStr+"T00:00:00");
+  return Math.round((target-oggi)/86400000);
+}
+
 function teamStats(prospects){
   const total=prospects.length;
   const sub=prospects.filter(p=>p.fase==="SUB").length;
@@ -351,7 +360,7 @@ function TreeCanvas({ memberId, memberNome, memberCognome, memberEmail, allMembe
 
 
 
-export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,positions,onOpenProspect,onPositionInTree}){
+export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,positions,onOpenProspect,onPositionInTree,onUpdateRinnovo}){
   const[selectedMember,setSelectedMember]=useState(null);
   const[teamFilter,setTeamFilter]=useState("all");
   const[copied,setCopied]=useState(false);
@@ -538,7 +547,7 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
       )}
 
       <div style={{display:"flex",background:"var(--bg3)",borderRadius:10,padding:4,marginBottom:16,border:"1px solid var(--border)"}}>
-        {[{id:"dashboard",label:"Dashboard"},{id:"albero",label:"Albero"},{id:"membri",label:"Membri"}].map(t=>(
+        {[{id:"dashboard",label:"Dashboard"},{id:"albero",label:"Albero"},{id:"membri",label:"Membri"},{id:"rinnovi",label:"Rinnovi"}].map(t=>(
           <button key={t.id} onClick={()=>setActiveTeamTab(t.id)}
             style={{flex:1,padding:"8px 16px",borderRadius:8,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"inherit",transition:"all .2s",background:activeTeamTab===t.id?"var(--bg4)":"transparent",color:activeTeamTab===t.id?"var(--a2)":"var(--muted)",boxShadow:activeTeamTab===t.id?"inset 0 0 0 1px var(--sidebar-border)":"none"}}>
             {t.label}
@@ -657,6 +666,7 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
             </>
           )}
 
+          {activeTeamTab!=="rinnovi"&&
           <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden"}}>
             <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
               <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -710,6 +720,79 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
               </table>
             }
           </div>
+          }
+
+          {activeTeamTab==="rinnovi"&&(()=>{
+            const membriConRinnovo=filteredMembers.map(m=>({m,giorni:giorniAlla(m.rinnovo_scadenza),cv:m.rinnovo_tipo?RINNOVO_CV[m.rinnovo_tipo]||0:0}));
+            const inScadenza=membriConRinnovo.filter(x=>x.giorni!=null&&x.giorni>=0&&x.giorni<=7);
+            const cvPotenziale=inScadenza.reduce((acc,x)=>acc+x.cv,0);
+            const ordinati=[...membriConRinnovo].sort((a,b)=>{
+              if(a.giorni==null&&b.giorni==null)return 0;
+              if(a.giorni==null)return 1;
+              if(b.giorni==null)return -1;
+              return a.giorni-b.giorni;
+            });
+            return(
+              <>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:16}}>
+                  {[
+                    {label:"Rinnovi entro 7 giorni",value:inScadenza.length,color:"#f59e0b"},
+                    {label:"CV potenziale (7gg)",value:cvPotenziale,color:"#10b981"},
+                    {label:"Rinnovi impostati",value:membriConRinnovo.filter(x=>x.m.rinnovo_scadenza).length+"/"+downline.length,color:"#8b5cf6"},
+                  ].map((k,i)=>(
+                    <div key={i} style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"16px 18px",position:"relative",overflow:"hidden"}}>
+                      <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"linear-gradient(90deg,"+k.color+","+k.color+"44)",borderRadius:"14px 14px 0 0"}}/>
+                      <div style={{fontSize:10,color:"var(--muted)",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:10}}>{k.label}</div>
+                      <div style={{fontSize:30,fontWeight:900,color:k.color,lineHeight:1}}>{k.value}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden"}}>
+                  <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
+                    <div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}>Rinnovi team</div>
+                    <div style={{display:"flex",gap:6}}>
+                      {["all","sinistra","destra","nessuna"].map(f=>(
+                        <button key={f} onClick={()=>setTeamFilter(f)}
+                          style={{padding:"5px 12px",borderRadius:8,border:teamFilter===f?"1px solid #2563eb40":"1px solid transparent",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"inherit",transition:"all .2s",background:teamFilter===f?"var(--bg4)":"transparent",color:teamFilter===f?"var(--a2)":"var(--muted)"}}>
+                          {f==="all"?"Tutti":f==="nessuna"?"Non assegnati":f.charAt(0).toUpperCase()+f.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {downline.length===0
+                    ?<div style={{padding:"3rem",textAlign:"center",color:"var(--border2)"}}><div style={{fontSize:36,marginBottom:12}}>{"\u25c8"}</div><p style={{fontSize:14}}>Nessun membro ancora</p></div>
+                    :<table style={{width:"100%",borderCollapse:"collapse"}}>
+                      <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Membro","Tipo rinnovo","Scadenza","Giorni","CV potenziale"].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
+                      <tbody>{ordinati.map(({m,giorni,cv})=>{
+                        const urgente=giorni!=null&&giorni>=0&&giorni<=7;
+                        const scaduto=giorni!=null&&giorni<0;
+                        return(
+                          <tr key={m.id} style={{borderBottom:"1px solid #0d1b3355",background:urgente?"var(--a1-10)":"transparent"}}>
+                            <td style={{padding:"12px 16px"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Av n={m.nome||m.email} c={m.cognome} color={urgente?"#f59e0b":"#6b7280"}/><div style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{m.nome||m.email} {m.cognome||""}</div></div></td>
+                            <td style={{padding:"12px 16px"}}>
+                              <select value={m.rinnovo_tipo||""} onChange={e=>onUpdateRinnovo(m.id,e.target.value||null,m.rinnovo_scadenza||null)} style={{width:"auto",minWidth:120,fontSize:11,padding:"5px 9px",background:"var(--bg3)",border:"1px solid var(--border2)"}}>
+                                <option value="">Non impostato</option>
+                                <option value="mensile">Mensile (90CV)</option>
+                                <option value="semestrale">Semestrale (75CV)</option>
+                                <option value="annuale">Annuale (75CV)</option>
+                              </select>
+                            </td>
+                            <td style={{padding:"12px 16px"}}>
+                              <input type="date" value={m.rinnovo_scadenza||""} onChange={e=>onUpdateRinnovo(m.id,m.rinnovo_tipo||null,e.target.value||null)} style={{fontSize:11,padding:"5px 9px",background:"var(--bg3)",border:"1px solid var(--border2)",color:"var(--text)",borderRadius:7}}/>
+                            </td>
+                            <td style={{padding:"12px 16px",fontWeight:800,fontSize:13,color:scaduto?"#ef4444":urgente?"#f59e0b":"var(--text)"}}>
+                              {giorni==null?"\u2014":scaduto?"Scaduto":giorni+"g"}
+                            </td>
+                            <td style={{padding:"12px 16px",fontWeight:800,fontSize:13,color:"#10b981"}}>{cv?cv+" CV":"\u2014"}</td>
+                          </tr>
+                        );
+                      })}</tbody>
+                    </table>
+                  }
+                </div>
+              </>
+            );
+          })()}
         </>
       )}
     </div>

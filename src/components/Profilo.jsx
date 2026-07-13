@@ -1,7 +1,7 @@
 import { useState } from "react";
 
-const SB_URL = "https://kuxrpbsvnkxhsicbyupp.supabase.co";
-const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1eHJwYnN2bmt4aHNpY2J5dXBwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwNzMwODIsImV4cCI6MjA5NzY0OTA4Mn0.s_lqOUC8939I2Wgf-Qkcq9WaiH1Nxze1uv4-PIV6s7I";
+const SB_URL = "https://gyxvhnwzkhjrgpqvakfw.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5eHZobnd6a2hqcmdwcXZha2Z3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NTEzOTQsImV4cCI6MjA5OTUyNzM5NH0.aYAzw7j6YcBIWdBsdHq0ibZrjyyK5CZqNAcchfdQt0o";
 
 const TEMI = {
   blu:   { label:"Blu",   preview:"linear-gradient(135deg,#1e40af,#0ea5e9)", vars:{"--bg":"#060b18","--bg2":"#080f1f","--bg3":"#0a1426","--bg4":"#0d1b33","--border":"#11203a","--border2":"#1e3a5f","--a1":"#2563eb","--a2":"#0ea5e9","--a1-10":"#2563eb1a","--a1-12":"#2563eb1f","--a1-13":"#2563eb21","--a1-18":"#2563eb2e","--a1-25":"#2563eb40","--a1-31":"#2563eb4f","--text":"#eff6ff","--muted":"#5278a8","--muted2":"#2a4060","--sidebar-active":"#0d1b33","--sidebar-border":"#2563eb40"} },
@@ -36,7 +36,7 @@ async function sbFetch(path, opts = {}) {
 
 const sbGetProfileByRef = (tok, code) => sbFetch("/rest/v1/profiles?referral_code=eq." + code + "&select=*", { _token: tok });
 
-export function ProfiloView({ auth, onUpdateProfile, downlineCount }) {
+export function ProfiloView({ auth, onUpdateProfile, downlineCount, onUpdateRinnovo }) {
   const p = auth.profile || {};
   const [nome,      setNome]      = useState(p.nome || "");
   const [cognome,   setCognome]   = useState(p.cognome || "");
@@ -45,6 +45,9 @@ export function ProfiloView({ auth, onUpdateProfile, downlineCount }) {
   const [instagram, setInstagram] = useState(p.instagram || "");
   const [sponsorId, setSponsorId] = useState("");
   const [sponsorName, setSponsorName] = useState(null);
+  const [rinnovoTipo, setRinnovoTipo] = useState(p.rinnovo_tipo || "");
+  const [rinnovoScadenza, setRinnovoScadenza] = useState(p.rinnovo_scadenza || "");
+  const [savingRinnovo, setSavingRinnovo] = useState(false);
   const [saving,    setSaving]    = useState(false);
   const [savingSponsor, setSavingSponsor] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -71,6 +74,15 @@ export function ProfiloView({ auth, onUpdateProfile, downlineCount }) {
       showMsg("Profilo aggiornato");
     } catch(e) { showMsg("Errore: " + e.message, "#ef4444"); }
     setSaving(false);
+  }
+
+  async function saveRinnovo() {
+    setSavingRinnovo(true);
+    try {
+      await onUpdateRinnovo(auth.userId, rinnovoTipo || null, rinnovoScadenza || null);
+      showMsg("Rinnovo aggiornato");
+    } catch(e) { showMsg("Errore: " + e.message, "#ef4444"); }
+    setSavingRinnovo(false);
   }
 
   async function saveSponsor() {
@@ -132,6 +144,32 @@ export function ProfiloView({ auth, onUpdateProfile, downlineCount }) {
             style={{ padding: "9px 22px", background: "linear-gradient(135deg,var(--a1),var(--a2))", color: "#fff", border: "none", borderRadius: 9, cursor: saving ? "not-allowed" : "pointer", fontWeight: 800, fontSize: 13, display: "flex", alignItems: "center", gap: 7, opacity: saving ? 0.7 : 1 }}>
             {saving && <span style={{ width: 14, height: 14, border: "2px solid #ffffff44", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block", animation: "spin .7s linear infinite" }} />}
             Salva
+          </button>
+        </div>
+      </div>
+
+      <div style={{ background: "var(--bg2)", border: "1px solid #1e3a5f", borderRadius: 14, padding: "1.4rem", marginBottom: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text)", marginBottom: 4 }}>Il tuo rinnovo</div>
+        <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: 16 }}>Inserisci qui la scadenza esatta che vedi sull altro sito, cosi la tua upline sa quando aspettarsi il rinnovo.</p>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+          <div>
+            <label style={lbl}>Tipo rinnovo</label>
+            <select value={rinnovoTipo} onChange={e => setRinnovoTipo(e.target.value)}>
+              <option value="">Non impostato</option>
+              <option value="mensile">Mensile (90 CV)</option>
+              <option value="semestrale">Semestrale (75 CV)</option>
+              <option value="annuale">Annuale (75 CV)</option>
+            </select>
+          </div>
+          <div>
+            <label style={lbl}>Data scadenza</label>
+            <input type="date" value={rinnovoScadenza} onChange={e => setRinnovoScadenza(e.target.value)} />
+          </div>
+        </div>
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <button onClick={saveRinnovo} disabled={savingRinnovo}
+            style={{ padding: "9px 22px", background: "linear-gradient(135deg,var(--a1),var(--a2))", color: "#fff", border: "none", borderRadius: 9, cursor: savingRinnovo ? "not-allowed" : "pointer", fontWeight: 800, fontSize: 13, opacity: savingRinnovo ? 0.7 : 1 }}>
+            Salva rinnovo
           </button>
         </div>
       </div>
