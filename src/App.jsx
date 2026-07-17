@@ -47,11 +47,12 @@ const sbCreateProfile   = (tok, row)        => sbFetch("/rest/v1/profiles", { me
 const sbUpdateProfile   = (tok, uid, row)   => sbFetch("/rest/v1/profiles?id=eq."+uid, { method:"PATCH", _token:tok, body:JSON.stringify(row) });
 const sbGetDownline     = (tok)             => sbFetch("/rest/v1/profiles?select=*&positioned_under=not.is.null", { _token:tok });
 const sbGetAllProfiles  = (tok)             => sbFetch("/rest/v1/profiles?select=*", { _token:tok });
-const sbGetDownlineProspects = (tok, uids)  => sbFetch("/rest/v1/prospects?select=*&user_id=in.("+uids.join(",")+")", { _token:tok });
+const sbGetDownlineProspects = (tok, uids)  => sbFetch("/rest/v1/prospects?select=*&order=created_at.asc&user_id=in.("+uids.join(",")+")", { _token:tok });
 const sbGetProfileByRef = (tok, code)       => sbFetch("/rest/v1/profiles?referral_code=eq."+code+"&select=*", { _token:tok });
 const sbLinkDownline    = (tok, uid, uplineId) => sbFetch("/rest/v1/profiles?id=eq."+uid, { method:"PATCH", _token:tok, body:JSON.stringify({ upline_id:uplineId }) });
 const sbPositionMember  = (tok, uid, positionedUnder) => sbFetch("/rest/v1/profiles?id=eq."+uid, { method:"PATCH", _token:tok, body:JSON.stringify({ positioned_under:positionedUnder }) });
 const sbSetRinnovo      = (tok, memberId, tipo, scadenza) => sbFetch("/rest/v1/rpc/set_rinnovo", { method:"POST", _token:tok, body:JSON.stringify({ p_member_id:memberId, p_tipo:tipo, p_scadenza:scadenza }) });
+const sbSetLeader       = (tok, memberId, value)          => sbFetch("/rest/v1/rpc/set_leader", { method:"POST", _token:tok, body:JSON.stringify({ p_member_id:memberId, p_value:value }) });
 const sbGetPositions    = (tok)             => sbFetch("/rest/v1/team_positions?select=*", { _token:tok });
 const sbSetPosition     = (tok, uplineId, memberId, team) => sbFetch("/rest/v1/team_positions", { method:"POST", _token:tok, headers:{"Prefer":"resolution=merge-duplicates"}, body:JSON.stringify({ upline_id:uplineId, member_id:memberId, team }) });
 
@@ -122,6 +123,16 @@ const FASE_LABEL = {
   INVITO:"Invito", CONOSCITIVA:"Conoscitiva", FUP1:"FUP 1", FUP2:"FUP 2", PACK:"Pack",
   CLOSING:"Closing", SUB:"Iscritto", FOLLOW_UP:"Follow Up", NON_INT:"Non Int.", NON_PIACE:"Non mi piace",
 };
+// Colore riga in lista prospect: verde=iscritto, rosso=sparito, giallo=da risentire piu avanti, blu=iscrizione fissata
+const ROW_TINT = {
+  SUB:"#10b981", NON_INT:"#ef4444", NON_PIACE:"#ef4444", FOLLOW_UP:"#f59e0b", CLOSING:"#3b82f6",
+};
+const ROW_TINT_LEGENDA = [
+  { colore:"#10b981", label:"iscritto" },
+  { colore:"#ef4444", label:"sparito" },
+  { colore:"#f59e0b", label:"da risentire più avanti" },
+  { colore:"#3b82f6", label:"iscrizione fissata" },
+];
 
 const PLEASURES = [
   { key:"tempo", label:"Tempo" },
@@ -489,6 +500,7 @@ export default function App() {
   const [sidebarMode, setSidebarMode] = useState("tutti");
   const [listaMode, setListaMode] = useState("personale");
   const [fLeg, setFLeg] = useState(""); // "" | "sinistra" | "destra" — solo per vista Team
+  const [fMembroTeam, setFMembroTeam] = useState(""); // "" | id membro — solo per vista Team
 
   useEffect(()=>{
     const el=document.createElement("style");
@@ -499,7 +511,7 @@ export default function App() {
   },[]);
 
   useEffect(()=>{
-    if (auth?.profile?.tema) applyTema(auth.profile.tema);
+    // Tema bloccato su "nero" per tutti — il selettore è stato rimosso dal Profilo
   },[auth?.profile?.tema]);
 
   useEffect(()=>{
@@ -821,6 +833,14 @@ export default function App() {
     } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
   }
 
+  async function setLeader(memberId, value) {
+    try {
+      await sbSetLeader(auth.token, memberId, value);
+      setDownline(d => d.map(m => m.id===memberId ? { ...m, is_leader:value } : m));
+      showToast(value ? "Impostato come leader" : "Rimosso da leader");
+    } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
+  }
+
   async function positionInTree(memberId, targetNodeId, team) {
     try {
       await sbPositionMember(auth.token, memberId, targetNodeId);
@@ -854,13 +874,24 @@ export default function App() {
 
   function onExport() {
     try {
-      const b=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+      const cols = ["nome","cognome","citta","telefono","instagram","fonte","fase","conosciutoAt","followUp","interesse","note"];
+      const headerLabels = ["Nome","Cognome","Città","Telefono","Instagram","Fonte","Fase","Conosciuto il","Follow-up","Interesse","Note"];
+      const esc = v => {
+        const s = v===null||v===undefined ? "" : String(v);
+        return /[",\n;]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+      };
+      const rows = [headerLabels.join(";")];
+      data.forEach(p => {
+        rows.push(cols.map(c => esc(c==="fase" ? (FASE_LABEL[p.fase]||p.fase) : p[c])).join(";"));
+      });
+      const csv = "\uFEFF" + rows.join("\r\n"); // BOM per apertura corretta in Google Sheets/Excel
+      const b=new Blob([csv],{type:"text/csv;charset=utf-8"});
       const u=URL.createObjectURL(b);
       const a=document.createElement("a");
-      a.href=u; a.download="becrm_backup_"+today()+".json";
+      a.href=u; a.download="prospect_"+today()+".csv";
       document.body.appendChild(a); a.click();
       setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(u);},800);
-      showToast("Backup esportato ");
+      showToast("File esportato — importalo in Google Sheets");
     } catch(e) { showToast("Errore export","#ef4444"); }
   }
 
@@ -902,7 +933,8 @@ export default function App() {
       &&(!fCitta||( p.citta||"").toLowerCase().includes(fCitta.toLowerCase()))
       &&(!fInteresse||p.interesse===fInteresse)
       &&(!fPercorso||(fPercorso==="in_percorso"?FASI_FUNNEL.includes(p.fase):FASI_SPECIALI.includes(p.fase)))
-      &&(listaMode!=="team"||!fLeg||p._leg===fLeg);
+      &&(listaMode!=="team"||!fLeg||p._leg===fLeg)
+      &&(listaMode!=="team"||!fMembroTeam||p._userId===fMembroTeam);
   });
 
   if (!auth) return <AuthScreen onAuth={setAuth} />;
@@ -941,9 +973,9 @@ export default function App() {
 
       <main className="mc" style={{flex:1,overflowY:"auto",height:"100vh",paddingBottom:0}}>
         {view==="dash"  && <Dash cd={cd} cdSub={cdSub} cdAct={cdAct} cdFU={cdFU} cdNI={cdNI} cdConv={cdConv} totSub={totSub} totConv={totConv} totAll={dashData.length} funnelCounts={funnelCounts} funnelMax={funnelMax} urgenti={urgenti} dashCiclo={dashCiclo} setDashCiclo={setDashCiclo} onOpen={openDetail} dashMode={dashMode} setDashMode={setDashMode} hasTeam={dlProspects.length>0} ticketVenduti={ticketVendutiCount} />}
-        {view==="lista" && <Lista prospects={listaData} total={listaMode==="team"?teamProspects.length:data.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} fCitta={fCitta} setFCitta={setFCitta} fInteresse={fInteresse} setFInteresse={setFInteresse} fPercorso={fPercorso} setFPercorso={setFPercorso} fLeg={fLeg} setFLeg={setFLeg} onOpen={openDetail} onAdd={openAdd} listaMode={listaMode} setListaMode={setListaMode} hasTeam={dlProspects.length>0} />}
-        {view==="stats"   && <Statistiche data={data} dlProspects={dlProspects} />}
-        {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onUpdateRinnovo={updateRinnovo} />}
+        {view==="lista" && <Lista prospects={listaData} total={listaMode==="team"?teamProspects.length:data.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} fCitta={fCitta} setFCitta={setFCitta} fInteresse={fInteresse} setFInteresse={setFInteresse} fPercorso={fPercorso} setFPercorso={setFPercorso} fLeg={fLeg} setFLeg={setFLeg} fMembroTeam={fMembroTeam} setFMembroTeam={setFMembroTeam} downline={downline} onOpen={openDetail} onAdd={openAdd} listaMode={listaMode} setListaMode={setListaMode} hasTeam={dlProspects.length>0} />}
+        {view==="stats"   && <Statistiche data={data} dlProspects={dlProspects} downline={downline} />}
+        {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onUpdateRinnovo={updateRinnovo} onSetLeader={setLeader} />}
         {view==="nomi"    && <ListaNomiView auth={auth} onInvitaProspect={invitaProspect} />}
         {view==="eventi"  && <EventiView auth={auth} allProfiles={allProfiles} downline={downline} positions={positions} showToast={showToast}
           sbListEventi={sbListEventi}
@@ -984,7 +1016,7 @@ export default function App() {
           <div className={"pop"} onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:520,maxHeight:"90vh",overflowY:"auto",borderRadius:"16px"}}>
             {modal==="detail"
               ? <DetailModal p={sel} onEdit={()=>{setForm({...sel});setModal("edit");}} onAdvance={()=>advanceFase(sel)} onFollowUp={()=>moveFase(sel,"FOLLOW_UP")} onNonInt={()=>moveFase(sel,"NON_INT")} onNonPiace={()=>moveFase(sel,"NON_PIACE")} onRiattiva={()=>moveFase(sel,"RIATTIVA")} onClose={closeModal} onUpdateProfilo={pr=>updateProfilo(sel.id,pr)} onUpdateChecklist={cl=>updateChecklist(sel.id,cl)} onDeleteStorico={fase=>deleteStorico(sel.id,fase)} onUpdateStoricoData={(fase,data,newFase,newStorico)=>updateStoricoData(sel.id,fase,data,newFase,newStorico)} />
-              : <FormModal form={form} setForm={setForm} onSave={saveForm} onClose={closeModal} onDelete={modal==="edit"?()=>deleteProp(form.id):null} isEdit={modal==="edit"} />
+              : <FormModal form={form} setForm={setForm} onSave={saveForm} onClose={closeModal} onDelete={modal==="edit"?()=>deleteProp(form.id):null} isEdit={modal==="edit"} isLeader={!!auth.profile?.is_leader} downline={downline} />
             }
           </div>
         </div>
@@ -1030,7 +1062,7 @@ function Sidebar({ view, setView, data, urgenti, onAdd, onExport, auth, onLogout
 
       <div style={{borderTop:"1px solid #11203a",paddingTop:14,marginTop:16,display:"flex",flexDirection:"column",gap:7}}>
         <div style={{fontSize:10,fontWeight:800,color:"var(--border2)",textTransform:"uppercase",letterSpacing:1.2,marginBottom:2}}>Backup</div>
-        <button onClick={onExport} style={{padding:"8px 10px",background:"var(--bg4)",color:"var(--a2)",border:"1px solid var(--border2)",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:12,textAlign:"left"}}> Esporta JSON</button>
+        <button onClick={onExport} style={{padding:"8px 10px",background:"var(--bg4)",color:"var(--a2)",border:"1px solid var(--border2)",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:12,textAlign:"left"}}> Esporta in Fogli</button>
       </div>
 
       <div style={{marginTop:14,borderTop:"1px solid var(--border)",paddingTop:14}}>
@@ -1242,13 +1274,17 @@ function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, f
 }
 
 //  STATISTICHE 
-function Statistiche({ data, dlProspects }) {
+function Statistiche({ data, dlProspects, downline }) {
   const hasTeam = (dlProspects||[]).length > 0;
   const [statsMode, setStatsMode] = useState(data.length > 0 ? "personale" : (hasTeam ? "team" : "personale"));
+  const [fMembro, setFMembro] = useState(""); // "" tutti | "self" solo tu | id membro specifico
   const [linePhase, setLinePhase] = useState("CONOSCITIVA");
   const [barCiclo,  setBarCiclo]  = useState("ALL");
 
-  const activeData = statsMode === "team" ? [...data, ...(dlProspects||[])] : data;
+  const activeData = statsMode !== "team" ? data
+    : fMembro === "" ? [...data, ...(dlProspects||[])]
+    : fMembro === "self" ? data
+    : (dlProspects||[]).filter(p => p._userId === fMembro);
 
   const cicliPresenti=[...new Set(activeData.flatMap(p=>(p.storico||[]).map(s=>cicloOfDate(s.data)).filter(Boolean)))].sort((a,b)=>a-b);
   const cicli=cicliPresenti.length?cicliPresenti:[CICLO_CORRENTE];
@@ -1266,13 +1302,22 @@ function Statistiche({ data, dlProspects }) {
           <p style={{color:"var(--muted)",fontSize:12,marginTop:4}}>Andamento e conversione del percorso, ciclo per ciclo</p>
         </div>
         {hasTeam && (
-          <div style={{display:"flex",background:"var(--bg3)",borderRadius:10,padding:4,border:"1px solid var(--border)"}}>
-            {["personale","team"].map(m=>(
-              <button key={m} onClick={()=>setStatsMode(m)} className="tabbtn"
-                style={{background:statsMode===m?"var(--bg4)":"transparent",color:statsMode===m?"var(--a2)":"var(--muted)",boxShadow:statsMode===m?"inset 0 0 0 1px var(--sidebar-border)":"none",fontSize:11,padding:"6px 14px"}}>
-                {m==="personale"?" Personale":" Team"}
-              </button>
-            ))}
+          <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
+            <div style={{display:"flex",background:"var(--bg3)",borderRadius:10,padding:4,border:"1px solid var(--border)"}}>
+              {["personale","team"].map(m=>(
+                <button key={m} onClick={()=>setStatsMode(m)} className="tabbtn"
+                  style={{background:statsMode===m?"var(--bg4)":"transparent",color:statsMode===m?"var(--a2)":"var(--muted)",boxShadow:statsMode===m?"inset 0 0 0 1px var(--sidebar-border)":"none",fontSize:11,padding:"6px 14px"}}>
+                  {m==="personale"?" Personale":" Team"}
+                </button>
+              ))}
+            </div>
+            {statsMode==="team" && (
+              <select value={fMembro} onChange={e=>setFMembro(e.target.value)} style={{width:"auto",minWidth:170}}>
+                <option value="">Tutto il team</option>
+                <option value="self">Solo tu</option>
+                {(downline||[]).map(m=><option key={m.id} value={m.id}>{m.nome||m.email} {m.cognome||""}</option>)}
+              </select>
+            )}
           </div>
         )}
       </div>
@@ -1300,7 +1345,7 @@ function Statistiche({ data, dlProspects }) {
 }
 
 //  LISTA 
-function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, setFFonte, fCiclo, setFCiclo, fCitta, setFCitta, fInteresse, setFInteresse, fPercorso, setFPercorso, fLeg, setFLeg, onOpen, onAdd, listaMode, setListaMode, hasTeam }) {
+function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, setFFonte, fCiclo, setFCiclo, fCitta, setFCitta, fInteresse, setFInteresse, fPercorso, setFPercorso, fLeg, setFLeg, fMembroTeam, setFMembroTeam, downline, onOpen, onAdd, listaMode, setListaMode, hasTeam }) {
   return (
     <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1.4rem",flexWrap:"wrap",gap:12}}>
@@ -1348,6 +1393,20 @@ function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, s
             <option value="destra">Solo destra</option>
           </select>
         )}
+        {listaMode==="team" && (
+          <select value={fMembroTeam} onChange={e=>setFMembroTeam(e.target.value)} style={{flex:1,minWidth:170}}>
+            <option value="">Tutte le persone del team</option>
+            {(downline||[]).map(m=><option key={m.id} value={m.id}>{m.nome||m.email} {m.cognome||""}</option>)}
+          </select>
+        )}
+      </div>
+      <div style={{display:"flex",gap:16,flexWrap:"wrap",marginBottom:14,padding:"9px 14px",background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:10}}>
+        {ROW_TINT_LEGENDA.map(l=>(
+          <div key={l.label} style={{display:"flex",alignItems:"center",gap:6}}>
+            <span style={{width:9,height:9,borderRadius:99,background:l.colore,flexShrink:0}} />
+            <span style={{fontSize:11,color:"var(--muted)",fontWeight:600}}>{l.label}</span>
+          </div>
+        ))}
       </div>
       {prospects.length===0
         ?<div style={{textAlign:"center",padding:"4rem",color:"var(--border2)"}}><div style={{fontSize:44,marginBottom:12}}></div><p style={{fontSize:14,marginBottom:14}}>Nessun prospect trovato</p><button onClick={onAdd} style={{padding:"9px 20px",fontSize:13,fontWeight:800,background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:10,cursor:"pointer"}}>Aggiungi il primo</button></div>
@@ -1364,8 +1423,9 @@ function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, s
                 if (Array.isArray(j)) return JUNG.filter(x=>j.includes(x.key));
                 return JUNG.filter(x=>x.key===j);
               })();
+              const tint = ROW_TINT[p.fase];
               return (
-                <tr key={p.id} className="hrow" onClick={()=>onOpen(p)} style={{cursor:"pointer",borderBottom:"1px solid #0d1b3355"}}>
+                <tr key={p.id} className="hrow" onClick={()=>onOpen(p)} style={{cursor:"pointer",borderBottom:"1px solid #0d1b3355",background:tint?tint+"14":"transparent",borderLeft:tint?"3px solid "+tint:"3px solid transparent"}}>
                   <td style={{padding:"12px 16px"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Av n={p.nome} c={p.cognome} color={FASE_CLR[p.fase]}/><span style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{p.nome} {p.cognome}</span></div></td>
                   {listaMode==="team"&&<td style={{padding:"12px 16px"}}><span style={{fontSize:11,color:"#8b5cf6",fontWeight:700,background:"#8b5cf618",borderRadius:6,padding:"2px 8px"}}>{p._ownerName||"\u2014"}</span></td>}
                   <td style={{padding:"12px 16px"}}>{c?<span style={{background:c===CICLO_CORRENTE?"var(--a1-13)":"var(--border)",color:c===CICLO_CORRENTE?"var(--a2)":"var(--muted)",borderRadius:6,padding:"2px 8px",fontSize:11,fontWeight:700}}>C{c}</span>:<span style={{color:"var(--border2)"}}>\u2014</span>}</td>
@@ -1404,7 +1464,7 @@ function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, s
 }
 
 //  FORM MODAL 
-function FormModal({ form, setForm, onSave, onClose, onDelete, isEdit }) {
+function FormModal({ form, setForm, onSave, onClose, onDelete, isEdit, isLeader, downline }) {
   const set=(k,v)=>setForm(f=>({...f,[k]:v}));
   const lbl={fontSize:11,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"};
   const dataBase=form.conosciutoAt||today();
@@ -1416,6 +1476,15 @@ function FormModal({ form, setForm, onSave, onClose, onDelete, isEdit }) {
         <h2 style={{fontWeight:900,fontSize:17,color:"var(--text)"}}>{isEdit?" Modifica":"+ Nuovo Prospect"}</h2>
         <button onClick={onClose} style={{background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:8,cursor:"pointer",padding:"4px 10px",fontSize:14}}></button>
       </div>
+      {isLeader && !isEdit && (
+        <div style={{marginBottom:14,background:"var(--a1-10)",border:"1px solid var(--a1-25)",borderRadius:10,padding:"10px 12px"}}>
+          <label style={lbl}>Questo prospect è di</label>
+          <select value={form._userId||""} onChange={e=>set("_userId",e.target.value||null)}>
+            <option value="">Tu</option>
+            {(downline||[]).map(m=><option key={m.id} value={m.id}>{m.nome||m.email} {m.cognome||""}</option>)}
+          </select>
+        </div>
+      )}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
         <div><label style={lbl}>Nome *</label><input value={form.nome||""} onChange={e=>set("nome",e.target.value)} placeholder="Nome" /></div>
         <div><label style={lbl}>Cognome</label><input value={form.cognome||""} onChange={e=>set("cognome",e.target.value)} placeholder="Cognome" /></div>
