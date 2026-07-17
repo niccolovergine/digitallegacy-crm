@@ -78,7 +78,7 @@ function toApp(r) {
     pacchetto:r.pacchetto||"", bvCustom:r.bv_custom||0,
     telefono:r.telefono||"", instagram:r.instagram||"",
     checklist:r.checklist||{kyc:false,pandadoc:false,click:false},
-    interesse:r.interesse||"",
+    interesse:r.interesse||"", statoColore:r.stato_colore||"",
   };
 }
 function toDB(p, uid) {
@@ -89,7 +89,7 @@ function toDB(p, uid) {
     pacchetto:p.pacchetto||null, bv_custom:p.bvCustom||null,
     telefono:p.telefono||null, instagram:p.instagram||null,
     checklist:p.checklist||{kyc:false,pandadoc:false,click:false},
-    interesse:p.interesse||null,
+    interesse:p.interesse||null, stato_colore:p.statoColore||null,
   };
 }
 
@@ -123,16 +123,16 @@ const FASE_LABEL = {
   INVITO:"Invito", CONOSCITIVA:"Conoscitiva", FUP1:"FUP 1", FUP2:"FUP 2", PACK:"Pack",
   CLOSING:"Closing", SUB:"Iscritto", FOLLOW_UP:"Follow Up", NON_INT:"Non Int.", NON_PIACE:"Non mi piace",
 };
-// Colore riga in lista prospect: verde=iscritto, rosso=sparito, giallo=da risentire piu avanti, blu=iscrizione fissata
-const ROW_TINT = {
-  SUB:"#10b981", NON_INT:"#ef4444", NON_PIACE:"#ef4444", FOLLOW_UP:"#f59e0b", CLOSING:"#3b82f6",
+// Colore riga in lista prospect: campo INDIPENDENTE dalla fase, si sceglie a parte.
+// iscritto=verde, sparito=rosso, da risentire più avanti=giallo, iscrizione fissata=blu
+const STATO_COLORE_OPTS = ["iscritto","sparito","da_risentire","iscrizione_fissata"];
+const STATO_COLORE_MAP = {
+  iscritto:"#10b981", sparito:"#ef4444", da_risentire:"#f59e0b", iscrizione_fissata:"#3b82f6",
 };
-const ROW_TINT_LEGENDA = [
-  { colore:"#10b981", label:"iscritto" },
-  { colore:"#ef4444", label:"sparito" },
-  { colore:"#f59e0b", label:"da risentire più avanti" },
-  { colore:"#3b82f6", label:"iscrizione fissata" },
-];
+const STATO_COLORE_LABEL = {
+  iscritto:"iscritto", sparito:"sparito", da_risentire:"da risentire più avanti", iscrizione_fissata:"iscrizione fissata",
+};
+const ROW_TINT_LEGENDA = STATO_COLORE_OPTS.map(k=>({ colore:STATO_COLORE_MAP[k], label:STATO_COLORE_LABEL[k] }));
 
 const PLEASURES = [
   { key:"tempo", label:"Tempo" },
@@ -703,6 +703,19 @@ export default function App() {
     } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
   }
 
+  async function setStatoColore(id, value) {
+    const p=data.find(x=>x.id===id)||dlProspects.find(x=>x.id===id); if (!p) return;
+    const ownerId=p._userId||auth.userId;
+    const newVal = p.statoColore===value ? "" : value; // click di nuovo = rimuove
+    const upd={...p,statoColore:newVal};
+    try {
+      await sbUpdate(auth.token,id,toDB(upd,ownerId));
+      if (data.find(x=>x.id===id)) setData(d=>d.map(x=>x.id===id?upd:x));
+      else setDlProspects(d=>d.map(x=>x.id===id?{...upd,_userId:ownerId,_ownerName:x._ownerName}:x));
+      setSel(upd);
+    } catch(e) { showToast("Errore salvataggio","#ef4444"); }
+  }
+
   async function updateProfilo(id,profilazione) {
     const p=data.find(x=>x.id===id)||dlProspects.find(x=>x.id===id); if (!p) return;
     const ownerId=p._userId||auth.userId;
@@ -1015,7 +1028,7 @@ export default function App() {
         <div onClick={closeModal} style={{position:"fixed",inset:0,background:"#00000090",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:16,animation:"fadeIn .2s"}}>
           <div className={"pop"} onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:520,maxHeight:"90vh",overflowY:"auto",borderRadius:"16px"}}>
             {modal==="detail"
-              ? <DetailModal p={sel} onEdit={()=>{setForm({...sel});setModal("edit");}} onAdvance={()=>advanceFase(sel)} onFollowUp={()=>moveFase(sel,"FOLLOW_UP")} onNonInt={()=>moveFase(sel,"NON_INT")} onNonPiace={()=>moveFase(sel,"NON_PIACE")} onRiattiva={()=>moveFase(sel,"RIATTIVA")} onClose={closeModal} onUpdateProfilo={pr=>updateProfilo(sel.id,pr)} onUpdateChecklist={cl=>updateChecklist(sel.id,cl)} onDeleteStorico={fase=>deleteStorico(sel.id,fase)} onUpdateStoricoData={(fase,data,newFase,newStorico)=>updateStoricoData(sel.id,fase,data,newFase,newStorico)} />
+              ? <DetailModal p={sel} onEdit={()=>{setForm({...sel});setModal("edit");}} onAdvance={()=>advanceFase(sel)} onFollowUp={()=>moveFase(sel,"FOLLOW_UP")} onNonInt={()=>moveFase(sel,"NON_INT")} onNonPiace={()=>moveFase(sel,"NON_PIACE")} onRiattiva={()=>moveFase(sel,"RIATTIVA")} onClose={closeModal} onUpdateProfilo={pr=>updateProfilo(sel.id,pr)} onUpdateChecklist={cl=>updateChecklist(sel.id,cl)} onDeleteStorico={fase=>deleteStorico(sel.id,fase)} onUpdateStoricoData={(fase,data,newFase,newStorico)=>updateStoricoData(sel.id,fase,data,newFase,newStorico)} onSetStatoColore={v=>setStatoColore(sel.id,v)} />
               : <FormModal form={form} setForm={setForm} onSave={saveForm} onClose={closeModal} onDelete={modal==="edit"?()=>deleteProp(form.id):null} isEdit={modal==="edit"} isLeader={!!auth.profile?.is_leader} downline={downline} />
             }
           </div>
@@ -1423,7 +1436,7 @@ function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, s
                 if (Array.isArray(j)) return JUNG.filter(x=>j.includes(x.key));
                 return JUNG.filter(x=>x.key===j);
               })();
-              const tint = ROW_TINT[p.fase];
+              const tint = STATO_COLORE_MAP[p.statoColore];
               return (
                 <tr key={p.id} className="hrow" onClick={()=>onOpen(p)} style={{cursor:"pointer",borderBottom:"1px solid #0d1b3355",background:tint?tint+"14":"transparent",borderLeft:tint?"3px solid "+tint:"3px solid transparent"}}>
                   <td style={{padding:"12px 16px"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Av n={p.nome} c={p.cognome} color={FASE_CLR[p.fase]}/><span style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{p.nome} {p.cognome}</span></div></td>
@@ -1614,7 +1627,7 @@ function ProfilazioneTab({ p, onUpdateProfilo }) {
 }
 
 //  DETAIL MODAL 
-function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onNonPiace, onRiattiva, onClose, onUpdateProfilo, onUpdateChecklist, onDeleteStorico, onUpdateStoricoData }) {
+function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onNonPiace, onRiattiva, onClose, onUpdateProfilo, onUpdateChecklist, onDeleteStorico, onUpdateStoricoData, onSetStatoColore }) {
   const [activeTab,setActiveTab]=useState("dettagli");
   const [stepPopup, setStepPopup]=useState(null); // {fase, date}
   const [stepDate, setStepDate]=useState("");
@@ -1642,6 +1655,22 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onNonPiace, o
           </div>
         </div>
         <button onClick={onClose} style={{background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:8,cursor:"pointer",padding:"4px 10px",fontSize:14}}></button>
+      </div>
+      <div style={{marginBottom:16}}>
+        <div style={{fontSize:10,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Colore riga (a parte dalla fase)</div>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+          {STATO_COLORE_OPTS.map(k=>{
+            const active=p.statoColore===k;
+            const c=STATO_COLORE_MAP[k];
+            return (
+              <button key={k} onClick={()=>onSetStatoColore(k)}
+                style={{padding:"6px 12px",borderRadius:8,border:"1px solid "+(active?c:"var(--border2)"),background:active?c+"22":"var(--bg3)",color:active?c:"var(--muted)",fontWeight:700,fontSize:11,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
+                <span style={{width:8,height:8,borderRadius:99,background:c,flexShrink:0}} />
+                {STATO_COLORE_LABEL[k]}
+              </button>
+            );
+          })}
+        </div>
       </div>
       <div style={{display:"flex",gap:6,marginBottom:16,background:"var(--bg3)",padding:4,borderRadius:10,border:"1px solid var(--border)"}}>
         {[{id:"dettagli",label:" Dettagli"},{id:"profilazione",label:" Profilazione"}].map(t=>(

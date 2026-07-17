@@ -174,25 +174,6 @@ export function ProfiloView({ auth, onUpdateProfile, downlineCount, onUpdateRinn
         </div>
       </div>
 
-      <div style={{ background: "var(--bg2)", border: "1px solid #1e3a5f", borderRadius: 14, padding: "1.4rem", marginBottom: 16 }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text)", marginBottom: 12 }}>Tema colori</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10 }}>
-          {Object.entries(TEMI).map(([key, t]) => {
-            const active = (p.tema || "blu") === key;
-            return (
-              <button key={key} onClick={async () => {
-                applyTema(key);
-                await onUpdateProfile({ tema: key });
-              }}
-                style={{ padding: "12px 8px", borderRadius: 10, border: "2px solid " + (active ? t.vars["--a1"] : "var(--border2)"), cursor: "pointer", background: active ? t.vars["--a1-18"] : "var(--bg3)", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, transition: "all .2s" }}>
-                <div style={{ width: 36, height: 36, borderRadius: "50%", background: t.preview, boxShadow: active ? "0 0 12px " + t.vars["--a1"] + "80" : "none" }} />
-                <span style={{ fontSize: 11, fontWeight: 700, color: active ? t.vars["--a1"] : "var(--muted)" }}>{t.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       <div style={{ background: "var(--bg2)", border: "1px solid #1e3a5f", borderRadius: 14, padding: "1.4rem" }}>
         <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text)", marginBottom: 12 }}>Il tuo sponsor</div>
         {sponsorName && (
