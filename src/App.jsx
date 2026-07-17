@@ -38,8 +38,14 @@ const sbSignIn  = (email, pw)      => sbFetch("/auth/v1/token?grant_type=passwor
 const sbSignOut = (tok)            => sbFetch("/auth/v1/logout", { method:"POST", _token:tok });
 const sbList    = (tok, uid)       => sbFetch("/rest/v1/prospects?select=*&order=created_at.asc&user_id=eq."+uid, { _token:tok });
 const sbInsert  = (tok, row)       => sbFetch("/rest/v1/prospects", { method:"POST", _token:tok, body:JSON.stringify(row) });
-const sbUpdate  = (tok, id, row)   => sbFetch("/rest/v1/prospects?id=eq."+id, { method:"PATCH", _token:tok, body:JSON.stringify(row) });
-const sbDelete  = (tok, id)        => sbFetch("/rest/v1/prospects?id=eq."+id, { method:"DELETE", _token:tok });
+const sbUpdate  = (tok, id, row)   => sbFetch("/rest/v1/prospects?id=eq."+id, { method:"PATCH", _token:tok, body:JSON.stringify(row) }).then(rows => {
+  if (!rows || rows.length===0) throw new Error("Non hai i permessi per modificare questo prospect — chiedi alla tua upline di renderti Leader");
+  return rows;
+});
+const sbDelete  = (tok, id)        => sbFetch("/rest/v1/prospects?id=eq."+id, { method:"DELETE", _token:tok }).then(rows => {
+  if (!rows || rows.length===0) throw new Error("Non hai i permessi per eliminare questo prospect");
+  return rows;
+});
 
 // Profile helpers
 const sbGetProfile      = (tok, uid)        => sbFetch("/rest/v1/profiles?id=eq."+uid+"&select=*", { _token:tok });
