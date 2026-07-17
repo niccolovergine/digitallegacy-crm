@@ -360,8 +360,8 @@ function TreeCanvas({ memberId, memberNome, memberCognome, memberEmail, allMembe
 
 
 
-export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,positions,onOpenProspect,onPositionInTree,onUpdateRinnovo,onSetLeader}){
-  const isRoot = !auth.profile?.upline_id; // solo chi è alla radice dell'albero può nominare i leader
+export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,positions,onOpenProspect,onPositionInTree,onUpdateRinnovo,onSetLeader,LUDOVICO_ID}){
+  const isRoot = auth.userId === LUDOVICO_ID; // solo il titolare del CRM può nominare i leader, indipendentemente da dove si trova nell'albero
   const[selectedMember,setSelectedMember]=useState(null);
   const[teamFilter,setTeamFilter]=useState("all");
   const[copied,setCopied]=useState(false);

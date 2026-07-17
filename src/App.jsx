@@ -354,13 +354,22 @@ function AuthScreen({ onAuth }) {
       setMode("signup");
     }
 
-    // Auto-restore session
+    // Auto-restore session — ricarica sempre un profilo fresco dal server,
+    // così eventuali modifiche fatte da SQL (leader, tema, upline...) si vedono subito
     const saved = localStorage.getItem("becrm_session");
     if (saved) {
       try {
         const session = JSON.parse(saved);
         if (session.token && session.userId) {
           onAuth({ token:session.token, userId:session.userId, email:session.email, profile:session.profile||null });
+          sbGetProfile(session.token, session.userId).then(rows => {
+            const fresh = rows?.[0];
+            if (fresh) {
+              onAuth({ token:session.token, userId:session.userId, email:session.email, profile:fresh });
+              const updated = { ...session, profile:fresh };
+              localStorage.setItem("becrm_session", JSON.stringify(updated));
+            }
+          }).catch(()=>{});
         }
       } catch(e) { localStorage.removeItem("becrm_session"); }
     }
@@ -994,7 +1003,7 @@ export default function App() {
         {view==="dash"  && <Dash cd={cd} cdSub={cdSub} cdAct={cdAct} cdFU={cdFU} cdNI={cdNI} cdConv={cdConv} totSub={totSub} totConv={totConv} totAll={dashData.length} funnelCounts={funnelCounts} funnelMax={funnelMax} urgenti={urgenti} dashCiclo={dashCiclo} setDashCiclo={setDashCiclo} onOpen={openDetail} dashMode={dashMode} setDashMode={setDashMode} hasTeam={dlProspects.length>0} ticketVenduti={ticketVendutiCount} />}
         {view==="lista" && <Lista prospects={listaData} total={listaMode==="team"?teamProspects.length:data.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} fCitta={fCitta} setFCitta={setFCitta} fInteresse={fInteresse} setFInteresse={setFInteresse} fPercorso={fPercorso} setFPercorso={setFPercorso} fLeg={fLeg} setFLeg={setFLeg} fMembroTeam={fMembroTeam} setFMembroTeam={setFMembroTeam} downline={downline} onOpen={openDetail} onAdd={openAdd} listaMode={listaMode} setListaMode={setListaMode} hasTeam={dlProspects.length>0} />}
         {view==="stats"   && <Statistiche data={data} dlProspects={dlProspects} downline={downline} />}
-        {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onUpdateRinnovo={updateRinnovo} onSetLeader={setLeader} />}
+        {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onUpdateRinnovo={updateRinnovo} onSetLeader={setLeader} LUDOVICO_ID={LUDOVICO_ID} />}
         {view==="nomi"    && <ListaNomiView auth={auth} onInvitaProspect={invitaProspect} />}
         {view==="eventi"  && <EventiView auth={auth} allProfiles={allProfiles} downline={downline} positions={positions} showToast={showToast}
           sbListEventi={sbListEventi}
