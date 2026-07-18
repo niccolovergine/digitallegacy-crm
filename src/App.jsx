@@ -4,6 +4,7 @@ import { TeamView } from "./components/Team";
 import { ProfiloView } from "./components/Profilo";
 import { ListaNomiView } from "./components/ListaNomi";
 import { EventiView } from "./components/Eventi";
+import { PlanView } from "./components/Plan";
 
 const SB_URL = "https://gyxvhnwzkhjrgpqvakfw.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5eHZobnd6a2hqcmdwcXZha2Z3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NTEzOTQsImV4cCI6MjA5OTUyNzM5NH0.aYAzw7j6YcBIWdBsdHq0ibZrjyyK5CZqNAcchfdQt0o";
@@ -72,6 +73,8 @@ const sbInsertEventoPersona = (tok, row)    => sbFetch("/rest/v1/evento_persone"
 const sbUpdateEventoPersona = (tok, id, row) => sbFetch("/rest/v1/evento_persone?id=eq."+id, { method:"PATCH", _token:tok, body:JSON.stringify(row) });
 const sbDeleteEventoPersona = (tok, id)     => sbFetch("/rest/v1/evento_persone?id=eq."+id, { method:"DELETE", _token:tok });
 const sbListEventoStatus  = (tok, eventoId) => sbFetch("/rest/v1/evento_membri_status?select=*&evento_id=eq."+eventoId, { _token:tok });
+const sbGetPiano = (tok, userId, ciclo) => sbFetch("/rest/v1/piani_rank?select=*&user_id=eq."+userId+"&ciclo=eq."+ciclo, { _token:tok });
+const sbSetPiano = (tok, userId, ciclo, rank) => sbFetch("/rest/v1/piani_rank?on_conflict=user_id,ciclo", { method:"POST", _token:tok, headers:{ "Prefer":"resolution=merge-duplicates,return=representation" }, body:JSON.stringify({ user_id:userId, ciclo, rank }) });
 const sbUpsertEventoStatus = (tok, row)     => sbFetch("/rest/v1/evento_membri_status?on_conflict=evento_id,user_id", { method:"POST", _token:tok, headers:{ "Prefer":"resolution=merge-duplicates,return=representation" }, body:JSON.stringify(row) });
 
 
@@ -1011,6 +1014,8 @@ export default function App() {
           sbUpdateEventoPersona={sbUpdateEventoPersona} sbDeleteEventoPersona={sbDeleteEventoPersona}
           sbListEventoStatus={sbListEventoStatus} sbUpsertEventoStatus={sbUpsertEventoStatus}
           LUDOVICO_ID={LUDOVICO_ID} onTicketCountChange={setTicketVendutiCount} />}
+        {view==="plan"    && <PlanView auth={auth} downline={downline} positions={positions} isLeader={!!auth.profile?.is_leader}
+          sbListEventi={sbListEventi} sbListEventoStatus={sbListEventoStatus} sbGetPiano={sbGetPiano} sbSetPiano={sbSetPiano} showToast={showToast} />}
         {view==="profilo" && <ProfiloView auth={auth} onUpdateProfile={updateProfile} downlineCount={downline.length} showToast={showToast} onUpdateRinnovo={updateRinnovo} />}
       </main>
 
@@ -1062,6 +1067,7 @@ function Sidebar({ view, setView, data, urgenti, onAdd, onExport, auth, onLogout
     { id:"team",    icon:"", label:"Team", badge:downlineCount||0 },
     { id:"nomi",    icon:"", label:"Lista Nomi" },
     { id:"eventi",  icon:"", label:"Eventi" },
+    { id:"plan",    icon:"", label:"Plan" },
     { id:"profilo", icon:"", label:"Profilo" },
   ];
   return (
