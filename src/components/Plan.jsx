@@ -36,7 +36,7 @@ function LegBlock({ label, current, target, color }) {
   );
 }
 
-export function PlanView({ auth, downline, positions, isLeader,
+export function PlanView({ auth, downline, positions, dlProspects, isLeader,
   sbListEventi, sbListEventoStatus, sbGetPiano, sbSetPiano, showToast }) {
 
   const [pianoCiclo] = useState(83); // ciclo obiettivo — il "ciclo d'oro"
@@ -106,6 +106,52 @@ export function PlanView({ auth, downline, positions, isLeader,
 
   const target = RANK_TARGETS.find(r => r.key === pianoRank);
 
+  // ---- JARVIS: incrocio geografia + momentum + canali di prospecting ----
+  const FASI_TERMINALI = useMemo(() => new Set(["SUB","NON_INT","NON_PIACE"]), []);
+
+  const jarvis = useMemo(() => {
+    if (!dlProspects || downline.length === 0) return null;
+
+    const momentumPerMembro = {};
+    dlProspects.forEach(p => {
+      if (!FASI_TERMINALI.has(p.fase)) momentumPerMembro[p._userId] = (momentumPerMembro[p._userId]||0) + 1;
+    });
+
+    const byCity = {};
+    downline.forEach(m => {
+      const citta = (m.citta||"").trim() || "Città non indicata";
+      if (!byCity[citta]) byCity[citta] = { citta, membri:[], momentum:0 };
+      byCity[citta].membri.push(m);
+      byCity[citta].momentum += momentumPerMembro[m.id] || 0;
+    });
+    const cities = Object.values(byCity).sort((a,b)=> b.momentum-a.momentum || b.membri.length-a.membri.length);
+
+    const fonteCount = {};
+    dlProspects.forEach(p => { const f = p.fonte || "Altro"; fonteCount[f] = (fonteCount[f]||0) + 1; });
+    const tot = dlProspects.length;
+    const canali = Object.entries(fonteCount)
+      .map(([fonte,n]) => ({ fonte, n, pct: tot ? Math.round((n/tot)*100) : 0 }))
+      .sort((a,b) => b.n - a.n);
+
+    return { cities, canali, totProspect: tot };
+  }, [downline, dlProspects, FASI_TERMINALI]);
+
+  const suggerimento = useMemo(() => {
+    if (!jarvis || jarvis.cities.length === 0) return null;
+    const top = jarvis.cities.find(c => c.citta !== "Città non indicata") || jarvis.cities[0];
+    if (!top || top.membri.length === 0) return null;
+    let msg = "La tua zona più forte è " + top.citta + " (" + top.membri.length + " attiv" + (top.membri.length===1?"o":"i") + ", " + top.momentum + " prospect in corso). Valuta di organizzare lì il prossimo push o tour.";
+    const canaliUsati = jarvis.canali.filter(c => jarvis.totProspect >= 5); // servono almeno un po' di dati
+    if (canaliUsati.length > 1) {
+      const menoUsato = [...jarvis.canali].sort((a,b)=>a.pct-b.pct)[0];
+      if (menoUsato && menoUsato.pct <= 15) {
+        msg += " Nel team si usa poco \"" + menoUsato.fonte + "\" (solo " + menoUsato.pct + "% dei contatti) — potrebbe valere la pena spingere di più su questo canale.";
+      }
+    }
+    return msg;
+  }, [jarvis]);
+
+
   return (
     <div>
       <div style={{ marginBottom: 18 }}>
@@ -126,13 +172,62 @@ export function PlanView({ auth, downline, positions, isLeader,
       )}
 
       {subTab === "jarvis" && isLeader && (
-        <div style={{ background:"var(--bg2)", border:"1px solid var(--border)", borderRadius:16, padding:"2.4rem", textAlign:"center" }}>
-          <div style={{ fontSize:40, marginBottom:14 }}></div>
-          <div style={{ fontSize:16, fontWeight:900, color:"var(--text)", marginBottom:8 }}>Jarvis è in arrivo</div>
-          <p style={{ fontSize:13, color:"var(--muted)", maxWidth:460, margin:"0 auto" }}>
-            L'analisi avanzata del team — zone geografiche di forza, momentum per area, effort pianificato e suggerimenti su dove concentrarsi — è la prossima funzionalità in costruzione. Sarà visibile solo a chi è impostato come Leader, esattamente come questa sezione.
-          </p>
-        </div>
+        !jarvis || jarvis.cities.length === 0 ? (
+          <div style={{ background:"var(--bg2)", border:"1px solid var(--border)", borderRadius:16, padding:"2.4rem", textAlign:"center" }}>
+            <div style={{ fontSize:16, fontWeight:900, color:"var(--text)", marginBottom:8 }}>Servono più dati</div>
+            <p style={{ fontSize:13, color:"var(--muted)", maxWidth:420, margin:"0 auto" }}>
+              Appena il tuo team avrà membri con città indicata nel profilo e qualche prospect in corso, qui vedrai l'analisi automatica di dove concentrare gli sforzi.
+            </p>
+          </div>
+        ) : (
+          <>
+            {suggerimento && (
+              <div style={{ background:"var(--a1-10)", border:"1px solid var(--a1-25)", borderRadius:16, padding:"1.4rem", marginBottom:16 }}>
+                <div style={{ fontSize:11, fontWeight:800, color:"var(--a2)", textTransform:"uppercase", letterSpacing:.8, marginBottom:8 }}> Suggerimento</div>
+                <p style={{ fontSize:14, color:"var(--text)", lineHeight:1.5, fontWeight:600 }}>{suggerimento}</p>
+              </div>
+            )}
+
+            <div style={{ background:"var(--bg2)", border:"1px solid var(--border)", borderRadius:16, padding:"1.4rem", marginBottom:16 }}>
+              <div style={{ fontSize:13, fontWeight:800, color:"var(--text)", marginBottom:14 }}>Zone di forza del team</div>
+              <div style={{ overflowX:"auto" }}>
+                <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                  <thead>
+                    <tr style={{ borderBottom:"1px solid #11203a" }}>
+                      {["Città","Attivi","Prospect in corso"].map(h=>(
+                        <th key={h} style={{ textAlign:"left", color:"var(--muted)", fontWeight:700, fontSize:10, textTransform:"uppercase", padding:"10px 14px" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {jarvis.cities.map((c,i) => (
+                      <tr key={c.citta} style={{ borderBottom:"1px solid #0d1b3355", background:i===0?"var(--a1-10)":"transparent" }}>
+                        <td style={{ padding:"10px 14px", fontWeight:700, fontSize:13, color:"var(--text)" }}>{c.citta}</td>
+                        <td style={{ padding:"10px 14px", fontWeight:800, fontSize:13, color:"var(--a2)" }}>{c.membri.length}</td>
+                        <td style={{ padding:"10px 14px", fontWeight:800, fontSize:13, color:"#10b981" }}>{c.momentum}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div style={{ background:"var(--bg2)", border:"1px solid var(--border)", borderRadius:16, padding:"1.4rem" }}>
+              <div style={{ fontSize:13, fontWeight:800, color:"var(--text)", marginBottom:14 }}>Canali di prospecting usati dal team</div>
+              <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                {jarvis.canali.map(c => (
+                  <div key={c.fonte}>
+                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
+                      <span style={{ fontSize:12, fontWeight:700, color:"var(--text)" }}>{c.fonte}</span>
+                      <span style={{ fontSize:12, fontWeight:800, color:"var(--muted)" }}>{c.n} · {c.pct}%</span>
+                    </div>
+                    <Bar current={c.pct} target={100} color={c.pct<=15?"#f59e0b":"var(--a1)"} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )
       )}
 
       {subTab === "plan" && (
