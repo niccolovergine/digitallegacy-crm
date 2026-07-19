@@ -20,17 +20,35 @@ function Bar({ current, target, color }) {
   );
 }
 
-function LegBlock({ label, current, target, color }) {
+function Donut({ current, target, color, size=118, stroke=12 }) {
+  const pct = target > 0 ? Math.min(100, (current/target)*100) : 100;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const dash = c * (pct/100);
+  return (
+    <div style={{ position:"relative", width:size, height:size, flexShrink:0 }}>
+      <svg width={size} height={size} style={{ transform:"rotate(-90deg)" }}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--bg4)" strokeWidth={stroke} />
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke}
+          strokeDasharray={c} strokeDashoffset={c-dash} strokeLinecap="round"
+          style={{ transition:"stroke-dashoffset .5s ease" }} />
+      </svg>
+      <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
+        <div style={{ fontSize:22, fontWeight:900, color:"var(--text)", lineHeight:1 }}>{current}</div>
+        <div style={{ fontSize:11, color:"var(--muted)", fontWeight:700, marginTop:2 }}>/ {target}</div>
+      </div>
+    </div>
+  );
+}
+
+function LegDonut({ label, current, target, color }) {
   const mancano = Math.max(0, target - current);
   return (
-    <div style={{ background:"var(--bg3)", border:"1px solid var(--border)", borderRadius:12, padding:"14px 16px", flex:1 }}>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:8 }}>
-        <span style={{ fontSize:12, fontWeight:800, color }}>{label}</span>
-        <span style={{ fontSize:13, fontWeight:900, color:"var(--text)" }}>{current}<span style={{color:"var(--muted)",fontWeight:600}}> / {target}</span></span>
-      </div>
-      <Bar current={current} target={target} color={color} />
-      <div style={{ marginTop:8, fontSize:11, fontWeight:700, color: mancano===0 ? "#10b981" : "var(--muted)" }}>
-        {mancano===0 ? " Obiettivo raggiunto" : "Mancano "+mancano+" persone sedute"}
+    <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:9, flex:1, minWidth:140 }}>
+      <Donut current={current} target={target} color={color} />
+      <div style={{ fontSize:12, fontWeight:800, color }}>{label}</div>
+      <div style={{ fontSize:11, fontWeight:700, color: mancano===0 ? "#10b981" : "var(--muted)", textAlign:"center" }}>
+        {mancano===0 ? " Obiettivo raggiunto" : "Mancano " + mancano}
       </div>
     </div>
   );
@@ -84,10 +102,12 @@ export function PlanView({ auth, downline, positions, dlProspects, isLeader,
   const seated = useMemo(() => {
     const count = (rows) => {
       let sinistra=0, destra=0;
-      (rows||[]).filter(r=>r.ha_ticket).forEach(r => {
+      (rows||[]).forEach(r => {
         const leg = getLeg(r.user_id);
-        if (leg==="sinistra") sinistra++;
-        else if (leg==="destra") destra++;
+        // "persona seduta" = il ticket proprio (se segnato) + ogni ticket extra effettivamente venduto
+        const n = (r.ha_ticket ? 1 : 0) + (Number(r.ticket_extra_venduti) || 0);
+        if (leg==="sinistra") sinistra += n;
+        else if (leg==="destra") destra += n;
       });
       return { sinistra, destra };
     };
@@ -255,24 +275,28 @@ export function PlanView({ auth, downline, positions, dlProspects, isLeader,
               <div style={{ textAlign:"center", padding:"2.4rem", color:"var(--border2)" }}>Scegli un rank qui sopra per vedere il tuo obiettivo</div>
             ) : (
               <>
-                <div style={{ background:"var(--bg2)", border:"1px solid var(--border)", borderRadius:16, padding:"1.4rem", marginBottom:16 }}>
-                  <div style={{ fontSize:13, fontWeight:800, color:"var(--a2)", marginBottom:14 }}>SQT EVENT — persone sedute</div>
-                  <div style={{ display:"flex", gap:14, flexWrap:"wrap" }}>
-                    <LegBlock label="Squadra Sinistra" current={seated.sqt.sinistra} target={target.sqt} color="var(--a1)" />
-                    <LegBlock label="Squadra Destra"   current={seated.sqt.destra}   target={target.sqt} color="#10b981" />
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(320px,1fr))", gap:18 }}>
+                  <div style={{ background:"linear-gradient(160deg,#06b6d422,var(--bg2))", border:"2px solid #06b6d445", borderRadius:18, padding:"1.6rem" }}>
+                    <div style={{ fontSize:10, fontWeight:800, color:"#22d3ee", textTransform:"uppercase", letterSpacing:1.2 }}>Primo obiettivo</div>
+                    <div style={{ fontSize:19, fontWeight:900, color:"var(--text)", marginBottom:18 }}>SQT EVENT</div>
+                    <div style={{ display:"flex", gap:18, justifyContent:"center", flexWrap:"wrap" }}>
+                      <LegDonut label="Squadra Sinistra" current={seated.sqt.sinistra} target={target.sqt} color="#22d3ee" />
+                      <LegDonut label="Squadra Destra"   current={seated.sqt.destra}   target={target.sqt} color="#0ea5b0" />
+                    </div>
                   </div>
-                </div>
 
-                <div style={{ background:"var(--bg2)", border:"1px solid var(--border)", borderRadius:16, padding:"1.4rem" }}>
-                  <div style={{ fontSize:13, fontWeight:800, color:"var(--a2)", marginBottom:14 }}>THE MASTERY — persone sedute</div>
-                  <div style={{ display:"flex", gap:14, flexWrap:"wrap" }}>
-                    <LegBlock label="Squadra Sinistra" current={seated.mastery.sinistra} target={target.mastery} color="var(--a1)" />
-                    <LegBlock label="Squadra Destra"   current={seated.mastery.destra}   target={target.mastery} color="#10b981" />
+                  <div style={{ background:"linear-gradient(160deg,var(--a2)22,var(--bg2))", border:"2px solid var(--a2)45", borderRadius:18, padding:"1.6rem" }}>
+                    <div style={{ fontSize:10, fontWeight:800, color:"var(--a2)", textTransform:"uppercase", letterSpacing:1.2 }}>Obiettivo finale</div>
+                    <div style={{ fontSize:19, fontWeight:900, color:"var(--text)", marginBottom:18 }}>THE MASTERY</div>
+                    <div style={{ display:"flex", gap:18, justifyContent:"center", flexWrap:"wrap" }}>
+                      <LegDonut label="Squadra Sinistra" current={seated.mastery.sinistra} target={target.mastery} color="var(--a1)" />
+                      <LegDonut label="Squadra Destra"   current={seated.mastery.destra}   target={target.mastery} color="var(--a2)" />
+                    </div>
                   </div>
                 </div>
 
                 <p style={{ fontSize:11, color:"var(--border2)", marginTop:14 }}>
-                  I numeri si aggiornano da soli in base a chi nel tuo team ha il ticket segnato in Eventi → Team Ticket & Logistica.
+                  I numeri si aggiornano da soli in base a chi nel tuo team ha il ticket (e quanti extra ha venduto) segnato in Eventi → Team Ticket & Logistica.
                 </p>
               </>
             )}
