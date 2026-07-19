@@ -36,6 +36,8 @@ async function sbFetch(path, opts = {}) {
 
 const sbSignUp  = (email, pw)      => sbFetch("/auth/v1/signup", { method:"POST", body:JSON.stringify({ email, password:pw }) });
 const sbSignIn  = (email, pw)      => sbFetch("/auth/v1/token?grant_type=password", { method:"POST", body:JSON.stringify({ email, password:pw }) });
+const sbForgotPassword = (email)   => sbFetch("/auth/v1/recover", { method:"POST", body:JSON.stringify({ email }) });
+const sbUpdatePasswordWithToken = (accessToken, newPassword) => sbFetch("/auth/v1/user", { method:"PUT", _token:accessToken, body:JSON.stringify({ password:newPassword }) });
 const sbSignOut = (tok)            => sbFetch("/auth/v1/logout", { method:"POST", _token:tok });
 const sbList    = (tok, uid)       => sbFetch("/rest/v1/prospects?select=*&order=created_at.asc&user_id=eq."+uid, { _token:tok });
 const sbInsert  = (tok, row)       => sbFetch("/rest/v1/prospects", { method:"POST", _token:tok, body:JSON.stringify(row) });
@@ -346,6 +348,12 @@ function AuthScreen({ onAuth }) {
   const [nome, setNome]       = useState("");
   const [cognome, setCognome] = useState("");
   const [remember, setRemember] = useState(true);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotSent, setForgotSent]   = useState(false);
+  const [recoveryToken, setRecoveryToken] = useState(null);
+  const [newPass, setNewPass]     = useState("");
+  const [newPass2, setNewPass2]   = useState("");
+  const [resetOk, setResetOk]     = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -355,6 +363,14 @@ function AuthScreen({ onAuth }) {
       localStorage.setItem("pending_ref", ref);
       localStorage.setItem("pending_ref_expires", Date.now() + 10 * 60 * 1000);
       setMode("signup");
+    }
+
+    // Se arriviamo da un link "password dimenticata", Supabase mette i dati nell'hash dell'URL
+    if (window.location.hash && window.location.hash.includes("type=recovery")) {
+      const hashParams = new URLSearchParams(window.location.hash.slice(1));
+      const at = hashParams.get("access_token");
+      if (at) { setRecoveryToken(at); setMode("reset"); }
+      return; // non fare l'auto-restore session in questo caso
     }
 
     // Auto-restore session — ricarica sempre un profilo fresco dal server,
@@ -427,6 +443,28 @@ function AuthScreen({ onAuth }) {
     setLoading(false);
   }
 
+  async function sendForgotEmail() {
+    if (!forgotEmail.trim()) { setErr("Inserisci la tua email"); return; }
+    setLoading(true); setErr("");
+    try {
+      await sbForgotPassword(forgotEmail.trim());
+      setForgotSent(true);
+    } catch(e) { setErr(e.message||"Errore di connessione"); }
+    setLoading(false);
+  }
+
+  async function submitNewPassword() {
+    if (!newPass.trim() || newPass.length < 6) { setErr("La password deve avere almeno 6 caratteri"); return; }
+    if (newPass !== newPass2) { setErr("Le due password non coincidono"); return; }
+    setLoading(true); setErr("");
+    try {
+      await sbUpdatePasswordWithToken(recoveryToken, newPass);
+      setResetOk(true);
+      window.history.replaceState(null, "", window.location.pathname); // pulisce l'hash dall'URL
+    } catch(e) { setErr(e.message||"Errore di connessione"); }
+    setLoading(false);
+  }
+
   return (
     <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",background:"var(--bg)",padding:16}}>
       <div className="pop" style={{width:"100%",maxWidth:400,background:"var(--bg2)",border:"1px solid var(--border2)",borderRadius:20,padding:"2.2rem",boxShadow:"0 20px 70px #000000aa"}}>
@@ -434,13 +472,73 @@ function AuthScreen({ onAuth }) {
           <div style={{fontWeight:900,fontSize:20,color:"var(--text)",letterSpacing:-0.5}}>Digital Legacy CRM</div>
         </div>
         <div style={{display:"flex",background:"var(--bg3)",borderRadius:10,padding:4,marginBottom:24,border:"1px solid var(--border)"}}>
-          {["login","signup"].map(m=>(
+          {mode!=="forgot" && mode!=="reset" && ["login","signup"].map(m=>(
             <button key={m} onClick={()=>{setMode(m);setErr("");}} className="tabbtn"
               style={{flex:1,background:mode===m?"var(--bg4)":"transparent",color:mode===m?"var(--a2)":"var(--muted)",boxShadow:mode===m?"inset 0 0 0 1px var(--sidebar-border)":"none"}}>
               {m==="login"?"Accedi":"Registrati"}
             </button>
           ))}
+          {mode==="forgot" && <div style={{flex:1,textAlign:"center",padding:"7px 0",fontSize:12,fontWeight:700,color:"var(--a2)"}}>Recupera password</div>}
+          {mode==="reset" && <div style={{flex:1,textAlign:"center",padding:"7px 0",fontSize:12,fontWeight:700,color:"var(--a2)"}}>Nuova password</div>}
         </div>
+
+        {mode==="reset" ? (
+          resetOk ? (
+            <div style={{textAlign:"center"}}>
+              <div style={{fontSize:13,color:"var(--text)",marginBottom:18,lineHeight:1.6}}>Password aggiornata! Ora puoi accedere con quella nuova.</div>
+              <button onClick={()=>{setMode("login");setResetOk(false);setNewPass("");setNewPass2("");}}
+                style={{width:"100%",padding:"11px",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:10,cursor:"pointer",fontWeight:800,fontSize:14}}>
+                Vai al login
+              </button>
+            </div>
+          ) : (
+            <>
+              <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:16}}>
+                <div>
+                  <label style={{fontSize:11,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"}}>Nuova password</label>
+                  <input type="password" value={newPass} onChange={e=>setNewPass(e.target.value)} placeholder="••••••••" onKeyDown={e=>e.key==="Enter"&&submitNewPassword()} />
+                </div>
+                <div>
+                  <label style={{fontSize:11,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"}}>Ripeti password</label>
+                  <input type="password" value={newPass2} onChange={e=>setNewPass2(e.target.value)} placeholder="••••••••" onKeyDown={e=>e.key==="Enter"&&submitNewPassword()} />
+                </div>
+              </div>
+              {err && <div style={{background:"#ef444415",border:"1px solid #ef444435",borderRadius:9,padding:"9px 13px",fontSize:12,color:"#f87171",marginBottom:14,lineHeight:1.5}}>{err}</div>}
+              <button onClick={submitNewPassword} disabled={loading}
+                style={{width:"100%",padding:"11px",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:10,cursor:loading?"not-allowed":"pointer",fontWeight:800,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8,opacity:loading?0.7:1}}>
+                {loading && <span className="spinner" />}
+                Salva nuova password
+              </button>
+            </>
+          )
+        ) : mode==="forgot" ? (
+          forgotSent ? (
+            <div style={{textAlign:"center"}}>
+              <div style={{fontSize:13,color:"var(--text)",marginBottom:18,lineHeight:1.6}}>Ti abbiamo mandato una email a <b>{forgotEmail}</b> con il link per reimpostare la password. Controlla anche lo spam.</div>
+              <button onClick={()=>{setMode("login");setForgotSent(false);setForgotEmail("");setErr("");}}
+                style={{width:"100%",padding:"11px",background:"var(--bg4)",color:"var(--a2)",border:"1px solid var(--border2)",borderRadius:10,cursor:"pointer",fontWeight:800,fontSize:14}}>
+                Torna al login
+              </button>
+            </div>
+          ) : (
+            <>
+              <div style={{marginBottom:16}}>
+                <label style={{fontSize:11,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"}}>Email</label>
+                <input type="email" value={forgotEmail} onChange={e=>setForgotEmail(e.target.value)} placeholder="tua@email.com" onKeyDown={e=>e.key==="Enter"&&sendForgotEmail()} />
+              </div>
+              {err && <div style={{background:"#ef444415",border:"1px solid #ef444435",borderRadius:9,padding:"9px 13px",fontSize:12,color:"#f87171",marginBottom:14,lineHeight:1.5}}>{err}</div>}
+              <button onClick={sendForgotEmail} disabled={loading}
+                style={{width:"100%",padding:"11px",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:10,cursor:loading?"not-allowed":"pointer",fontWeight:800,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8,opacity:loading?0.7:1}}>
+                {loading && <span className="spinner" />}
+                Invia link di recupero
+              </button>
+              <div style={{textAlign:"center",marginTop:16,fontSize:11,color:"var(--muted)"}}>
+                <span onClick={()=>{setMode("login");setErr("");}} style={{color:"var(--a2)",cursor:"pointer",fontWeight:700}}> Torna al login</span>
+              </div>
+            </>
+          )
+        ) : (
+        <>
         <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:16}}>
           {mode==="signup" && (
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
@@ -466,11 +564,14 @@ function AuthScreen({ onAuth }) {
         {err && <div style={{background:"#ef444415",border:"1px solid #ef444435",borderRadius:9,padding:"9px 13px",fontSize:12,color:"#f87171",marginBottom:14,lineHeight:1.5}}>{err}</div>}
 
         {mode==="login" && (
-          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,cursor:"pointer"}} onClick={()=>setRemember(r=>!r)}>
-            <div style={{width:18,height:18,borderRadius:5,border:"1.5px solid "+(remember?"var(--a1)":"var(--border2)"),background:remember?"var(--a1)":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .2s"}}>
-              {remember && <span style={{color:"#fff",fontSize:11,fontWeight:900}}></span>}
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}} onClick={()=>setRemember(r=>!r)}>
+              <div style={{width:18,height:18,borderRadius:5,border:"1.5px solid "+(remember?"var(--a1)":"var(--border2)"),background:remember?"var(--a1)":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .2s"}}>
+                {remember && <span style={{color:"#fff",fontSize:11,fontWeight:900}}></span>}
+              </div>
+              <span style={{fontSize:12,color:"var(--muted)",userSelect:"none"}}>Ricordami</span>
             </div>
-            <span style={{fontSize:12,color:"var(--muted)",userSelect:"none"}}>Ricordami su questo dispositivo</span>
+            <span onClick={()=>{setMode("forgot");setErr("");setForgotEmail(email);}} style={{fontSize:12,color:"var(--a2)",cursor:"pointer",fontWeight:700}}>Password dimenticata?</span>
           </div>
         )}
         <button onClick={submit} disabled={loading}
@@ -483,6 +584,8 @@ function AuthScreen({ onAuth }) {
             Non hai un account?{" "}
             <span onClick={()=>{setMode("signup");setErr("");}} style={{color:"var(--a2)",cursor:"pointer",fontWeight:700}}>Registrati</span>
           </div>
+        )}
+        </>
         )}
       </div>
     </div>
