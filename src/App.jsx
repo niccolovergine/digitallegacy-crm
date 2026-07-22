@@ -73,6 +73,10 @@ const sbSetLeader       = (tok, memberId, value)          => sbFetch("/rest/v1/r
 const sbSetAttivo       = (tok, memberId, value)          => sbFetch("/rest/v1/rpc/set_attivo", { method:"POST", _token:tok, body:JSON.stringify({ p_member_id:memberId, p_value:value }) });
 const sbGetPositions    = (tok)             => sbFetch("/rest/v1/team_positions?select=*", { _token:tok });
 const sbSetPosition     = (tok, uplineId, memberId, team) => sbFetch("/rest/v1/team_positions", { method:"POST", _token:tok, headers:{"Prefer":"resolution=merge-duplicates"}, body:JSON.stringify({ upline_id:uplineId, member_id:memberId, team }) });
+const sbGetClienti      = (tok)             => sbFetch("/rest/v1/rpc/get_clienti_visibili", { method:"POST", _token:tok, body:JSON.stringify({}) });
+const sbAddCliente      = (tok, row)        => sbFetch("/rest/v1/rpc/add_cliente", { method:"POST", _token:tok, body:JSON.stringify({ p_positioned_under:row.positionedUnder, p_nome:row.nome, p_cognome:row.cognome||null, p_citta:row.citta||null, p_rinnovo_tipo:row.rinnovoTipo||"", p_rinnovo_scadenza:row.rinnovoScadenza||null }) });
+const sbUpdateCliente   = (tok, id, row)    => sbFetch("/rest/v1/rpc/update_cliente", { method:"POST", _token:tok, body:JSON.stringify({ p_cliente_id:id, p_nome:row.nome, p_cognome:row.cognome||null, p_citta:row.citta||null, p_rinnovo_tipo:row.rinnovoTipo||"", p_rinnovo_scadenza:row.rinnovoScadenza||null, p_attivo:row.attivo!==false }) });
+const sbDeleteCliente   = (tok, id)         => sbFetch("/rest/v1/rpc/delete_cliente", { method:"POST", _token:tok, body:JSON.stringify({ p_cliente_id:id }) });
 
 // Eventi helpers
 const LUDOVICO_ID = "3eeef288-c1f0-409e-bde7-d35cf5694e7d";
@@ -625,6 +629,7 @@ export default function App() {
   const [ready, setReady]         = useState(false);
   const [saving, setSaving]       = useState(false);
   const [downline, setDownline]   = useState([]);
+  const [clienti, setClienti]     = useState([]);
   const [allProfiles, setAllProfiles] = useState([]);
   const [showEventoReminder, setShowEventoReminder] = useState(false);
   const [ticketVendutiCount, setTicketVendutiCount] = useState(0);
@@ -699,6 +704,10 @@ export default function App() {
       );
       const mine = [...posizionati, ...inAttesa];
       setDownline(mine);
+      try {
+        const cl = await sbGetClienti(auth.token);
+        setClienti((cl||[]).map(r=>({id:r.id,nome:r.nome,cognome:r.cognome||"",citta:r.citta||"",positionedUnder:r.positioned_under,rinnovoTipo:r.rinnovo_tipo||"",rinnovoScadenza:r.rinnovo_scadenza||"",attivo:r.attivo!==false})));
+      } catch(e) { /* tabella clienti non ancora creata o errore permessi: non bloccare il resto */ }
       if (mine.length > 0) {
         const uids = mine.map(p => p.id);
         const dp = await sbGetDownlineProspects(auth.token, uids);
@@ -795,25 +804,36 @@ export default function App() {
   async function saveClienteQuick(clienteForm) {
     if (!clienteForm.nome?.trim()) { showToast("Inserisci almeno il nome","#ef4444"); return; }
     setSaving(true);
-    const ownerId = clienteForm._userId || auth.userId;
-    const oggi = today();
-    const base = {
-      nome:clienteForm.nome, cognome:clienteForm.cognome||"", citta:clienteForm.citta||"",
-      fonte:"Referral", fase:"SUB", conosciutoAt:oggi, note:"", profilazione:{},
-      pacchetto:"", bvCustom:0, telefono:"", instagram:"",
-      checklist:{kyc:false,pandadoc:false,click:false}, interesse:"", statoColore:"",
-      rinnovoTipo:clienteForm.rinnovoTipo||"", rinnovoScadenza:clienteForm.rinnovoScadenza||"", attivo:true,
-    };
-    const storico = buildStorico(base,"SUB",oggi);
-    const np = {...base, id:genId(), storico};
+    const positionedUnder = clienteForm._userId || auth.userId;
     try {
-      await sbInsert(auth.token,toDB(np,ownerId));
-      if (ownerId === auth.userId) setData(d=>[...d,np]);
-      else setDlProspects(d=>[...d,{...np,_userId:ownerId}]);
+      const res = await sbAddCliente(auth.token, {
+        positionedUnder, nome:clienteForm.nome, cognome:clienteForm.cognome||"", citta:clienteForm.citta||"",
+        rinnovoTipo:clienteForm.rinnovoTipo||"", rinnovoScadenza:clienteForm.rinnovoScadenza||"",
+      });
+      const newId = Array.isArray(res) ? res[0] : res;
+      setClienti(c=>[...c,{id:newId,nome:clienteForm.nome,cognome:clienteForm.cognome||"",citta:clienteForm.citta||"",positionedUnder,rinnovoTipo:clienteForm.rinnovoTipo||"",rinnovoScadenza:clienteForm.rinnovoScadenza||"",attivo:true}]);
       showToast("Cliente aggiunto ");
       closeModal();
     } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
     setSaving(false);
+  }
+
+  async function updateClienteQuick(id, fields) {
+    const prev = clienti.find(c=>c.id===id);
+    if (!prev) return;
+    const merged = {...prev, ...fields};
+    try {
+      await sbUpdateCliente(auth.token, id, merged);
+      setClienti(c=>c.map(x=>x.id===id?merged:x));
+    } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
+  }
+
+  async function deleteClienteQuick(id) {
+    try {
+      await sbDeleteCliente(auth.token, id);
+      setClienti(c=>c.filter(x=>x.id!==id));
+      showToast("Cliente rimosso","#ef4444");
+    } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
   }
 
   async function invitaProspect(fields) {
@@ -1159,7 +1179,7 @@ export default function App() {
         {view==="dash"  && <Dash cd={cd} cdSub={cdSub} cdAct={cdAct} cdFU={cdFU} cdNI={cdNI} cdConv={cdConv} totSub={totSub} totConv={totConv} totAll={dashData.length} funnelCounts={funnelCounts} funnelMax={funnelMax} urgenti={urgenti} dashCiclo={dashCiclo} setDashCiclo={setDashCiclo} onOpen={openDetail} dashMode={dashMode} setDashMode={setDashMode} hasTeam={dlProspects.length>0} ticketVenduti={ticketVendutiCount} />}
         {view==="lista" && <Lista prospects={listaData} total={listaMode==="team"?teamProspects.length:data.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} fCitta={fCitta} setFCitta={setFCitta} fInteresse={fInteresse} setFInteresse={setFInteresse} fPercorso={fPercorso} setFPercorso={setFPercorso} fLeg={fLeg} setFLeg={setFLeg} fMembroTeam={fMembroTeam} setFMembroTeam={setFMembroTeam} downline={downline} onOpen={openDetail} onAdd={openAdd} listaMode={listaMode} setListaMode={setListaMode} hasTeam={dlProspects.length>0} />}
         {view==="stats"   && <Statistiche data={data} dlProspects={teamProspects} downline={downline} />}
-        {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onUpdateRinnovo={updateRinnovo} onSetLeader={setLeader} onSetAttivo={setAttivo} onAddCliente={openAddCliente} LUDOVICO_ID={LUDOVICO_ID} />}
+        {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} clienti={clienti} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onUpdateRinnovo={updateRinnovo} onSetLeader={setLeader} onSetAttivo={setAttivo} onAddCliente={openAddCliente} onUpdateCliente={updateClienteQuick} onDeleteCliente={deleteClienteQuick} LUDOVICO_ID={LUDOVICO_ID} />}
         {view==="nomi"    && <ListaNomiView auth={auth} onInvitaProspect={invitaProspect} />}
         {view==="eventi"  && <EventiView auth={auth} allProfiles={allProfiles} downline={downline} positions={positions} showToast={showToast}
           sbListEventi={sbListEventi}

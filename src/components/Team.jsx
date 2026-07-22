@@ -360,7 +360,7 @@ function TreeCanvas({ memberId, memberNome, memberCognome, memberEmail, allMembe
 
 
 
-export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,positions,onOpenProspect,onPositionInTree,onUpdateRinnovo,onSetLeader,onSetAttivo,onAddCliente,LUDOVICO_ID}){
+export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddManual,positions,onOpenProspect,onPositionInTree,onUpdateRinnovo,onSetLeader,onSetAttivo,onAddCliente,onUpdateCliente,onDeleteCliente,LUDOVICO_ID}){
   const isRoot = auth.userId === LUDOVICO_ID; // solo il titolare del CRM può nominare i leader, indipendentemente da dove si trova nell'albero
   const[selectedMember,setSelectedMember]=useState(null);
   const[teamFilter,setTeamFilter]=useState("all");
@@ -747,6 +747,55 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
           </div>
           }
 
+          {activeTeamTab==="membri" && (clienti||[]).length>0 && (()=>{
+            const filteredClienti = teamFilter==="all" ? (clienti||[]) : (clienti||[]).filter(c=>{
+              if (c.positionedUnder===auth.userId) return false; // il root non ha una gamba
+              const owner=downline.find(d=>d.id===c.positionedUnder);
+              return owner && getTeamForMe(owner)===teamFilter;
+            });
+            return (
+              <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden",marginTop:16}}>
+                <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a"}}>
+                  <div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}>Clienti</div>
+                  <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>Aggiunti senza account — non toccano prospect e statistiche, contano nei rinnovi</div>
+                </div>
+                {filteredClienti.length===0
+                  ? <div style={{padding:"2rem",textAlign:"center",color:"var(--border2)",fontSize:13}}>Nessun cliente in questa vista</div>
+                  : <table style={{width:"100%",borderCollapse:"collapse"}}>
+                    <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Cliente","Di chi è","Tipo rinnovo","Scadenza","Attivo",""].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
+                    <tbody>{filteredClienti.map(c=>{
+                      const owner=c.positionedUnder===auth.userId?null:downline.find(d=>d.id===c.positionedUnder);
+                      return (
+                        <tr key={c.id} style={{borderBottom:"1px solid #0d1b3355"}}>
+                          <td style={{padding:"12px 16px"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Av n={c.nome} c={c.cognome} color="#f59e0b"/><div><div style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{c.nome} {c.cognome||""}</div>{c.citta&&<div style={{color:"var(--muted)",fontSize:11}}>{c.citta}</div>}</div></div></td>
+                          <td style={{padding:"12px 16px",fontSize:12,color:"var(--muted)"}}>{owner?(owner.nome||owner.email)+" "+(owner.cognome||""):"Tu"}</td>
+                          <td style={{padding:"12px 16px"}}>
+                            <select value={c.rinnovoTipo||""} onChange={e=>onUpdateCliente(c.id,{rinnovoTipo:e.target.value})} style={{width:"auto",minWidth:120,fontSize:11,padding:"5px 9px",background:"var(--bg3)",border:"1px solid var(--border2)"}}>
+                              <option value="">Non impostato</option>
+                              <option value="mensile_60">Mensile (60CV)</option>
+                              <option value="mensile_90">Mensile (90CV)</option>
+                              <option value="semestrale_75">Semestrale (75CV)</option>
+                              <option value="semestrale_90">Semestrale (90CV)</option>
+                              <option value="annuale_75">Annuale (75CV)</option>
+                              <option value="annuale_90">Annuale (90CV)</option>
+                            </select>
+                          </td>
+                          <td style={{padding:"12px 16px"}}>
+                            <input type="date" value={c.rinnovoScadenza||""} onChange={e=>onUpdateCliente(c.id,{rinnovoScadenza:e.target.value})} style={{fontSize:11,padding:"5px 9px",background:"var(--bg3)",border:"1px solid var(--border2)",color:"var(--text)",borderRadius:7}}/>
+                          </td>
+                          <td style={{padding:"12px 16px"}}>
+                            <input type="checkbox" checked={c.attivo!==false} onChange={e=>onUpdateCliente(c.id,{attivo:e.target.checked})} style={{width:16,height:16,cursor:"pointer"}} />
+                          </td>
+                          <td style={{padding:"12px 16px"}}><button onClick={()=>{if(window.confirm("Rimuovere "+c.nome+"?"))onDeleteCliente(c.id);}} style={{background:"#ef444415",border:"1px solid #ef444430",borderRadius:6,color:"#f87171",cursor:"pointer",fontSize:11,fontWeight:800,padding:"4px 9px"}}>Rimuovi</button></td>
+                        </tr>
+                      );
+                    })}</tbody>
+                  </table>
+                }
+              </div>
+            );
+          })()}
+
           {activeTeamTab==="rinnovi"&&(()=>{
             const membriAttiviRinnovo=filteredMembers.filter(m=>m.attivo!==false);
             const righeMembri=membriAttiviRinnovo.map(m=>({tipo:"membro",id:m.id,nome:m.nome,cognome:m.cognome,email:m.email,ownerLabel:null,rinnovoTipo:m.rinnovo_tipo,rinnovoScadenza:m.rinnovo_scadenza,giorni:giorniAlla(m.rinnovo_scadenza),cv:m.rinnovo_tipo?RINNOVO_CV[m.rinnovo_tipo]||0:0,onChangeTipo:v=>onUpdateRinnovo(m.id,v||null,m.rinnovo_scadenza||null),onChangeData:v=>onUpdateRinnovo(m.id,m.rinnovo_tipo||null,v||null)}));
@@ -756,7 +805,12 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
               const owner=downline.find(m=>m.id===p._userId);
               return {tipo:"cliente",id:p.id,nome:p.nome,cognome:p.cognome,ownerLabel:owner?(owner.nome||owner.email)+" "+(owner.cognome||""):"",rinnovoTipo:p.rinnovoTipo,rinnovoScadenza:p.rinnovoScadenza,giorni:giorniAlla(p.rinnovoScadenza),cv:p.rinnovoTipo?RINNOVO_CV[p.rinnovoTipo]||0:0,onChangeTipo:null,onChangeData:null};
             });
-            const righe=[...righeMembri,...righeClienti];
+            const clientiDedicatiFiltrati=(clienti||[]).filter(c=>c.attivo!==false&&c.rinnovoTipo&&(c.positionedUnder===auth.userId||membriFiltratiIds.has(c.positionedUnder)));
+            const righeClientiDedicati=clientiDedicatiFiltrati.map(c=>{
+              const owner=c.positionedUnder===auth.userId?null:downline.find(m=>m.id===c.positionedUnder);
+              return {tipo:"cliente",id:"cl_"+c.id,nome:c.nome,cognome:c.cognome,ownerLabel:owner?(owner.nome||owner.email)+" "+(owner.cognome||""):"Tu",rinnovoTipo:c.rinnovoTipo,rinnovoScadenza:c.rinnovoScadenza,giorni:giorniAlla(c.rinnovoScadenza),cv:c.rinnovoTipo?RINNOVO_CV[c.rinnovoTipo]||0:0,onChangeTipo:v=>onUpdateCliente(c.id,{rinnovoTipo:v}),onChangeData:v=>onUpdateCliente(c.id,{rinnovoScadenza:v})};
+            });
+            const righe=[...righeMembri,...righeClienti,...righeClientiDedicati];
             const conRinnovo=righe.filter(x=>x.rinnovoScadenza);
             const inScadenza=righe.filter(x=>x.giorni!=null&&x.giorni>=0&&x.giorni<=7);
             const cvPotenziale=inScadenza.reduce((acc,x)=>acc+x.cv,0);
