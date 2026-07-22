@@ -740,6 +740,7 @@ export default function App() {
 
   function getOwnerToken() { return auth.token; }
   function openAdd()    { setForm({fase:"INVITO",fonte:"Instagram",conosciutoAt:today()}); setModal("add"); }
+  function openAddCliente() { setForm({fase:"SUB",fonte:"Referral",conosciutoAt:today(),attivo:true}); setModal("add"); }
   function openDetail(p){ setSel(p); setModal("detail"); }
   function closeModal() { setModal(null); setSel(null); setForm({}); }
 
@@ -1134,7 +1135,7 @@ export default function App() {
         {view==="dash"  && <Dash cd={cd} cdSub={cdSub} cdAct={cdAct} cdFU={cdFU} cdNI={cdNI} cdConv={cdConv} totSub={totSub} totConv={totConv} totAll={dashData.length} funnelCounts={funnelCounts} funnelMax={funnelMax} urgenti={urgenti} dashCiclo={dashCiclo} setDashCiclo={setDashCiclo} onOpen={openDetail} dashMode={dashMode} setDashMode={setDashMode} hasTeam={dlProspects.length>0} ticketVenduti={ticketVendutiCount} />}
         {view==="lista" && <Lista prospects={listaData} total={listaMode==="team"?teamProspects.length:data.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} fCitta={fCitta} setFCitta={setFCitta} fInteresse={fInteresse} setFInteresse={setFInteresse} fPercorso={fPercorso} setFPercorso={setFPercorso} fLeg={fLeg} setFLeg={setFLeg} fMembroTeam={fMembroTeam} setFMembroTeam={setFMembroTeam} downline={downline} onOpen={openDetail} onAdd={openAdd} listaMode={listaMode} setListaMode={setListaMode} hasTeam={dlProspects.length>0} />}
         {view==="stats"   && <Statistiche data={data} dlProspects={teamProspects} downline={downline} />}
-        {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onUpdateRinnovo={updateRinnovo} onSetLeader={setLeader} onSetAttivo={setAttivo} LUDOVICO_ID={LUDOVICO_ID} />}
+        {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onUpdateRinnovo={updateRinnovo} onSetLeader={setLeader} onSetAttivo={setAttivo} onAddCliente={openAddCliente} LUDOVICO_ID={LUDOVICO_ID} />}
         {view==="nomi"    && <ListaNomiView auth={auth} onInvitaProspect={invitaProspect} />}
         {view==="eventi"  && <EventiView auth={auth} allProfiles={allProfiles} downline={downline} positions={positions} showToast={showToast}
           sbListEventi={sbListEventi}
@@ -1175,7 +1176,7 @@ export default function App() {
           <div className={"pop"} onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:520,maxHeight:"90vh",overflowY:"auto",borderRadius:"16px"}}>
             {modal==="detail"
               ? <DetailModal p={sel} onEdit={()=>{setForm({...sel});setModal("edit");}} onAdvance={()=>advanceFase(sel)} onFollowUp={()=>moveFase(sel,"FOLLOW_UP")} onNonInt={()=>moveFase(sel,"NON_INT")} onNonPiace={()=>moveFase(sel,"NON_PIACE")} onRiattiva={()=>moveFase(sel,"RIATTIVA")} onClose={closeModal} onUpdateProfilo={pr=>updateProfilo(sel.id,pr)} onUpdateChecklist={cl=>updateChecklist(sel.id,cl)} onDeleteStorico={fase=>deleteStorico(sel.id,fase)} onUpdateStoricoData={(fase,data,newFase,newStorico)=>updateStoricoData(sel.id,fase,data,newFase,newStorico)} onSetStatoColore={v=>setStatoColore(sel.id,v)} />
-              : <FormModal form={form} setForm={setForm} onSave={saveForm} onClose={closeModal} onDelete={modal==="edit"?()=>deleteProp(form.id):null} isEdit={modal==="edit"} isLeader={!!auth.profile?.is_leader} downline={downline} />
+              : <FormModal form={form} setForm={setForm} onSave={saveForm} onClose={closeModal} onDelete={modal==="edit"?()=>deleteProp(form.id):null} isEdit={modal==="edit"} isLeader={!!auth.profile?.is_leader || auth.userId===LUDOVICO_ID} downline={downline} />
             }
           </div>
         </div>

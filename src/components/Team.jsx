@@ -360,7 +360,7 @@ function TreeCanvas({ memberId, memberNome, memberCognome, memberEmail, allMembe
 
 
 
-export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,positions,onOpenProspect,onPositionInTree,onUpdateRinnovo,onSetLeader,onSetAttivo,LUDOVICO_ID}){
+export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,positions,onOpenProspect,onPositionInTree,onUpdateRinnovo,onSetLeader,onSetAttivo,onAddCliente,LUDOVICO_ID}){
   const isRoot = auth.userId === LUDOVICO_ID; // solo il titolare del CRM può nominare i leader, indipendentemente da dove si trova nell'albero
   const[selectedMember,setSelectedMember]=useState(null);
   const[teamFilter,setTeamFilter]=useState("all");
@@ -555,6 +555,14 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
           </button>
         ))}
       </div>
+
+      {onAddCliente && (
+        <div style={{display:"flex",justifyContent:"flex-end",marginBottom:16}}>
+          <button onClick={onAddCliente} style={{padding:"9px 18px",background:"linear-gradient(135deg,#10b981,#10b98199)",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:13,display:"flex",alignItems:"center",gap:6}}>
+            + Aggiungi cliente
+          </button>
+        </div>
+      )}
 
       {activeTeamTab==="albero"&&(
         <div style={{marginBottom:16}}>
