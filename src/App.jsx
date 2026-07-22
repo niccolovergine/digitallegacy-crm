@@ -888,9 +888,11 @@ export default function App() {
     const next=FASI_FUNNEL[i+1];
     const storico=buildStorico(p,next,today());
     const upd={...p,fase:next,storico};
+    const ownerId=p._userId||auth.userId;
     try {
-      await sbUpdate(auth.token,p.id,toDB(upd,auth.userId));
-      setData(d=>d.map(x=>x.id===p.id?upd:x));
+      await sbUpdate(auth.token,p.id,toDB(upd,ownerId));
+      if (data.find(x=>x.id===p.id)) setData(d=>d.map(x=>x.id===p.id?upd:x));
+      else setDlProspects(d=>d.map(x=>x.id===p.id?{...upd,_userId:ownerId,_ownerName:p._ownerName}:x));
       setSel(upd); showToast("→ "+FASE_LABEL[next]);
     } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
   }
@@ -898,9 +900,12 @@ export default function App() {
   async function moveFase(p,fase) {
     const newFase=fase==="RIATTIVA"?highestReached(p):fase;
     const upd={...p,fase:newFase};
+    const ownerId=p._userId||auth.userId;
     try {
-      await sbUpdate(auth.token,p.id,toDB(upd,auth.userId));
-      setData(d=>d.map(x=>x.id===p.id?upd:x)); setSel(upd);
+      await sbUpdate(auth.token,p.id,toDB(upd,ownerId));
+      if (data.find(x=>x.id===p.id)) setData(d=>d.map(x=>x.id===p.id?upd:x));
+      else setDlProspects(d=>d.map(x=>x.id===p.id?{...upd,_userId:ownerId,_ownerName:p._ownerName}:x));
+      setSel(upd);
       showToast(fase==="FOLLOW_UP"?" Follow Up":fase==="NON_INT"?" Non interessato":fase==="NON_PIACE"?" Non mi piace":"↩ Riattivato",
         fase==="FOLLOW_UP"?"#f59e0b":fase==="NON_INT"?"#6b7280":fase==="NON_PIACE"?"#ec4899":"var(--a1)");
     } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
