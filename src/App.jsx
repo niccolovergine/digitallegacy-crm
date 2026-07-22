@@ -740,7 +740,7 @@ export default function App() {
 
   function getOwnerToken() { return auth.token; }
   function openAdd()    { setForm({fase:"INVITO",fonte:"Instagram",conosciutoAt:today()}); setModal("add"); }
-  function openAddCliente() { setForm({fase:"SUB",fonte:"Referral",conosciutoAt:today(),attivo:true}); setModal("add"); }
+  function openAddCliente() { setForm({}); setModal("cliente"); }
   function openDetail(p){ setSel(p); setModal("detail"); }
   function closeModal() { setModal(null); setSel(null); setForm({}); }
 
@@ -790,6 +790,30 @@ export default function App() {
       showToast("Rimosso","#ef4444");
     } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
     closeModal();
+  }
+
+  async function saveClienteQuick(clienteForm) {
+    if (!clienteForm.nome?.trim()) { showToast("Inserisci almeno il nome","#ef4444"); return; }
+    setSaving(true);
+    const ownerId = clienteForm._userId || auth.userId;
+    const oggi = today();
+    const base = {
+      nome:clienteForm.nome, cognome:clienteForm.cognome||"", citta:clienteForm.citta||"",
+      fonte:"Referral", fase:"SUB", conosciutoAt:oggi, note:"", profilazione:{},
+      pacchetto:"", bvCustom:0, telefono:"", instagram:"",
+      checklist:{kyc:false,pandadoc:false,click:false}, interesse:"", statoColore:"",
+      rinnovoTipo:clienteForm.rinnovoTipo||"", rinnovoScadenza:clienteForm.rinnovoScadenza||"", attivo:true,
+    };
+    const storico = buildStorico(base,"SUB",oggi);
+    const np = {...base, id:genId(), storico};
+    try {
+      await sbInsert(auth.token,toDB(np,ownerId));
+      if (ownerId === auth.userId) setData(d=>[...d,np]);
+      else setDlProspects(d=>[...d,{...np,_userId:ownerId}]);
+      showToast("Cliente aggiunto ");
+      closeModal();
+    } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
+    setSaving(false);
   }
 
   async function invitaProspect(fields) {
@@ -1176,6 +1200,8 @@ export default function App() {
           <div className={"pop"} onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:520,maxHeight:"90vh",overflowY:"auto",borderRadius:"16px"}}>
             {modal==="detail"
               ? <DetailModal p={sel} onEdit={()=>{setForm({...sel});setModal("edit");}} onAdvance={()=>advanceFase(sel)} onFollowUp={()=>moveFase(sel,"FOLLOW_UP")} onNonInt={()=>moveFase(sel,"NON_INT")} onNonPiace={()=>moveFase(sel,"NON_PIACE")} onRiattiva={()=>moveFase(sel,"RIATTIVA")} onClose={closeModal} onUpdateProfilo={pr=>updateProfilo(sel.id,pr)} onUpdateChecklist={cl=>updateChecklist(sel.id,cl)} onDeleteStorico={fase=>deleteStorico(sel.id,fase)} onUpdateStoricoData={(fase,data,newFase,newStorico)=>updateStoricoData(sel.id,fase,data,newFase,newStorico)} onSetStatoColore={v=>setStatoColore(sel.id,v)} />
+              : modal==="cliente"
+              ? <ClienteQuickModal form={form} setForm={setForm} onSave={saveClienteQuick} onClose={closeModal} isLeader={!!auth.profile?.is_leader || auth.userId===LUDOVICO_ID} downline={downline} saving={saving} />
               : <FormModal form={form} setForm={setForm} onSave={saveForm} onClose={closeModal} onDelete={modal==="edit"?()=>deleteProp(form.id):null} isEdit={modal==="edit"} isLeader={!!auth.profile?.is_leader || auth.userId===LUDOVICO_ID} downline={downline} />
             }
           </div>
@@ -1722,6 +1748,68 @@ function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, s
 }
 
 //  FORM MODAL 
+function ClienteQuickModal({ form, setForm, onSave, onClose, isLeader, downline, saving }) {
+  const set=(k,v)=>setForm(f=>({...f,[k]:v}));
+  const lbl={fontSize:11,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"};
+  return (
+    <div style={{background:"var(--bg2)",border:"1px solid var(--border2)",borderRadius:16,padding:"1.6rem",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 20px 70px #000000aa"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+        <h2 style={{fontWeight:900,fontSize:17,color:"var(--text)"}}>+ Aggiungi cliente</h2>
+        <button onClick={onClose} style={{background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:8,cursor:"pointer",padding:"4px 10px",fontSize:14}}></button>
+      </div>
+      <p style={{fontSize:12,color:"var(--muted)",marginBottom:18}}>Per chi è già cliente/iscritto — niente funnel, solo i dati per tenerlo in conto nei rinnovi.</p>
+
+      {isLeader && (
+        <div style={{marginBottom:14}}>
+          <label style={lbl}>Di chi è (a chi lo metti sotto)</label>
+          <select value={form._userId||""} onChange={e=>set("_userId",e.target.value||null)}>
+            <option value="">Tu</option>
+            {(downline||[]).map(m=><option key={m.id} value={m.id}>{m.nome||m.email} {m.cognome||""}</option>)}
+          </select>
+        </div>
+      )}
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
+        <div>
+          <label style={lbl}>Nome *</label>
+          <input value={form.nome||""} onChange={e=>set("nome",e.target.value)} placeholder="Nome" />
+        </div>
+        <div>
+          <label style={lbl}>Cognome</label>
+          <input value={form.cognome||""} onChange={e=>set("cognome",e.target.value)} placeholder="Cognome" />
+        </div>
+      </div>
+      <div style={{marginBottom:14}}>
+        <label style={lbl}>Città</label>
+        <input value={form.citta||""} onChange={e=>set("citta",e.target.value)} placeholder="Città" />
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
+        <div>
+          <label style={lbl}>Tipo rinnovo</label>
+          <select value={form.rinnovoTipo||""} onChange={e=>set("rinnovoTipo",e.target.value)}>
+            <option value="">Non impostato</option>
+            <option value="mensile_60">Mensile (60 CV)</option>
+            <option value="mensile_90">Mensile (90 CV)</option>
+            <option value="semestrale_75">Semestrale (75 CV)</option>
+            <option value="semestrale_90">Semestrale (90 CV)</option>
+            <option value="annuale_75">Annuale (75 CV)</option>
+            <option value="annuale_90">Annuale (90 CV)</option>
+          </select>
+        </div>
+        <div>
+          <label style={lbl}>Data rinnovo</label>
+          <input type="date" value={form.rinnovoScadenza||""} onChange={e=>set("rinnovoScadenza",e.target.value)} />
+        </div>
+      </div>
+
+      <div style={{display:"flex",gap:9,justifyContent:"flex-end"}}>
+        <button onClick={onClose} style={{padding:"9px 15px",background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:9,cursor:"pointer",fontWeight:600,fontSize:13}}>Annulla</button>
+        <button onClick={()=>onSave(form)} disabled={saving} style={{padding:"9px 20px",background:"linear-gradient(135deg,#10b981,#10b981bb)",color:"#fff",border:"none",borderRadius:9,cursor:saving?"not-allowed":"pointer",fontWeight:800,fontSize:13,opacity:saving?0.7:1}}>{saving?"Aggiungo...":"Aggiungi cliente"}</button>
+      </div>
+    </div>
+  );
+}
+
 function FormModal({ form, setForm, onSave, onClose, onDelete, isEdit, isLeader, downline }) {
   const set=(k,v)=>setForm(f=>({...f,[k]:v}));
   const lbl={fontSize:11,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"};
@@ -2019,6 +2107,24 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onNonPiace, o
                 </div>
               </div>
             )}
+            {p.fase==="SUB"&&(()=>{
+              const RINNOVO_LABEL2={mensile_60:"Mensile (60CV)",mensile_90:"Mensile (90CV)",semestrale_75:"Semestrale (75CV)",semestrale_90:"Semestrale (90CV)",annuale_75:"Annuale (75CV)",annuale_90:"Annuale (90CV)"};
+              const giorni = p.rinnovoScadenza ? Math.ceil((new Date(p.rinnovoScadenza)-new Date(new Date().toDateString()))/86400000) : null;
+              const scaduto = giorni!=null && giorni<0;
+              const urgente = giorni!=null && giorni>=0 && giorni<=7;
+              return (
+                <div style={{...box,gridColumn:"1/-1",background:p.attivo===false?"#ef444412":"#8b5cf612",border:p.attivo===false?"1px solid #ef444430":"1px solid #8b5cf630"}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+                    <div style={lbl}>Rinnovo cliente</div>
+                    {p.attivo===false&&<span style={{fontSize:10,fontWeight:800,color:"#ef4444"}}>INATTIVO</span>}
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:6}}>
+                    <span style={{color:"#a78bfa",fontWeight:800,fontSize:13}}>{p.rinnovoTipo?RINNOVO_LABEL2[p.rinnovoTipo]||p.rinnovoTipo:"Non impostato"}</span>
+                    <span style={{fontSize:12,color:"var(--text)"}}>{p.rinnovoScadenza?p.rinnovoScadenza:"\u2014"}{giorni!=null&&<span style={{marginLeft:6,fontWeight:800,color:scaduto?"#ef4444":urgente?"#f59e0b":"var(--muted)"}}>({scaduto?"Scaduto":giorni+"g"})</span>}</span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
           {storico.length>0&&(<div style={{...box,marginBottom:9}}><div style={lbl}> Storico percorso</div><div style={{display:"flex",flexDirection:"column",gap:6,marginTop:8}}>{storico.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:9}}><span style={{width:8,height:8,borderRadius:99,background:FASE_CLR[s.fase],flexShrink:0,boxShadow:"0 0 6px "+FASE_CLR[s.fase]+"70"}}/><span style={{fontSize:12.5,fontWeight:700,color:"var(--text)",minWidth:64}}>{FASE_LABEL[s.fase]}</span><input type="date" defaultValue={s.data} onBlur={e=>{if(e.target.value&&e.target.value!==s.data)onUpdateStoricoData(s.fase,e.target.value);}} style={{fontSize:11,padding:"2px 6px",width:"auto",minWidth:0,background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:6,color:"var(--muted)",cursor:"pointer"}}/><span style={{fontSize:10,color:"var(--muted)",marginLeft:"auto"}}>Ciclo {cicloOfDate(s.data)||"\u2014"}</span>{storico.length>1&&<button onClick={()=>onDeleteStorico(s.fase)} style={{background:"#ef444415",border:"1px solid #ef444430",borderRadius:6,color:"#f87171",cursor:"pointer",fontSize:11,fontWeight:800,padding:"2px 7px",marginLeft:4,lineHeight:1}}>x</button>}</div>))}</div></div>)}
           {p.note&&<div style={{...box,marginBottom:9}}><div style={lbl}> Note</div><p style={{color:"var(--text)",lineHeight:1.6,fontSize:13,marginTop:4}}>{p.note}</p></div>}
