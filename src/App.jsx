@@ -235,24 +235,26 @@ function buildStorico(prospect, fase, dateForFase) {
   }
   return storico.sort((a,b)=>FASI_FUNNEL.indexOf(a.fase)-FASI_FUNNEL.indexOf(b.fase));
 }
-function reachedInCiclo(p,fase,c) {
+function dateReached(p, fase) {
   const storico = p.storico||[];
-  const e = storico.find(s=>s.fase===fase);
-  if (e) return cicloOfDate(e.data)===Number(c);
-  // Se CONOSCITIVA non c'è ma FUP1 sì, considera CONOSCITIVA raggiunta con FUP1
-  if (fase==="CONOSCITIVA") {
-    const fup1 = storico.find(s=>s.fase==="FUP1");
-    if (fup1) return cicloOfDate(fup1.data)===Number(c);
-  }
-  return false;
+  const idx = FASI_FUNNEL.indexOf(fase);
+  if (idx<0) return null;
+  // Trova, tra le fasi registrate, quella più vicina (>= fase richiesta): così "raggiunto Pack"
+  // conta anche chi ha un salto diretto a Closing senza un passaggio Pack esplicito in storico.
+  let best=null, bestIdx=Infinity;
+  storico.forEach(s=>{
+    const si=FASI_FUNNEL.indexOf(s.fase);
+    if (si>=idx && si<bestIdx) { bestIdx=si; best=s.data; }
+  });
+  return best;
+}
+function reachedInCiclo(p,fase,c) {
+  const d = dateReached(p,fase);
+  return d ? cicloOfDate(d)===Number(c) : false;
 }
 
 function reachedEver(p,fase) {
-  const storico = p.storico||[];
-  if (storico.some(s=>s.fase===fase)) return true;
-  // Se CONOSCITIVA non c'è ma FUP1 sì, considera raggiunta
-  if (fase==="CONOSCITIVA") return storico.some(s=>s.fase==="FUP1");
-  return false;
+  return dateReached(p,fase) != null;
 }
 function highestReached(p) {
   let best=null,bi=-1;
