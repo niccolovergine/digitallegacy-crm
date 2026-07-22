@@ -292,7 +292,7 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
           <p style={{color:"var(--muted)",fontSize:12,marginTop:3}}>La tua lista personale — privata, visibile solo a te</p>
         </div>
         <div style={{display:"flex",gap:10}}>
-          <a href="https://qrco.de/bgsu0X" target="_blank" rel="noreferrer"
+          <a href="/memory-jogger.pdf" target="_blank" rel="noreferrer"
             style={{padding:"9px 18px",fontSize:13,fontWeight:800,background:"var(--bg4)",color:"var(--text)",border:"1px solid var(--border2)",borderRadius:10,cursor:"pointer",textDecoration:"none",display:"flex",alignItems:"center",gap:6}}>
             Memory Jogger
           </a>

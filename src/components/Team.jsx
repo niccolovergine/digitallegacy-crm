@@ -19,7 +19,7 @@ function cicloLabel(c){const r=CICLI.find(x=>x[0]===Number(c));if(!r)return"Cicl
 function dataByCiclo(arr,c){const r=CICLI.find(x=>x[0]===Number(c));if(!r)return[];return arr.filter(p=>p.conosciutoAt&&p.conosciutoAt>=r[1]&&p.conosciutoAt<r[2]);}
 const fmt=d=>d?new Date(d+"T12:00:00").toLocaleDateString("it-IT"):"\u2014";
 
-const RINNOVO_CV={mensile:90,semestrale:75,annuale:75};
+const RINNOVO_CV={mensile:60,semestrale:90,annuale:90};
 const RINNOVO_LABEL={mensile:"Mensile",semestrale:"Semestrale",annuale:"Annuale"};
 function giorniAlla(dateStr){
   if(!dateStr)return null;
@@ -360,7 +360,7 @@ function TreeCanvas({ memberId, memberNome, memberCognome, memberEmail, allMembe
 
 
 
-export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,positions,onOpenProspect,onPositionInTree,onUpdateRinnovo,onSetLeader,LUDOVICO_ID}){
+export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,positions,onOpenProspect,onPositionInTree,onUpdateRinnovo,onSetLeader,onSetAttivo,LUDOVICO_ID}){
   const isRoot = auth.userId === LUDOVICO_ID; // solo il titolare del CRM può nominare i leader, indipendentemente da dove si trova nell'albero
   const[selectedMember,setSelectedMember]=useState(null);
   const[teamFilter,setTeamFilter]=useState("all");
@@ -686,7 +686,7 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
             {downline.length===0
               ?<div style={{padding:"3rem",textAlign:"center",color:"var(--border2)"}}><div style={{fontSize:36,marginBottom:12}}>{"\u25c8"}</div><p style={{fontSize:14,marginBottom:8}}>Nessun membro ancora</p><p style={{fontSize:12,color:"var(--border2)"}}>Condividi il tuo link referral</p></div>
               :<table style={{width:"100%",borderCollapse:"collapse"}}>
-                <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Membro","Squadra",...(isRoot?["Leader"]:[]),"Prospect","Iscritti","Conv%","BV","Azione",""].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
+                <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Membro","Squadra",...(isRoot?["Leader","Attivo"]:[]),"Prospect","Iscritti","Conv%","BV","Azione",""].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
                 <tbody>{filteredMembers.map(m=>{
                   const mP=getMemberProspects(m.id);
                   const ms=teamStats(mP);
@@ -717,6 +717,14 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
                           </label>
                         </td>
                       )}
+                      {isRoot && (
+                        <td style={{padding:"12px 16px"}}>
+                          <label style={{display:"inline-flex",alignItems:"center",gap:6,cursor:"pointer"}} title="Se disattivato, il membro resta nell'albero ma viene escluso da Jarvis, rinnovi e conteggi attivi">
+                            <input type="checkbox" checked={m.attivo!==false} onChange={e=>onSetAttivo(m.id,e.target.checked)} style={{width:16,height:16,cursor:"pointer"}} />
+                            {m.attivo===false && <span style={{fontSize:10,fontWeight:800,color:"#ef4444"}}>Inattivo</span>}
+                          </label>
+                        </td>
+                      )}
                       <td style={{padding:"12px 16px",fontWeight:700,color:"var(--text)",fontSize:13}}>{ms.total}</td>
                       <td style={{padding:"12px 16px",fontWeight:700,color:"#10b981",fontSize:13}}>{ms.sub}</td>
                       <td style={{padding:"12px 16px",fontWeight:800,fontSize:13,color:convColor(ms.conv)}}>{ms.conv}%</td>
@@ -732,7 +740,8 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
           }
 
           {activeTeamTab==="rinnovi"&&(()=>{
-            const membriConRinnovo=filteredMembers.map(m=>({m,giorni:giorniAlla(m.rinnovo_scadenza),cv:m.rinnovo_tipo?RINNOVO_CV[m.rinnovo_tipo]||0:0}));
+            const membriAttiviRinnovo=filteredMembers.filter(m=>m.attivo!==false);
+            const membriConRinnovo=membriAttiviRinnovo.map(m=>({m,giorni:giorniAlla(m.rinnovo_scadenza),cv:m.rinnovo_tipo?RINNOVO_CV[m.rinnovo_tipo]||0:0}));
             const inScadenza=membriConRinnovo.filter(x=>x.giorni!=null&&x.giorni>=0&&x.giorni<=7);
             const cvPotenziale=inScadenza.reduce((acc,x)=>acc+x.cv,0);
             const ordinati=[...membriConRinnovo].sort((a,b)=>{
@@ -747,7 +756,7 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
                   {[
                     {label:"Rinnovi entro 7 giorni",value:inScadenza.length,color:"#f59e0b"},
                     {label:"CV potenziale (7gg)",value:cvPotenziale,color:"#10b981"},
-                    {label:"Rinnovi impostati",value:membriConRinnovo.filter(x=>x.m.rinnovo_scadenza).length+"/"+downline.length,color:"#8b5cf6"},
+                    {label:"Rinnovi impostati",value:membriConRinnovo.filter(x=>x.m.rinnovo_scadenza).length+"/"+membriAttiviRinnovo.length,color:"#8b5cf6"},
                   ].map((k,i)=>(
                     <div key={i} style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"16px 18px",position:"relative",overflow:"hidden"}}>
                       <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"linear-gradient(90deg,"+k.color+","+k.color+"44)",borderRadius:"14px 14px 0 0"}}/>
@@ -781,9 +790,9 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
                             <td style={{padding:"12px 16px"}}>
                               <select value={m.rinnovo_tipo||""} onChange={e=>onUpdateRinnovo(m.id,e.target.value||null,m.rinnovo_scadenza||null)} style={{width:"auto",minWidth:120,fontSize:11,padding:"5px 9px",background:"var(--bg3)",border:"1px solid var(--border2)"}}>
                                 <option value="">Non impostato</option>
-                                <option value="mensile">Mensile (90CV)</option>
-                                <option value="semestrale">Semestrale (75CV)</option>
-                                <option value="annuale">Annuale (75CV)</option>
+                                <option value="mensile">Mensile (60CV)</option>
+                                <option value="semestrale">Semestrale (90CV)</option>
+                                <option value="annuale">Annuale (90CV)</option>
                               </select>
                             </td>
                             <td style={{padding:"12px 16px"}}>

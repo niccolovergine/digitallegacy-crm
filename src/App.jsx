@@ -70,6 +70,7 @@ const sbLinkDownline    = (tok, uid, uplineId) => sbFetch("/rest/v1/profiles?id=
 const sbPositionMember  = (tok, uid, positionedUnder) => sbFetch("/rest/v1/profiles?id=eq."+uid, { method:"PATCH", _token:tok, body:JSON.stringify({ positioned_under:positionedUnder }) });
 const sbSetRinnovo      = (tok, memberId, tipo, scadenza) => sbFetch("/rest/v1/rpc/set_rinnovo", { method:"POST", _token:tok, body:JSON.stringify({ p_member_id:memberId, p_tipo:tipo, p_scadenza:scadenza }) });
 const sbSetLeader       = (tok, memberId, value)          => sbFetch("/rest/v1/rpc/set_leader", { method:"POST", _token:tok, body:JSON.stringify({ p_member_id:memberId, p_value:value }) });
+const sbSetAttivo       = (tok, memberId, value)          => sbFetch("/rest/v1/rpc/set_attivo", { method:"POST", _token:tok, body:JSON.stringify({ p_member_id:memberId, p_value:value }) });
 const sbGetPositions    = (tok)             => sbFetch("/rest/v1/team_positions?select=*", { _token:tok });
 const sbSetPosition     = (tok, uplineId, memberId, team) => sbFetch("/rest/v1/team_positions", { method:"POST", _token:tok, headers:{"Prefer":"resolution=merge-duplicates"}, body:JSON.stringify({ upline_id:uplineId, member_id:memberId, team }) });
 
@@ -756,8 +757,12 @@ export default function App() {
       const ownerId = form._userId || auth.userId;
       if (modal==="add") {
         const np={...record,id:genId()};
-        await sbInsert(auth.token,toDB(np,auth.userId));
-        setData(d=>[...d,np]);
+        await sbInsert(auth.token,toDB(np,ownerId));
+        if (ownerId === auth.userId) {
+          setData(d=>[...d,np]);
+        } else {
+          setDlProspects(d=>[...d,{...np,_userId:ownerId}]);
+        }
         showToast("Prospect aggiunto ");
       } else {
         await sbUpdate(auth.token,record.id,toDB(record,ownerId));
@@ -983,6 +988,14 @@ export default function App() {
     } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
   }
 
+  async function setAttivo(memberId, value) {
+    try {
+      await sbSetAttivo(auth.token, memberId, value);
+      setDownline(d => d.map(m => m.id===memberId ? { ...m, attivo:value } : m));
+      showToast(value ? "Membro rimesso attivo" : "Membro impostato come inattivo");
+    } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
+  }
+
   async function positionInTree(memberId, targetNodeId, team) {
     try {
       await sbPositionMember(auth.token, memberId, targetNodeId);
@@ -1117,7 +1130,7 @@ export default function App() {
         {view==="dash"  && <Dash cd={cd} cdSub={cdSub} cdAct={cdAct} cdFU={cdFU} cdNI={cdNI} cdConv={cdConv} totSub={totSub} totConv={totConv} totAll={dashData.length} funnelCounts={funnelCounts} funnelMax={funnelMax} urgenti={urgenti} dashCiclo={dashCiclo} setDashCiclo={setDashCiclo} onOpen={openDetail} dashMode={dashMode} setDashMode={setDashMode} hasTeam={dlProspects.length>0} ticketVenduti={ticketVendutiCount} />}
         {view==="lista" && <Lista prospects={listaData} total={listaMode==="team"?teamProspects.length:data.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} fCitta={fCitta} setFCitta={setFCitta} fInteresse={fInteresse} setFInteresse={setFInteresse} fPercorso={fPercorso} setFPercorso={setFPercorso} fLeg={fLeg} setFLeg={setFLeg} fMembroTeam={fMembroTeam} setFMembroTeam={setFMembroTeam} downline={downline} onOpen={openDetail} onAdd={openAdd} listaMode={listaMode} setListaMode={setListaMode} hasTeam={dlProspects.length>0} />}
         {view==="stats"   && <Statistiche data={data} dlProspects={dlProspects} downline={downline} />}
-        {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onUpdateRinnovo={updateRinnovo} onSetLeader={setLeader} LUDOVICO_ID={LUDOVICO_ID} />}
+        {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onUpdateRinnovo={updateRinnovo} onSetLeader={setLeader} onSetAttivo={setAttivo} LUDOVICO_ID={LUDOVICO_ID} />}
         {view==="nomi"    && <ListaNomiView auth={auth} onInvitaProspect={invitaProspect} />}
         {view==="eventi"  && <EventiView auth={auth} allProfiles={allProfiles} downline={downline} positions={positions} showToast={showToast}
           sbListEventi={sbListEventi}

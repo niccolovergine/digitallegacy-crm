@@ -130,7 +130,8 @@ export function PlanView({ auth, downline, positions, dlProspects, isLeader,
   const FASI_TERMINALI = useMemo(() => new Set(["SUB","NON_INT","NON_PIACE"]), []);
 
   const jarvis = useMemo(() => {
-    if (!dlProspects || downline.length === 0) return null;
+    const downlineAttiva = downline.filter(m => m.attivo !== false);
+    if (!dlProspects || downlineAttiva.length === 0) return null;
 
     const momentumPerMembro = {};
     dlProspects.forEach(p => {
@@ -138,7 +139,7 @@ export function PlanView({ auth, downline, positions, dlProspects, isLeader,
     });
 
     const byCity = {};
-    downline.forEach(m => {
+    downlineAttiva.forEach(m => {
       const citta = (m.citta||"").trim() || "Città non indicata";
       if (!byCity[citta]) byCity[citta] = { citta, membri:[], momentum:0 };
       byCity[citta].membri.push(m);
