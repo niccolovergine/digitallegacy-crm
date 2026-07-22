@@ -758,9 +758,13 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddMa
           }
 
           {activeTeamTab==="membri" && (clienti||[]).length>0 && (()=>{
-            const filteredClienti = teamFilter==="all" ? (clienti||[])
+            const byTeam = teamFilter==="all" ? (clienti||[])
               : teamFilter==="nessuna" ? (clienti||[]).filter(c=>!c.team)
               : (clienti||[]).filter(c=>c.team===teamFilter);
+            const filteredClienti = !memberSearch.trim() ? byTeam : byTeam.filter(c=>{
+              const q=memberSearch.trim().toLowerCase();
+              return (c.nome||"").toLowerCase().includes(q) || (c.cognome||"").toLowerCase().includes(q) || (c.citta||"").toLowerCase().includes(q);
+            });
             return (
               <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden",marginTop:16}}>
                 <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a"}}>
