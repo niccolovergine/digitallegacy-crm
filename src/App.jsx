@@ -10,20 +10,28 @@ const SB_URL = "https://gyxvhnwzkhjrgpqvakfw.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5eHZobnd6a2hqcmdwcXZha2Z3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NTEzOTQsImV4cCI6MjA5OTUyNzM5NH0.aYAzw7j6YcBIWdBsdHq0ibZrjyyK5CZqNAcchfdQt0o";
 
 async function sbFetch(path, opts = {}) {
-  const res = await fetch(SB_URL + path, {
-    ...opts,
-    headers: {
-      "apikey": SB_KEY,
-      "Authorization": "Bearer " + (opts._token || SB_KEY),
-      "Content-Type": "application/json",
-      "Prefer": "return=representation",
-      ...(opts.headers || {}),
-    },
-  });
+  let res;
+  try {
+    res = await fetch(SB_URL + path, {
+      ...opts,
+      headers: {
+        "apikey": SB_KEY,
+        "Authorization": "Bearer " + (opts._token || SB_KEY),
+        "Content-Type": "application/json",
+        "Prefer": "return=representation",
+        ...(opts.headers || {}),
+      },
+    });
+  } catch (netErr) {
+    // Qui finiscono solo i veri problemi di rete (offline, DNS, ecc.)
+    throw new Error("Errore di connessione — controlla la tua rete internet e riprova");
+  }
   const text = await res.text();
   if (!res.ok) {
-    const e = text ? JSON.parse(text) : {};
-    const msg = e.message || res.statusText;
+    let e = {};
+    try { e = text ? JSON.parse(text) : {}; } catch (_) { e = {}; }
+    // Supabase Auth usa "msg", PostgREST usa "message": controlliamo entrambi + varianti
+    const msg = e.msg || e.message || e.error_description || e.error || res.statusText || ("Errore " + res.status);
     // Se il token è scaduto, forza logout
     if (msg.toLowerCase().includes("jwt expired") || msg.toLowerCase().includes("invalid jwt") || res.status === 401) {
       localStorage.removeItem("becrm_session");
