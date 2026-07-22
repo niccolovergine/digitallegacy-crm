@@ -74,8 +74,8 @@ const sbSetAttivo       = (tok, memberId, value)          => sbFetch("/rest/v1/r
 const sbGetPositions    = (tok)             => sbFetch("/rest/v1/team_positions?select=*", { _token:tok });
 const sbSetPosition     = (tok, uplineId, memberId, team) => sbFetch("/rest/v1/team_positions", { method:"POST", _token:tok, headers:{"Prefer":"resolution=merge-duplicates"}, body:JSON.stringify({ upline_id:uplineId, member_id:memberId, team }) });
 const sbGetClienti      = (tok)             => sbFetch("/rest/v1/rpc/get_clienti_visibili", { method:"POST", _token:tok, body:JSON.stringify({}) });
-const sbAddCliente      = (tok, row)        => sbFetch("/rest/v1/rpc/add_cliente", { method:"POST", _token:tok, body:JSON.stringify({ p_positioned_under:row.positionedUnder, p_nome:row.nome, p_cognome:row.cognome||null, p_citta:row.citta||null, p_rinnovo_tipo:row.rinnovoTipo||"", p_rinnovo_scadenza:row.rinnovoScadenza||null }) });
-const sbUpdateCliente   = (tok, id, row)    => sbFetch("/rest/v1/rpc/update_cliente", { method:"POST", _token:tok, body:JSON.stringify({ p_cliente_id:id, p_nome:row.nome, p_cognome:row.cognome||null, p_citta:row.citta||null, p_rinnovo_tipo:row.rinnovoTipo||"", p_rinnovo_scadenza:row.rinnovoScadenza||null, p_attivo:row.attivo!==false }) });
+const sbAddCliente      = (tok, row)        => sbFetch("/rest/v1/rpc/add_cliente", { method:"POST", _token:tok, body:JSON.stringify({ p_positioned_under:row.positionedUnder, p_nome:row.nome, p_cognome:row.cognome||null, p_citta:row.citta||null, p_rinnovo_tipo:row.rinnovoTipo||"", p_rinnovo_scadenza:row.rinnovoScadenza||null, p_team:row.team||"" }) });
+const sbUpdateCliente   = (tok, id, row)    => sbFetch("/rest/v1/rpc/update_cliente", { method:"POST", _token:tok, body:JSON.stringify({ p_cliente_id:id, p_nome:row.nome, p_cognome:row.cognome||null, p_citta:row.citta||null, p_rinnovo_tipo:row.rinnovoTipo||"", p_rinnovo_scadenza:row.rinnovoScadenza||null, p_attivo:row.attivo!==false, p_team:row.team||"" }) });
 const sbDeleteCliente   = (tok, id)         => sbFetch("/rest/v1/rpc/delete_cliente", { method:"POST", _token:tok, body:JSON.stringify({ p_cliente_id:id }) });
 
 // Eventi helpers
@@ -706,7 +706,7 @@ export default function App() {
       setDownline(mine);
       try {
         const cl = await sbGetClienti(auth.token);
-        setClienti((cl||[]).map(r=>({id:r.id,nome:r.nome,cognome:r.cognome||"",citta:r.citta||"",positionedUnder:r.positioned_under,rinnovoTipo:r.rinnovo_tipo||"",rinnovoScadenza:r.rinnovo_scadenza||"",attivo:r.attivo!==false})));
+        setClienti((cl||[]).map(r=>({id:r.id,nome:r.nome,cognome:r.cognome||"",citta:r.citta||"",positionedUnder:r.positioned_under,rinnovoTipo:r.rinnovo_tipo||"",rinnovoScadenza:r.rinnovo_scadenza||"",attivo:r.attivo!==false,team:r.team||""})));
       } catch(e) { /* tabella clienti non ancora creata o errore permessi: non bloccare il resto */ }
       if (mine.length > 0) {
         const uids = mine.map(p => p.id);
@@ -808,10 +808,10 @@ export default function App() {
     try {
       const res = await sbAddCliente(auth.token, {
         positionedUnder, nome:clienteForm.nome, cognome:clienteForm.cognome||"", citta:clienteForm.citta||"",
-        rinnovoTipo:clienteForm.rinnovoTipo||"", rinnovoScadenza:clienteForm.rinnovoScadenza||"",
+        rinnovoTipo:clienteForm.rinnovoTipo||"", rinnovoScadenza:clienteForm.rinnovoScadenza||"", team:clienteForm.team||"",
       });
       const newId = Array.isArray(res) ? res[0] : res;
-      setClienti(c=>[...c,{id:newId,nome:clienteForm.nome,cognome:clienteForm.cognome||"",citta:clienteForm.citta||"",positionedUnder,rinnovoTipo:clienteForm.rinnovoTipo||"",rinnovoScadenza:clienteForm.rinnovoScadenza||"",attivo:true}]);
+      setClienti(c=>[...c,{id:newId,nome:clienteForm.nome,cognome:clienteForm.cognome||"",citta:clienteForm.citta||"",positionedUnder,rinnovoTipo:clienteForm.rinnovoTipo||"",rinnovoScadenza:clienteForm.rinnovoScadenza||"",attivo:true,team:clienteForm.team||""}]);
       showToast("Cliente aggiunto ");
       closeModal();
     } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
@@ -1788,6 +1788,14 @@ function ClienteQuickModal({ form, setForm, onSave, onClose, isLeader, downline,
           </select>
         </div>
       )}
+      <div style={{marginBottom:14}}>
+        <label style={lbl}>Gamba</label>
+        <select value={form.team||""} onChange={e=>set("team",e.target.value)}>
+          <option value="">Non assegnata</option>
+          <option value="sinistra">Sinistra</option>
+          <option value="destra">Destra</option>
+        </select>
+      </div>
 
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
         <div>

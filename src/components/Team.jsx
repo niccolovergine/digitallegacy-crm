@@ -748,11 +748,9 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddMa
           }
 
           {activeTeamTab==="membri" && (clienti||[]).length>0 && (()=>{
-            const filteredClienti = teamFilter==="all" ? (clienti||[]) : (clienti||[]).filter(c=>{
-              if (c.positionedUnder===auth.userId) return false; // il root non ha una gamba
-              const owner=downline.find(d=>d.id===c.positionedUnder);
-              return owner && getTeamForMe(owner)===teamFilter;
-            });
+            const filteredClienti = teamFilter==="all" ? (clienti||[])
+              : teamFilter==="nessuna" ? (clienti||[]).filter(c=>!c.team)
+              : (clienti||[]).filter(c=>c.team===teamFilter);
             return (
               <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden",marginTop:16}}>
                 <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a"}}>
@@ -762,13 +760,21 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddMa
                 {filteredClienti.length===0
                   ? <div style={{padding:"2rem",textAlign:"center",color:"var(--border2)",fontSize:13}}>Nessun cliente in questa vista</div>
                   : <table style={{width:"100%",borderCollapse:"collapse"}}>
-                    <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Cliente","Di chi è","Tipo rinnovo","Scadenza","Attivo",""].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
+                    <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Cliente","Di chi è","Gamba","Tipo rinnovo","Scadenza","Attivo",""].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
                     <tbody>{filteredClienti.map(c=>{
                       const owner=c.positionedUnder===auth.userId?null:downline.find(d=>d.id===c.positionedUnder);
+                      const teamColor=c.team==="sinistra"?"var(--a1)":c.team==="destra"?"#10b981":"#6b7280";
                       return (
                         <tr key={c.id} style={{borderBottom:"1px solid #0d1b3355"}}>
                           <td style={{padding:"12px 16px"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Av n={c.nome} c={c.cognome} color="#f59e0b"/><div><div style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{c.nome} {c.cognome||""}</div>{c.citta&&<div style={{color:"var(--muted)",fontSize:11}}>{c.citta}</div>}</div></div></td>
                           <td style={{padding:"12px 16px",fontSize:12,color:"var(--muted)"}}>{owner?(owner.nome||owner.email)+" "+(owner.cognome||""):"Tu"}</td>
+                          <td style={{padding:"12px 16px"}}>
+                            <select value={c.team||""} onChange={e=>onUpdateCliente(c.id,{team:e.target.value})} style={{width:"auto",minWidth:100,fontSize:11,padding:"5px 9px",color:teamColor,border:"1px solid "+teamColor+"40",background:"var(--bg3)"}}>
+                              <option value="">Non assegnata</option>
+                              <option value="sinistra">Sinistra</option>
+                              <option value="destra">Destra</option>
+                            </select>
+                          </td>
                           <td style={{padding:"12px 16px"}}>
                             <select value={c.rinnovoTipo||""} onChange={e=>onUpdateCliente(c.id,{rinnovoTipo:e.target.value})} style={{width:"auto",minWidth:120,fontSize:11,padding:"5px 9px",background:"var(--bg3)",border:"1px solid var(--border2)"}}>
                               <option value="">Non impostato</option>
@@ -805,7 +811,12 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddMa
               const owner=downline.find(m=>m.id===p._userId);
               return {tipo:"cliente",id:p.id,nome:p.nome,cognome:p.cognome,ownerLabel:owner?(owner.nome||owner.email)+" "+(owner.cognome||""):"",rinnovoTipo:p.rinnovoTipo,rinnovoScadenza:p.rinnovoScadenza,giorni:giorniAlla(p.rinnovoScadenza),cv:p.rinnovoTipo?RINNOVO_CV[p.rinnovoTipo]||0:0,onChangeTipo:null,onChangeData:null};
             });
-            const clientiDedicatiFiltrati=(clienti||[]).filter(c=>c.attivo!==false&&c.rinnovoTipo&&(c.positionedUnder===auth.userId||membriFiltratiIds.has(c.positionedUnder)));
+            const clientiDedicatiFiltrati=(clienti||[]).filter(c=>{
+              if (c.attivo===false||!c.rinnovoTipo) return false;
+              if (teamFilter==="all") return true;
+              if (teamFilter==="nessuna") return !c.team;
+              return c.team===teamFilter;
+            });
             const righeClientiDedicati=clientiDedicatiFiltrati.map(c=>{
               const owner=c.positionedUnder===auth.userId?null:downline.find(m=>m.id===c.positionedUnder);
               return {tipo:"cliente",id:"cl_"+c.id,nome:c.nome,cognome:c.cognome,ownerLabel:owner?(owner.nome||owner.email)+" "+(owner.cognome||""):"Tu",rinnovoTipo:c.rinnovoTipo,rinnovoScadenza:c.rinnovoScadenza,giorni:giorniAlla(c.rinnovoScadenza),cv:c.rinnovoTipo?RINNOVO_CV[c.rinnovoTipo]||0:0,onChangeTipo:v=>onUpdateCliente(c.id,{rinnovoTipo:v}),onChangeData:v=>onUpdateCliente(c.id,{rinnovoScadenza:v})};
