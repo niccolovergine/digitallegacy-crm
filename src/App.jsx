@@ -762,6 +762,18 @@ export default function App() {
   async function saveForm() {
     if (!form.nome?.trim()) return;
     if (form.fase === "SUB" && !form.pacchetto) { showToast("Seleziona il pacchetto per un iscritto ", "#ef4444"); return; }
+    if (modal==="add") {
+      const nomeNorm=form.nome.trim().toLowerCase();
+      const cognomeNorm=(form.cognome||"").trim().toLowerCase();
+      const tuttiIProspect=[...data,...(dlProspects||[])];
+      const dup=tuttiIProspect.find(p=>(p.nome||"").trim().toLowerCase()===nomeNorm && (p.cognome||"").trim().toLowerCase()===cognomeNorm);
+      if (dup) {
+        const isMio=data.some(p=>p.id===dup.id);
+        const ownerLabel = isMio ? "te" : (()=>{ const m=downline.find(x=>x.id===dup._userId); return m?(m.nome||m.email)+" "+(m.cognome||""):"qualcun altro"; })();
+        const proceed=window.confirm("Prospect \""+form.nome+" "+(form.cognome||"")+"\" risulta già presente (di "+ownerLabel+"). Vuoi aggiungerlo comunque?");
+        if (!proceed) return;
+      }
+    }
     setSaving(true);
     try {
       const conosciutoAt = form.conosciutoAt||today();
