@@ -373,6 +373,7 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddMa
   const[addTeam,setAddTeam]=useState("");
   const[activeTeamTab,setActiveTeamTab]=useState("dashboard");
   const[selectedForPlacement,setSelectedForPlacement]=useState(null); // membro selezionato da piazzare
+  const[memberSearch,setMemberSearch]=useState("");
 
   const referralLink=auth?.profile?.referral_code?window.location.origin+"?ref="+auth.profile.referral_code:null;
 
@@ -407,7 +408,11 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddMa
   const inAttesa=downline.filter(m=>!m.positioned_under&&getTeamForMe(m));
   // Membri posizionati nell'albero
   const posizionati=downline.filter(m=>m.positioned_under);
-  const filteredMembers=teamFilter==="all"?downline:teamFilter==="sinistra"?sinistra:teamFilter==="destra"?destra:noTeam;
+  const filteredMembersByTeam=teamFilter==="all"?downline:teamFilter==="sinistra"?sinistra:teamFilter==="destra"?destra:noTeam;
+  const filteredMembers = !memberSearch.trim() ? filteredMembersByTeam : filteredMembersByTeam.filter(m=>{
+    const q=memberSearch.trim().toLowerCase();
+    return (m.nome||"").toLowerCase().includes(q) || (m.cognome||"").toLowerCase().includes(q) || (m.email||"").toLowerCase().includes(q) || (m.citta||"").toLowerCase().includes(q);
+  });
   function getMemberProspects(memberId){return dlByCiclo.filter(p=>p._userId===memberId);}
   function squadraStats(members){return teamStats(members.flatMap(m=>getMemberProspects(m.id)));}
   const statsS=squadraStats(sinistra);
@@ -682,17 +687,22 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddMa
                 <div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}>Membri</div>
                 <button onClick={()=>setShowAddModal(true)} style={{width:26,height:26,borderRadius:"50%",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",cursor:"pointer",fontWeight:900,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 0 10px #2563eb50"}}>+</button>
               </div>
-              <div style={{display:"flex",gap:6}}>
-                {["all","sinistra","destra","nessuna"].map(f=>(
-                  <button key={f} onClick={()=>setTeamFilter(f)}
-                    style={{padding:"5px 12px",borderRadius:8,border:teamFilter===f?"1px solid #2563eb40":"1px solid transparent",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"inherit",transition:"all .2s",background:teamFilter===f?"var(--bg4)":"transparent",color:teamFilter===f?"var(--a2)":"var(--muted)"}}>
-                    {f==="all"?"Tutti":f==="nessuna"?"Non assegnati":f.charAt(0).toUpperCase()+f.slice(1)}
-                  </button>
-                ))}
+              <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
+                <input value={memberSearch} onChange={e=>setMemberSearch(e.target.value)} placeholder="Cerca membro..." style={{width:170,fontSize:12,padding:"6px 10px",background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:8,color:"var(--text)"}} />
+                <div style={{display:"flex",gap:6}}>
+                  {["all","sinistra","destra","nessuna"].map(f=>(
+                    <button key={f} onClick={()=>setTeamFilter(f)}
+                      style={{padding:"5px 12px",borderRadius:8,border:teamFilter===f?"1px solid #2563eb40":"1px solid transparent",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"inherit",transition:"all .2s",background:teamFilter===f?"var(--bg4)":"transparent",color:teamFilter===f?"var(--a2)":"var(--muted)"}}>
+                      {f==="all"?"Tutti":f==="nessuna"?"Non assegnati":f.charAt(0).toUpperCase()+f.slice(1)}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
             {downline.length===0
               ?<div style={{padding:"3rem",textAlign:"center",color:"var(--border2)"}}><div style={{fontSize:36,marginBottom:12}}>{"\u25c8"}</div><p style={{fontSize:14,marginBottom:8}}>Nessun membro ancora</p><p style={{fontSize:12,color:"var(--border2)"}}>Condividi il tuo link referral</p></div>
+              :filteredMembers.length===0
+              ?<div style={{padding:"3rem",textAlign:"center",color:"var(--border2)"}}><p style={{fontSize:14}}>Nessun membro trovato per "{memberSearch}"</p></div>
               :<table style={{width:"100%",borderCollapse:"collapse"}}>
                 <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Membro","Squadra",...(isRoot?["Leader","Attivo"]:[]),"Prospect","Iscritti","Conv%","BV","Azione",""].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
                 <tbody>{filteredMembers.map(m=>{
@@ -803,7 +813,7 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddMa
           })()}
 
           {activeTeamTab==="rinnovi"&&(()=>{
-            const membriAttiviRinnovo=filteredMembers.filter(m=>m.attivo!==false);
+            const membriAttiviRinnovo=filteredMembersByTeam.filter(m=>m.attivo!==false);
             const righeMembri=membriAttiviRinnovo.map(m=>({tipo:"membro",id:m.id,nome:m.nome,cognome:m.cognome,email:m.email,ownerLabel:null,rinnovoTipo:m.rinnovo_tipo,rinnovoScadenza:m.rinnovo_scadenza,giorni:giorniAlla(m.rinnovo_scadenza),cv:m.rinnovo_tipo?RINNOVO_CV[m.rinnovo_tipo]||0:0,onChangeTipo:v=>onUpdateRinnovo(m.id,v||null,m.rinnovo_scadenza||null),onChangeData:v=>onUpdateRinnovo(m.id,m.rinnovo_tipo||null,v||null)}));
             const membriFiltratiIds=new Set(membriAttiviRinnovo.map(m=>m.id));
             const clientiSub=(dlProspects||[]).filter(p=>p.fase==="SUB"&&p.rinnovoTipo&&p.attivo!==false&&membriFiltratiIds.has(p._userId));
