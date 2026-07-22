@@ -803,6 +803,14 @@ export default function App() {
 
   async function saveClienteQuick(clienteForm) {
     if (!clienteForm.nome?.trim()) { showToast("Inserisci almeno il nome","#ef4444"); return; }
+    const nomeNorm = clienteForm.nome.trim().toLowerCase();
+    const cognomeNorm = (clienteForm.cognome||"").trim().toLowerCase();
+    const dup = clienti.find(c => c.nome.trim().toLowerCase()===nomeNorm && (c.cognome||"").trim().toLowerCase()===cognomeNorm);
+    if (dup) {
+      const ownerLabel = dup.positionedUnder===auth.userId ? "te" : (()=>{ const m=downline.find(x=>x.id===dup.positionedUnder); return m?(m.nome||m.email)+" "+(m.cognome||""):"qualcun altro"; })();
+      const proceed = window.confirm("Cliente \""+clienteForm.nome+" "+(clienteForm.cognome||"")+"\" risulta già registrato (di "+ownerLabel+"). Vuoi aggiungerlo comunque?");
+      if (!proceed) return;
+    }
     setSaving(true);
     const positionedUnder = clienteForm._userId || auth.userId;
     try {

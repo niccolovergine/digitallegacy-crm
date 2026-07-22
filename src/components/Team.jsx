@@ -819,7 +819,7 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddMa
             });
             const righeClientiDedicati=clientiDedicatiFiltrati.map(c=>{
               const owner=c.positionedUnder===auth.userId?null:downline.find(m=>m.id===c.positionedUnder);
-              return {tipo:"cliente",id:"cl_"+c.id,nome:c.nome,cognome:c.cognome,ownerLabel:owner?(owner.nome||owner.email)+" "+(owner.cognome||""):"Tu",rinnovoTipo:c.rinnovoTipo,rinnovoScadenza:c.rinnovoScadenza,giorni:giorniAlla(c.rinnovoScadenza),cv:c.rinnovoTipo?RINNOVO_CV[c.rinnovoTipo]||0:0,onChangeTipo:v=>onUpdateCliente(c.id,{rinnovoTipo:v}),onChangeData:v=>onUpdateCliente(c.id,{rinnovoScadenza:v})};
+              return {tipo:"cliente",id:"cl_"+c.id,nome:c.nome,cognome:c.cognome,ownerLabel:owner?(owner.nome||owner.email)+" "+(owner.cognome||""):"Tu",rinnovoTipo:c.rinnovoTipo,rinnovoScadenza:c.rinnovoScadenza,giorni:giorniAlla(c.rinnovoScadenza),cv:c.rinnovoTipo?RINNOVO_CV[c.rinnovoTipo]||0:0,onChangeTipo:v=>onUpdateCliente(c.id,{rinnovoTipo:v}),onChangeData:v=>onUpdateCliente(c.id,{rinnovoScadenza:v}),onDelete:()=>{if(window.confirm("Rimuovere "+c.nome+" "+(c.cognome||"")+"?"))onDeleteCliente(c.id);}};
             });
             const righe=[...righeMembri,...righeClienti,...righeClientiDedicati];
             const conRinnovo=righe.filter(x=>x.rinnovoScadenza);
@@ -861,7 +861,7 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddMa
                   {righe.length===0
                     ?<div style={{padding:"3rem",textAlign:"center",color:"var(--border2)"}}><div style={{fontSize:36,marginBottom:12}}>{"\u25c8"}</div><p style={{fontSize:14}}>Nessun membro ancora</p></div>
                     :<table style={{width:"100%",borderCollapse:"collapse"}}>
-                      <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["","Nome","Tipo rinnovo","Scadenza","Giorni","CV potenziale"].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
+                      <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["","Nome","Tipo rinnovo","Scadenza","Giorni","CV potenziale",""].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
                       <tbody>{ordinati.map(r=>{
                         const urgente=r.giorni!=null&&r.giorni>=0&&r.giorni<=7;
                         const scaduto=r.giorni!=null&&r.giorni<0;
@@ -895,6 +895,7 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddMa
                               {r.giorni==null?"\u2014":scaduto?"Scaduto":r.giorni+"g"}
                             </td>
                             <td style={{padding:"12px 16px",fontWeight:800,fontSize:13,color:"#10b981"}}>{r.cv?r.cv+" CV":"\u2014"}</td>
+                            <td style={{padding:"12px 16px"}}>{r.onDelete&&<button onClick={r.onDelete} style={{background:"#ef444415",border:"1px solid #ef444430",borderRadius:6,color:"#f87171",cursor:"pointer",fontSize:11,fontWeight:800,padding:"4px 9px"}}>Rimuovi</button>}</td>
                           </tr>
                         );
                       })}</tbody>
