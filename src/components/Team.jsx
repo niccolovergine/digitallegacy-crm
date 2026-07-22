@@ -659,28 +659,12 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddMa
                       </div>
                     ))}
                   </div>
-                  <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"1.4rem",marginBottom:16}}>
-                    <div style={{fontSize:13,fontWeight:800,color:"var(--text)",marginBottom:16}}>Confronto squadre</div>
-                    <div style={{height:220}}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={compareData} margin={{top:5,right:10,left:-15,bottom:5}}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false}/>
-                          <XAxis dataKey="name" stroke="var(--muted)" fontSize={12}/>
-                          <YAxis stroke="var(--muted)" fontSize={12} allowDecimals={false}/>
-                          <Tooltip contentStyle={ts} itemStyle={{color:"var(--text)"}} labelStyle={{color:"var(--text)",fontWeight:700}}/>
-                          <Legend wrapperStyle={{fontSize:11}}/>
-                          <Bar dataKey="sinistra" name="Sinistra" fill="var(--a1)" radius={[4,4,0,0]}/>
-                          <Bar dataKey="destra" name="Destra" fill="#10b981" radius={[4,4,0,0]}/>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
                 </>
               )}
             </>
           )}
 
-          {activeTeamTab!=="rinnovi"&&
+          {activeTeamTab==="membri"&&
           <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden"}}>
             <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
               <div style={{display:"flex",alignItems:"center",gap:10}}>
