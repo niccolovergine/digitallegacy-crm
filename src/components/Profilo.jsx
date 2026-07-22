@@ -156,9 +156,12 @@ export function ProfiloView({ auth, onUpdateProfile, downlineCount, onUpdateRinn
             <label style={lbl}>Tipo rinnovo</label>
             <select value={rinnovoTipo} onChange={e => setRinnovoTipo(e.target.value)}>
               <option value="">Non impostato</option>
-              <option value="mensile">Mensile (60 CV)</option>
-              <option value="semestrale">Semestrale (90 CV)</option>
-              <option value="annuale">Annuale (90 CV)</option>
+              <option value="mensile_60">Mensile (60 CV)</option>
+              <option value="mensile_90">Mensile (90 CV)</option>
+              <option value="semestrale_75">Semestrale (75 CV)</option>
+              <option value="semestrale_90">Semestrale (90 CV)</option>
+              <option value="annuale_75">Annuale (75 CV)</option>
+              <option value="annuale_90">Annuale (90 CV)</option>
             </select>
           </div>
           <div>

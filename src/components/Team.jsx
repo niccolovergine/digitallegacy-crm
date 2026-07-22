@@ -19,8 +19,8 @@ function cicloLabel(c){const r=CICLI.find(x=>x[0]===Number(c));if(!r)return"Cicl
 function dataByCiclo(arr,c){const r=CICLI.find(x=>x[0]===Number(c));if(!r)return[];return arr.filter(p=>p.conosciutoAt&&p.conosciutoAt>=r[1]&&p.conosciutoAt<r[2]);}
 const fmt=d=>d?new Date(d+"T12:00:00").toLocaleDateString("it-IT"):"\u2014";
 
-const RINNOVO_CV={mensile:60,semestrale:90,annuale:90};
-const RINNOVO_LABEL={mensile:"Mensile",semestrale:"Semestrale",annuale:"Annuale"};
+const RINNOVO_CV={mensile_60:60,mensile_90:90,semestrale_75:75,semestrale_90:90,annuale_75:75,annuale_90:90};
+const RINNOVO_LABEL={mensile_60:"Mensile (60CV)",mensile_90:"Mensile (90CV)",semestrale_75:"Semestrale (75CV)",semestrale_90:"Semestrale (90CV)",annuale_75:"Annuale (75CV)",annuale_90:"Annuale (90CV)"};
 function giorniAlla(dateStr){
   if(!dateStr)return null;
   const oggi=new Date();oggi.setHours(0,0,0,0);
@@ -790,9 +790,12 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
                             <td style={{padding:"12px 16px"}}>
                               <select value={m.rinnovo_tipo||""} onChange={e=>onUpdateRinnovo(m.id,e.target.value||null,m.rinnovo_scadenza||null)} style={{width:"auto",minWidth:120,fontSize:11,padding:"5px 9px",background:"var(--bg3)",border:"1px solid var(--border2)"}}>
                                 <option value="">Non impostato</option>
-                                <option value="mensile">Mensile (60CV)</option>
-                                <option value="semestrale">Semestrale (90CV)</option>
-                                <option value="annuale">Annuale (90CV)</option>
+                                <option value="mensile_60">Mensile (60CV)</option>
+                                <option value="mensile_90">Mensile (90CV)</option>
+                                <option value="semestrale_75">Semestrale (75CV)</option>
+                                <option value="semestrale_90">Semestrale (90CV)</option>
+                                <option value="annuale_75">Annuale (75CV)</option>
+                                <option value="annuale_90">Annuale (90CV)</option>
                               </select>
                             </td>
                             <td style={{padding:"12px 16px"}}>
