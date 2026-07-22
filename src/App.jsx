@@ -99,6 +99,7 @@ function toApp(r) {
     telefono:r.telefono||"", instagram:r.instagram||"",
     checklist:r.checklist||{kyc:false,pandadoc:false,click:false},
     interesse:r.interesse||"", statoColore:r.stato_colore||"",
+    rinnovoTipo:r.rinnovo_tipo||"", rinnovoScadenza:r.rinnovo_scadenza||"", attivo:r.attivo!==false,
   };
 }
 function toDB(p, uid) {
@@ -110,6 +111,7 @@ function toDB(p, uid) {
     telefono:p.telefono||null, instagram:p.instagram||null,
     checklist:p.checklist||{kyc:false,pandadoc:false,click:false},
     interesse:p.interesse||null, stato_colore:p.statoColore||null,
+    rinnovo_tipo:p.rinnovoTipo||null, rinnovo_scadenza:p.rinnovoScadenza||null, attivo:p.attivo!==false,
   };
 }
 
@@ -1129,7 +1131,7 @@ export default function App() {
       <main className="mc" style={{flex:1,overflowY:"auto",height:"100vh",paddingBottom:0}}>
         {view==="dash"  && <Dash cd={cd} cdSub={cdSub} cdAct={cdAct} cdFU={cdFU} cdNI={cdNI} cdConv={cdConv} totSub={totSub} totConv={totConv} totAll={dashData.length} funnelCounts={funnelCounts} funnelMax={funnelMax} urgenti={urgenti} dashCiclo={dashCiclo} setDashCiclo={setDashCiclo} onOpen={openDetail} dashMode={dashMode} setDashMode={setDashMode} hasTeam={dlProspects.length>0} ticketVenduti={ticketVendutiCount} />}
         {view==="lista" && <Lista prospects={listaData} total={listaMode==="team"?teamProspects.length:data.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} fCitta={fCitta} setFCitta={setFCitta} fInteresse={fInteresse} setFInteresse={setFInteresse} fPercorso={fPercorso} setFPercorso={setFPercorso} fLeg={fLeg} setFLeg={setFLeg} fMembroTeam={fMembroTeam} setFMembroTeam={setFMembroTeam} downline={downline} onOpen={openDetail} onAdd={openAdd} listaMode={listaMode} setListaMode={setListaMode} hasTeam={dlProspects.length>0} />}
-        {view==="stats"   && <Statistiche data={data} dlProspects={dlProspects} downline={downline} />}
+        {view==="stats"   && <Statistiche data={data} dlProspects={teamProspects} downline={downline} />}
         {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onUpdateRinnovo={updateRinnovo} onSetLeader={setLeader} onSetAttivo={setAttivo} LUDOVICO_ID={LUDOVICO_ID} />}
         {view==="nomi"    && <ListaNomiView auth={auth} onInvitaProspect={invitaProspect} />}
         {view==="eventi"  && <EventiView auth={auth} allProfiles={allProfiles} downline={downline} positions={positions} showToast={showToast}
@@ -1430,23 +1432,70 @@ function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, f
 }
 
 //  STATISTICHE 
+const STATS_START_CICLO = 79; // prima di questo ciclo non si tracciavano ancora le statistiche
 function Statistiche({ data, dlProspects, downline }) {
   const hasTeam = (dlProspects||[]).length > 0;
   const [statsMode, setStatsMode] = useState(data.length > 0 ? "personale" : (hasTeam ? "team" : "personale"));
   const [fMembro, setFMembro] = useState(""); // "" tutti | "self" solo tu | id membro specifico
-  const [linePhase, setLinePhase] = useState("CONOSCITIVA");
+  const [legFilter, setLegFilter] = useState("all"); // all | sinistra | destra
   const [barCiclo,  setBarCiclo]  = useState("ALL");
 
-  const activeData = statsMode !== "team" ? data
+  const baseData = statsMode !== "team" ? data
     : fMembro === "" ? [...data, ...(dlProspects||[])]
     : fMembro === "self" ? data
     : (dlProspects||[]).filter(p => p._userId === fMembro);
 
-  const cicliPresenti=[...new Set(activeData.flatMap(p=>(p.storico||[]).map(s=>cicloOfDate(s.data)).filter(Boolean)))].sort((a,b)=>a-b);
+  const activeData = (statsMode==="team" && fMembro==="" && legFilter!=="all")
+    ? baseData.filter(p => p._leg === legFilter)
+    : baseData;
+
+  const cicliPresenti=[...new Set(activeData.flatMap(p=>(p.storico||[]).map(s=>cicloOfDate(s.data)).filter(Boolean)))].filter(c=>c>=STATS_START_CICLO).sort((a,b)=>a-b);
   const cicli=cicliPresenti.length?cicliPresenti:[CICLO_CORRENTE];
-  const lineData=cicli.map(c=>{const row={ciclo:"C"+c};FASI_FUNNEL.forEach(f=>{row[f]=activeData.filter(p=>reachedInCiclo(p,f,c)).length;});return row;});
   const barData=FASI_FUNNEL.map(f=>{const count=barCiclo==="ALL"?activeData.filter(p=>reachedEver(p,f)).length:activeData.filter(p=>reachedInCiclo(p,f,Number(barCiclo))).length;return{fase:FASE_LABEL[f],key:f,count,fill:FASE_CLR[f]};});
-  const tableRows=[...cicli].sort((a,b)=>b-a).map(c=>{const r={c};FASI_FUNNEL.forEach(f=>{r[f]=activeData.filter(p=>reachedInCiclo(p,f,c)).length;});r.conv=r.INVITO>0?Math.round(r.SUB/r.INVITO*100):r.FUP1>0?Math.round(r.SUB/r.FUP1*100):0;return r;});
+  const dropOffs = barData.slice(0,-1).map((b,i)=>{const next=barData[i+1];const rate=b.count>0?Math.round(next.count/b.count*100):0;return{da:b.fase,a:next.fase,rate,fromCount:b.count,color:next.fill};});
+  const bottleneck = dropOffs.filter(d=>d.fromCount>=3).sort((a,b)=>a.rate-b.rate)[0]; // solo se c'è un minimo di dati
+  const tableRowsAsc=[...cicli].sort((a,b)=>a-b).map(c=>{const r={c};FASI_FUNNEL.forEach(f=>{r[f]=activeData.filter(p=>reachedInCiclo(p,f,c)).length;});r.conv=r.INVITO>0?Math.round(r.SUB/r.INVITO*100):r.FUP1>0?Math.round(r.SUB/r.FUP1*100):0;return r;});
+  const tableRows=[...tableRowsAsc].reverse().map((r,i)=>{const prev=tableRowsAsc[tableRowsAsc.length-2-i];return{...r,delta:prev?r.conv-prev.conv:null};});
+
+  // Tempo medio di conversione (Invito → Iscritto)
+  const inScope = p => barCiclo==="ALL" ? true : reachedInCiclo(p,"SUB",Number(barCiclo));
+  const durate = activeData.filter(p=>reachedEver(p,"SUB")&&inScope(p)).map(p=>{
+    const storico=p.storico||[];
+    const dInvito=storico.find(s=>s.fase==="INVITO")?.data;
+    const dSub=storico.find(s=>s.fase==="SUB")?.data;
+    if(!dInvito||!dSub) return null;
+    const giorni=Math.round((new Date(dSub)-new Date(dInvito))/86400000);
+    return giorni>=0?giorni:null;
+  }).filter(g=>g!=null);
+  const tempoMedioConversione = durate.length ? Math.round(durate.reduce((a,b)=>a+b,0)/durate.length) : null;
+
+  // Fonte migliore
+  const fontiSet=[...new Set(activeData.map(p=>p.fonte||"Altro"))];
+  const fontiStats = fontiSet.map(f=>{
+    const arr=activeData.filter(p=>(p.fonte||"Altro")===f && (barCiclo==="ALL"?true:cicloOfDate(p.conosciutoAt)===Number(barCiclo)));
+    const tot=arr.length;
+    const sub=arr.filter(p=>reachedEver(p,"SUB")).length;
+    return {fonte:f,tot,sub,rate:tot>0?Math.round(sub/tot*100):0};
+  }).filter(f=>f.tot>=3).sort((a,b)=>b.rate-a.rate);
+  const fonteMigliore=fontiStats[0]||null;
+
+  // Classifica membri (solo in modalità team, tutto il team)
+  const showClassifica = statsMode==="team" && fMembro==="" && hasTeam;
+  const classificaRows = !showClassifica ? [] : (() => {
+    const rows = (downline||[]).map(m=>{
+      const own=(dlProspects||[]).filter(p=>p._userId===m.id && (legFilter==="all"||p._leg===legFilter));
+      const invito=barCiclo==="ALL"?own.filter(p=>reachedEver(p,"INVITO")).length:own.filter(p=>reachedInCiclo(p,"INVITO",Number(barCiclo))).length;
+      const sub=barCiclo==="ALL"?own.filter(p=>reachedEver(p,"SUB")).length:own.filter(p=>reachedInCiclo(p,"SUB",Number(barCiclo))).length;
+      return {id:m.id,label:(m.nome||m.email)+" "+(m.cognome||""),invito,sub,rate:invito>0?Math.round(sub/invito*100):0};
+    });
+    if (legFilter==="all") {
+      const invito=barCiclo==="ALL"?data.filter(p=>reachedEver(p,"INVITO")).length:data.filter(p=>reachedInCiclo(p,"INVITO",Number(barCiclo))).length;
+      const sub=barCiclo==="ALL"?data.filter(p=>reachedEver(p,"SUB")).length:data.filter(p=>reachedInCiclo(p,"SUB",Number(barCiclo))).length;
+      rows.unshift({id:"self",label:"Tu",invito,sub,rate:invito>0?Math.round(sub/invito*100):0});
+    }
+    return rows.filter(r=>r.invito>=2).sort((a,b)=>b.rate-a.rate||b.invito-a.invito).slice(0,6);
+  })();
+
   const ts={background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:8,color:"var(--text)",fontSize:12};
   const tProps={contentStyle:ts,itemStyle:{color:"var(--text)"},labelStyle:{color:"var(--text)",fontWeight:700}};
   if (!activeData.length) return <div style={{padding:"2rem 2.2rem"}}><h1 style={{fontWeight:900,fontSize:26,color:"var(--text)",marginBottom:8}}>Statistiche</h1><div style={{textAlign:"center",padding:"5rem",color:"var(--border2)"}}><div style={{fontSize:44,marginBottom:12}}></div><p>{hasTeam ? "Nessun dato in questa modalita — prova a switchare su Team" : "Aggiungi prospect per vedere le statistiche"}</p></div></div>;
@@ -1455,7 +1504,7 @@ function Statistiche({ data, dlProspects, downline }) {
       <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:24,gap:12,flexWrap:"wrap"}}>
         <div>
           <h1 style={{fontWeight:900,fontSize:26,color:"var(--text)",letterSpacing:-0.8}}>Statistiche</h1>
-          <p style={{color:"var(--muted)",fontSize:12,marginTop:4}}>Andamento e conversione del percorso, ciclo per ciclo</p>
+          <p style={{color:"var(--muted)",fontSize:12,marginTop:4}}>Dove converti e dove ti perdi persone nel percorso</p>
         </div>
         {hasTeam && (
           <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
@@ -1474,27 +1523,77 @@ function Statistiche({ data, dlProspects, downline }) {
                 {(downline||[]).map(m=><option key={m.id} value={m.id}>{m.nome||m.email} {m.cognome||""}</option>)}
               </select>
             )}
+            {statsMode==="team" && fMembro==="" && (
+              <div style={{display:"flex",background:"var(--bg3)",borderRadius:10,padding:4,border:"1px solid var(--border)"}}>
+                {[["all","Tutti"],["sinistra","Sinistra"],["destra","Destra"]].map(([k,l])=>(
+                  <button key={k} onClick={()=>setLegFilter(k)} className="tabbtn"
+                    style={{background:legFilter===k?"var(--bg4)":"transparent",color:legFilter===k?"var(--a2)":"var(--muted)",boxShadow:legFilter===k?"inset 0 0 0 1px var(--sidebar-border)":"none",fontSize:11,padding:"6px 14px"}}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
-      <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"1.4rem",marginBottom:16}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:10}}>
-          <div><div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}> Andamento nei cicli</div><div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>Quanti ne fai per ciclo</div></div>
-          <select value={linePhase} onChange={e=>setLinePhase(e.target.value)} style={{width:"auto",minWidth:160}}><option value="ALL">Tutte le fasi</option>{FASI_FUNNEL.map(f=><option key={f} value={f}>{FASE_LABEL[f]}</option>)}</select>
+
+      {bottleneck && (
+        <div style={{background:"linear-gradient(135deg,#f59e0b12,#f59e0b05)",border:"1px solid #f59e0b30",borderRadius:14,padding:"1rem 1.3rem",marginBottom:16,display:"flex",gap:14,alignItems:"center"}}>
+          <div style={{fontSize:24}}>💡</div>
+          <div>
+            <div style={{fontSize:13,fontWeight:800,color:"#f59e0b"}}>Dove ti perdi più persone</div>
+            <div style={{fontSize:13,color:"var(--text)",marginTop:2}}>Tra <b>{bottleneck.da}</b> e <b>{bottleneck.a}</b> passa solo il <b>{bottleneck.rate}%</b> — è il punto del percorso dove converti meno. Se vuoi migliorare i numeri, è lì che vale la pena lavorare per primo (script, follow up, tempi di risposta).</div>
+          </div>
         </div>
-        <div style={{height:300}}><ResponsiveContainer width="100%" height="100%"><LineChart data={lineData} margin={{top:5,right:10,left:-15,bottom:5}}><CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/><XAxis dataKey="ciclo" stroke="var(--muted)" fontSize={12}/><YAxis stroke="var(--muted)" fontSize={12} allowDecimals={false}/><Tooltip {...tProps} cursor={{stroke:"var(--border2)"}}/>{linePhase==="ALL"?FASI_FUNNEL.map(f=><Line key={f} type="monotone" dataKey={f} name={FASE_LABEL[f]} stroke={FASE_CLR[f]} strokeWidth={2} dot={{r:3}}/>):<Line type="monotone" dataKey={linePhase} name={FASE_LABEL[linePhase]} stroke={FASE_CLR[linePhase]} strokeWidth={3} dot={{r:4}} activeDot={{r:6}}/>}{linePhase==="ALL"&&<Legend wrapperStyle={{fontSize:11}}/>}</LineChart></ResponsiveContainer></div>
-      </div>
+      )}
+
       <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"1.4rem",marginBottom:16}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:10}}>
-          <div><div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}> Conversione del percorso</div></div>
+          <div><div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}> Conversione del percorso</div><div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>Quante persone raggiungono ogni fase</div></div>
           <select value={barCiclo} onChange={e=>setBarCiclo(e.target.value)} style={{width:"auto",minWidth:160}}><option value="ALL">Tutti i cicli</option>{[...cicli].sort((a,b)=>b-a).map(c=><option key={c} value={c}>Ciclo {c}</option>)}</select>
         </div>
         <div style={{height:300}}><ResponsiveContainer width="100%" height="100%"><BarChart data={barData} margin={{top:5,right:10,left:-15,bottom:5}}><CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false}/><XAxis dataKey="fase" stroke="var(--muted)" fontSize={12}/><YAxis stroke="var(--muted)" fontSize={12} allowDecimals={false}/><Tooltip {...tProps} cursor={{fill:"#0d1b3360"}}/><Bar dataKey="count" name="Raggiunti" radius={[6,6,0,0]}>{barData.map((e,i)=><Cell key={i} fill={e.fill}/>)}</Bar></BarChart></ResponsiveContainer></div>
-        <div style={{display:"flex",gap:8,marginTop:14,flexWrap:"wrap"}}>{barData.slice(0,-1).map((b,i)=>{const next=barData[i+1];const rate=b.count>0?Math.round(next.count/b.count*100):0;return(<div key={i} style={{flex:"1 1 120px",background:"var(--bg3)",border:"1px solid var(--border)",borderRadius:9,padding:"9px 11px"}}><div style={{fontSize:10,color:"var(--muted)",fontWeight:600}}>{b.fase} → {next.fase}</div><div style={{fontSize:18,fontWeight:900,color:next.fill,marginTop:2}}>{rate}%</div></div>);})}</div>
+        <div style={{display:"flex",gap:8,marginTop:14,flexWrap:"wrap"}}>{dropOffs.map((d,i)=>(<div key={i} style={{flex:"1 1 120px",background:bottleneck&&d.da===bottleneck.da&&d.a===bottleneck.a?"#f59e0b12":"var(--bg3)",border:bottleneck&&d.da===bottleneck.da&&d.a===bottleneck.a?"1px solid #f59e0b40":"1px solid var(--border)",borderRadius:9,padding:"9px 11px"}}><div style={{fontSize:10,color:"var(--muted)",fontWeight:600}}>{d.da} → {d.a}</div><div style={{fontSize:18,fontWeight:900,color:d.color,marginTop:2}}>{d.rate}%</div></div>))}</div>
       </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
+        <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"1.4rem",position:"relative",overflow:"hidden"}}>
+          <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"linear-gradient(90deg,#3b82f6,#3b82f644)"}}/>
+          <div style={{fontSize:11,color:"var(--muted)",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:8}}>Tempo medio di conversione</div>
+          {tempoMedioConversione!=null
+            ? <><div style={{fontSize:34,fontWeight:900,color:"#3b82f6",lineHeight:1}}>{tempoMedioConversione} <span style={{fontSize:16,fontWeight:700,color:"var(--muted)"}}>giorni</span></div>
+              <div style={{fontSize:12,color:"var(--muted)",marginTop:8}}>Da quando conosci il prospect a quando si iscrive, in media ({durate.length} iscritti analizzati)</div></>
+            : <div style={{fontSize:13,color:"var(--border2)",marginTop:6}}>Non ci sono ancora abbastanza iscritti con date complete per calcolarlo</div>
+          }
+        </div>
+        <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"1.4rem",position:"relative",overflow:"hidden"}}>
+          <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"linear-gradient(90deg,#10b981,#10b98144)"}}/>
+          <div style={{fontSize:11,color:"var(--muted)",fontWeight:700,textTransform:"uppercase",letterSpacing:.6,marginBottom:8}}>Fonte migliore</div>
+          {fonteMigliore
+            ? <><div style={{fontSize:34,fontWeight:900,color:"#10b981",lineHeight:1}}>{fonteMigliore.fonte}</div>
+              <div style={{fontSize:12,color:"var(--muted)",marginTop:8}}>{fonteMigliore.rate}% di conversione su {fonteMigliore.tot} prospect — la fonte dove vale la pena investire di più</div></>
+            : <div style={{fontSize:13,color:"var(--border2)",marginTop:6}}>Servono almeno 3 prospect per ogni fonte per confrontarle</div>
+          }
+        </div>
+      </div>
+
+      {showClassifica && classificaRows.length>0 && (
+        <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden",marginBottom:16}}>
+          <div style={{padding:"1.1rem 1.4rem",borderBottom:"1px solid #11203a"}}><div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}> Classifica conversione</div><div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{barCiclo==="ALL"?"Su tutti i cicli":"Ciclo "+barCiclo} — chi converte meglio nel team (min. 2 invitati)</div></div>
+          <div>{classificaRows.map((r,i)=>(
+            <div key={r.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 20px",borderBottom:i<classificaRows.length-1?"1px solid #0d1b3355":"none"}}>
+              <div style={{width:24,fontSize:14,fontWeight:900,color:i===0?"#f59e0b":i===1?"#c0c0c0":i===2?"#cd7f32":"var(--border2)"}}>{i<3?["🥇","🥈","🥉"][i]:i+1}</div>
+              <div style={{flex:1,fontSize:13,fontWeight:700,color:"var(--text)"}}>{r.label}</div>
+              <div style={{fontSize:11,color:"var(--muted)"}}>{r.sub}/{r.invito} iscritti</div>
+              <div style={{fontSize:15,fontWeight:900,color:r.rate>=20?"#10b981":r.rate>=10?"var(--a2)":"#f59e0b",minWidth:48,textAlign:"right"}}>{r.rate}%</div>
+            </div>
+          ))}</div>
+        </div>
+      )}
+
       <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden"}}>
-        <div style={{padding:"1.1rem 1.4rem",borderBottom:"1px solid #11203a"}}><div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}> Cicli a confronto</div></div>
-        <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",minWidth:600}}><thead><tr style={{borderBottom:"1px solid #11203a"}}><th style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>Ciclo</th>{FASI_FUNNEL.map(f=><th key={f} style={{textAlign:"center",color:FASE_CLR[f],fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 10px"}}>{FASE_LABEL[f]}</th>)}<th style={{textAlign:"center",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>Conv%</th></tr></thead><tbody>{tableRows.map(r=>(<tr key={r.c} className="hrow" style={{borderBottom:"1px solid #0d1b3355"}}><td style={{padding:"11px 16px"}}><span style={{background:r.c===CICLO_CORRENTE?"var(--a1-13)":"var(--border)",color:r.c===CICLO_CORRENTE?"var(--a2)":"var(--muted)",borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:700}}>C{r.c}</span></td>{FASI_FUNNEL.map(f=><td key={f} style={{textAlign:"center",padding:"11px 10px",fontWeight:700,fontSize:13,color:r[f]>0?"var(--text)":"var(--border2)"}}>{r[f]}</td>)}<td style={{textAlign:"center",padding:"11px 16px",fontWeight:800,fontSize:13,color:r.conv>=20?"#10b981":r.conv>=10?"var(--a2)":"#f59e0b"}}>{r.conv}%</td></tr>))}</tbody></table></div>
+        <div style={{padding:"1.1rem 1.4rem",borderBottom:"1px solid #11203a"}}><div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}> Cicli a confronto</div><div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>Dal ciclo {STATS_START_CICLO} in poi — prima non si tracciava ancora</div></div>
+        <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",minWidth:640}}><thead><tr style={{borderBottom:"1px solid #11203a"}}><th style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>Ciclo</th>{FASI_FUNNEL.map(f=><th key={f} style={{textAlign:"center",color:FASE_CLR[f],fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 10px"}}>{FASE_LABEL[f]}</th>)}<th style={{textAlign:"center",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>Conv%</th></tr></thead><tbody>{tableRows.map(r=>(<tr key={r.c} className="hrow" style={{borderBottom:"1px solid #0d1b3355"}}><td style={{padding:"11px 16px"}}><span style={{background:r.c===CICLO_CORRENTE?"var(--a1-13)":"var(--border)",color:r.c===CICLO_CORRENTE?"var(--a2)":"var(--muted)",borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:700}}>C{r.c}</span></td>{FASI_FUNNEL.map(f=><td key={f} style={{textAlign:"center",padding:"11px 10px",fontWeight:700,fontSize:13,color:r[f]>0?"var(--text)":"var(--border2)"}}>{r[f]}</td>)}<td style={{textAlign:"center",padding:"11px 16px",fontWeight:800,fontSize:13,color:r.conv>=20?"#10b981":r.conv>=10?"var(--a2)":"#f59e0b"}}>{r.conv}%{r.delta!=null&&r.delta!==0&&<span style={{marginLeft:6,fontSize:11,color:r.delta>0?"#10b981":"#ef4444"}}>{r.delta>0?"▲":"▼"}{Math.abs(r.delta)}</span>}</td></tr>))}</tbody></table></div>
       </div>
     </div>
   );
@@ -1685,6 +1784,32 @@ function FormModal({ form, setForm, onSave, onClose, onDelete, isEdit, isLeader,
                 {form.pacchetto==="altro" ? (form.bvCustom||0)+" BV prodotti" : bvOfPacchetto(form.pacchetto)+" BV prodotti"}
               </div>
             )}
+            <div style={{marginTop:14,paddingTop:14,borderTop:"1px solid var(--border2)"}}>
+              <div style={{fontSize:12,fontWeight:800,color:"var(--text)",marginBottom:2}}>Rinnovo cliente</div>
+              <p style={{fontSize:11,color:"var(--muted)",marginBottom:10}}>Facoltativo — se lo imposti, questo iscritto entra nel conteggio Rinnovi del team senza bisogno che si crei un account.</p>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                <div>
+                  <label style={lbl}>Tipo rinnovo</label>
+                  <select value={form.rinnovoTipo||""} onChange={e=>set("rinnovoTipo",e.target.value)}>
+                    <option value="">Non impostato</option>
+                    <option value="mensile_60">Mensile (60 CV)</option>
+                    <option value="mensile_90">Mensile (90 CV)</option>
+                    <option value="semestrale_75">Semestrale (75 CV)</option>
+                    <option value="semestrale_90">Semestrale (90 CV)</option>
+                    <option value="annuale_75">Annuale (75 CV)</option>
+                    <option value="annuale_90">Annuale (90 CV)</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={lbl}>Data scadenza</label>
+                  <input type="date" value={form.rinnovoScadenza||""} onChange={e=>set("rinnovoScadenza",e.target.value)} />
+                </div>
+              </div>
+              <label style={{display:"inline-flex",alignItems:"center",gap:8,marginTop:10,cursor:"pointer"}}>
+                <input type="checkbox" checked={form.attivo!==false} onChange={e=>set("attivo",e.target.checked)} style={{width:16,height:16,cursor:"pointer"}} />
+                <span style={{fontSize:12,fontWeight:700,color:form.attivo===false?"#ef4444":"var(--muted)"}}>{form.attivo===false?"Cliente inattivo (ha mollato)":"Cliente attivo"}</span>
+              </label>
+            </div>
           </div>
         )}
       </div>

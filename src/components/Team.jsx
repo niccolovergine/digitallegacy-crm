@@ -741,10 +741,18 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
 
           {activeTeamTab==="rinnovi"&&(()=>{
             const membriAttiviRinnovo=filteredMembers.filter(m=>m.attivo!==false);
-            const membriConRinnovo=membriAttiviRinnovo.map(m=>({m,giorni:giorniAlla(m.rinnovo_scadenza),cv:m.rinnovo_tipo?RINNOVO_CV[m.rinnovo_tipo]||0:0}));
-            const inScadenza=membriConRinnovo.filter(x=>x.giorni!=null&&x.giorni>=0&&x.giorni<=7);
+            const righeMembri=membriAttiviRinnovo.map(m=>({tipo:"membro",id:m.id,nome:m.nome,cognome:m.cognome,email:m.email,ownerLabel:null,rinnovoTipo:m.rinnovo_tipo,rinnovoScadenza:m.rinnovo_scadenza,giorni:giorniAlla(m.rinnovo_scadenza),cv:m.rinnovo_tipo?RINNOVO_CV[m.rinnovo_tipo]||0:0,onChangeTipo:v=>onUpdateRinnovo(m.id,v||null,m.rinnovo_scadenza||null),onChangeData:v=>onUpdateRinnovo(m.id,m.rinnovo_tipo||null,v||null)}));
+            const membriFiltratiIds=new Set(membriAttiviRinnovo.map(m=>m.id));
+            const clientiSub=(dlProspects||[]).filter(p=>p.fase==="SUB"&&p.rinnovoTipo&&p.attivo!==false&&membriFiltratiIds.has(p._userId));
+            const righeClienti=clientiSub.map(p=>{
+              const owner=downline.find(m=>m.id===p._userId);
+              return {tipo:"cliente",id:p.id,nome:p.nome,cognome:p.cognome,ownerLabel:owner?(owner.nome||owner.email)+" "+(owner.cognome||""):"",rinnovoTipo:p.rinnovoTipo,rinnovoScadenza:p.rinnovoScadenza,giorni:giorniAlla(p.rinnovoScadenza),cv:p.rinnovoTipo?RINNOVO_CV[p.rinnovoTipo]||0:0,onChangeTipo:null,onChangeData:null};
+            });
+            const righe=[...righeMembri,...righeClienti];
+            const conRinnovo=righe.filter(x=>x.rinnovoScadenza);
+            const inScadenza=righe.filter(x=>x.giorni!=null&&x.giorni>=0&&x.giorni<=7);
             const cvPotenziale=inScadenza.reduce((acc,x)=>acc+x.cv,0);
-            const ordinati=[...membriConRinnovo].sort((a,b)=>{
+            const ordinati=[...righe].sort((a,b)=>{
               if(a.giorni==null&&b.giorni==null)return 0;
               if(a.giorni==null)return 1;
               if(b.giorni==null)return -1;
@@ -756,7 +764,7 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
                   {[
                     {label:"Rinnovi entro 7 giorni",value:inScadenza.length,color:"#f59e0b"},
                     {label:"CV potenziale (7gg)",value:cvPotenziale,color:"#10b981"},
-                    {label:"Rinnovi impostati",value:membriConRinnovo.filter(x=>x.m.rinnovo_scadenza).length+"/"+membriAttiviRinnovo.length,color:"#8b5cf6"},
+                    {label:"Rinnovi impostati",value:conRinnovo.length+"/"+righe.length,color:"#8b5cf6"},
                   ].map((k,i)=>(
                     <div key={i} style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"16px 18px",position:"relative",overflow:"hidden"}}>
                       <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"linear-gradient(90deg,"+k.color+","+k.color+"44)",borderRadius:"14px 14px 0 0"}}/>
@@ -777,34 +785,43 @@ export function TeamView({auth,downline,dlProspects,onAssignTeam,onAddManual,pos
                       ))}
                     </div>
                   </div>
-                  {downline.length===0
+                  {righe.length===0
                     ?<div style={{padding:"3rem",textAlign:"center",color:"var(--border2)"}}><div style={{fontSize:36,marginBottom:12}}>{"\u25c8"}</div><p style={{fontSize:14}}>Nessun membro ancora</p></div>
                     :<table style={{width:"100%",borderCollapse:"collapse"}}>
-                      <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Membro","Tipo rinnovo","Scadenza","Giorni","CV potenziale"].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
-                      <tbody>{ordinati.map(({m,giorni,cv})=>{
-                        const urgente=giorni!=null&&giorni>=0&&giorni<=7;
-                        const scaduto=giorni!=null&&giorni<0;
+                      <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["","Nome","Tipo rinnovo","Scadenza","Giorni","CV potenziale"].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
+                      <tbody>{ordinati.map(r=>{
+                        const urgente=r.giorni!=null&&r.giorni>=0&&r.giorni<=7;
+                        const scaduto=r.giorni!=null&&r.giorni<0;
                         return(
-                          <tr key={m.id} style={{borderBottom:"1px solid #0d1b3355",background:urgente?"var(--a1-10)":"transparent"}}>
-                            <td style={{padding:"12px 16px"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Av n={m.nome||m.email} c={m.cognome} color={urgente?"#f59e0b":"#6b7280"}/><div style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{m.nome||m.email} {m.cognome||""}</div></div></td>
+                          <tr key={r.tipo+"_"+r.id} style={{borderBottom:"1px solid #0d1b3355",background:urgente?"var(--a1-10)":"transparent"}}>
                             <td style={{padding:"12px 16px"}}>
-                              <select value={m.rinnovo_tipo||""} onChange={e=>onUpdateRinnovo(m.id,e.target.value||null,m.rinnovo_scadenza||null)} style={{width:"auto",minWidth:120,fontSize:11,padding:"5px 9px",background:"var(--bg3)",border:"1px solid var(--border2)"}}>
-                                <option value="">Non impostato</option>
-                                <option value="mensile_60">Mensile (60CV)</option>
-                                <option value="mensile_90">Mensile (90CV)</option>
-                                <option value="semestrale_75">Semestrale (75CV)</option>
-                                <option value="semestrale_90">Semestrale (90CV)</option>
-                                <option value="annuale_75">Annuale (75CV)</option>
-                                <option value="annuale_90">Annuale (90CV)</option>
-                              </select>
+                              <span style={{fontSize:9,fontWeight:800,padding:"3px 8px",borderRadius:6,textTransform:"uppercase",letterSpacing:.4,background:r.tipo==="cliente"?"#f59e0b18":"#8b5cf618",color:r.tipo==="cliente"?"#f59e0b":"#8b5cf6"}}>{r.tipo==="cliente"?"Cliente":"Membro"}</span>
+                            </td>
+                            <td style={{padding:"12px 16px"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Av n={r.nome||r.email} c={r.cognome} color={urgente?"#f59e0b":"#6b7280"}/><div><div style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{r.nome||r.email} {r.cognome||""}</div>{r.ownerLabel&&<div style={{color:"var(--muted)",fontSize:10}}>di {r.ownerLabel}</div>}</div></div></td>
+                            <td style={{padding:"12px 16px"}}>
+                              {r.onChangeTipo
+                                ?<select value={r.rinnovoTipo||""} onChange={e=>r.onChangeTipo(e.target.value)} style={{width:"auto",minWidth:120,fontSize:11,padding:"5px 9px",background:"var(--bg3)",border:"1px solid var(--border2)"}}>
+                                  <option value="">Non impostato</option>
+                                  <option value="mensile_60">Mensile (60CV)</option>
+                                  <option value="mensile_90">Mensile (90CV)</option>
+                                  <option value="semestrale_75">Semestrale (75CV)</option>
+                                  <option value="semestrale_90">Semestrale (90CV)</option>
+                                  <option value="annuale_75">Annuale (75CV)</option>
+                                  <option value="annuale_90">Annuale (90CV)</option>
+                                </select>
+                                :<span style={{fontSize:12,color:"var(--text)",fontWeight:600}}>{RINNOVO_LABEL[r.rinnovoTipo]||"\u2014"}</span>
+                              }
                             </td>
                             <td style={{padding:"12px 16px"}}>
-                              <input type="date" value={m.rinnovo_scadenza||""} onChange={e=>onUpdateRinnovo(m.id,m.rinnovo_tipo||null,e.target.value||null)} style={{fontSize:11,padding:"5px 9px",background:"var(--bg3)",border:"1px solid var(--border2)",color:"var(--text)",borderRadius:7}}/>
+                              {r.onChangeData
+                                ?<input type="date" value={r.rinnovoScadenza||""} onChange={e=>r.onChangeData(e.target.value)} style={{fontSize:11,padding:"5px 9px",background:"var(--bg3)",border:"1px solid var(--border2)",color:"var(--text)",borderRadius:7}}/>
+                                :<span style={{fontSize:12,color:"var(--text)"}}>{r.rinnovoScadenza||"\u2014"}</span>
+                              }
                             </td>
                             <td style={{padding:"12px 16px",fontWeight:800,fontSize:13,color:scaduto?"#ef4444":urgente?"#f59e0b":"var(--text)"}}>
-                              {giorni==null?"\u2014":scaduto?"Scaduto":giorni+"g"}
+                              {r.giorni==null?"\u2014":scaduto?"Scaduto":r.giorni+"g"}
                             </td>
-                            <td style={{padding:"12px 16px",fontWeight:800,fontSize:13,color:"#10b981"}}>{cv?cv+" CV":"\u2014"}</td>
+                            <td style={{padding:"12px 16px",fontWeight:800,fontSize:13,color:"#10b981"}}>{r.cv?r.cv+" CV":"\u2014"}</td>
                           </tr>
                         );
                       })}</tbody>
