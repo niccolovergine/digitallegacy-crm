@@ -60,6 +60,7 @@ const sbDelete  = (tok, id)        => sbFetch("/rest/v1/prospects?id=eq."+id, { 
 
 // Profile helpers
 const sbGetProfile      = (tok, uid)        => sbFetch("/rest/v1/profiles?id=eq."+uid+"&select=*", { _token:tok });
+const sbGetUser         = (tok)             => sbFetch("/auth/v1/user", { _token:tok });
 const sbCreateProfile   = (tok, row)        => sbFetch("/rest/v1/profiles", { method:"POST", _token:tok, body:JSON.stringify(row) });
 const sbUpdateProfile   = (tok, uid, row)   => sbFetch("/rest/v1/profiles?id=eq."+uid, { method:"PATCH", _token:tok, body:JSON.stringify(row) });
 const sbGetDownline     = (tok)             => sbFetch("/rest/v1/profiles?select=*&positioned_under=not.is.null", { _token:tok });
@@ -388,6 +389,33 @@ function AuthScreen({ onAuth }) {
       const at = hashParams.get("access_token");
       if (at) { setRecoveryToken(at); setMode("reset"); }
       return; // non fare l'auto-restore session in questo caso
+    }
+
+    // Se arriviamo dal link "conferma la tua email" (o un altro link Supabase con sessione valida),
+    // l'hash contiene comunque un access_token valido: accediamo subito l'utente invece di
+    // lasciarlo sulla schermata di login senza nessun feedback (era la causa del giro a vuoto
+    // login → password dimenticata → registrati che alcuni utenti segnalavano).
+    if (window.location.hash && window.location.hash.includes("access_token")) {
+      const hashParams = new URLSearchParams(window.location.hash.slice(1));
+      const at = hashParams.get("access_token");
+      if (at) {
+        (async () => {
+          try {
+            const user = await sbGetUser(at);
+            const userId = user.id;
+            let profile = await sbGetProfile(at, userId);
+            if (!profile || profile.length === 0) {
+              await sbCreateProfile(at, { id:userId, email:user.email });
+              profile = await sbGetProfile(at, userId);
+            }
+            const authData = { token:at, userId, email:user.email, profile:profile?.[0]||null };
+            localStorage.setItem("becrm_session", JSON.stringify(authData));
+            window.history.replaceState(null, "", window.location.pathname);
+            onAuth(authData);
+          } catch(e) { /* se fallisce, l'utente vede semplicemente la schermata di login normale */ }
+        })();
+        return;
+      }
     }
 
     // Auto-restore session — ricarica sempre un profilo fresco dal server,
