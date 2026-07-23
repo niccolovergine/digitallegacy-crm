@@ -43,6 +43,8 @@ async function sbFetch(path, opts = {}) {
 }
 
 const sbSignUp  = (email, pw)      => sbFetch("/auth/v1/signup", { method:"POST", body:JSON.stringify({ email, password:pw }) });
+const sbVerifyOtp = (email, token, type) => sbFetch("/auth/v1/verify", { method:"POST", body:JSON.stringify({ email, token, type }) });
+const sbResendOtp = (email, type)  => sbFetch("/auth/v1/resend", { method:"POST", body:JSON.stringify({ email, type }) });
 const sbSignIn  = (email, pw)      => sbFetch("/auth/v1/token?grant_type=password", { method:"POST", body:JSON.stringify({ email, password:pw }) });
 const sbForgotPassword = (email)   => sbFetch("/auth/v1/recover", { method:"POST", body:JSON.stringify({ email }) });
 const sbUpdatePasswordWithToken = (accessToken, newPassword) => sbFetch("/auth/v1/user", { method:"PUT", _token:accessToken, body:JSON.stringify({ password:newPassword }) });
@@ -372,6 +374,8 @@ function AuthScreen({ onAuth }) {
   const [newPass, setNewPass]     = useState("");
   const [newPass2, setNewPass2]   = useState("");
   const [resetOk, setResetOk]     = useState(false);
+  const [otpCode, setOtpCode]     = useState("");
+  const [otpResent, setOtpResent] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -464,8 +468,7 @@ function AuthScreen({ onAuth }) {
           if (remember) localStorage.setItem("becrm_session", JSON.stringify(authData));
           onAuth(authData);
         } else {
-          setErr("Registrazione ok! Ora accedi.");
-          setMode("login");
+          setMode("verify-otp");
         }
       } else {
         const res = await sbSignIn(email, pass);
@@ -485,6 +488,48 @@ function AuthScreen({ onAuth }) {
         }
       }
     } catch(e) { setErr(e.message||"Errore di connessione"); }
+    setLoading(false);
+  }
+
+  async function verifyOtp() {
+    if (!otpCode.trim()) { setErr("Inserisci il codice ricevuto via email"); return; }
+    setLoading(true); setErr("");
+    try {
+      const res = await sbVerifyOtp(email, otpCode.trim(), "signup");
+      if (res && res.access_token) {
+        const tok    = res.access_token;
+        const userId = res.user.id;
+        const pendingRef = localStorage.getItem("pending_ref");
+        const pendingExpires = localStorage.getItem("pending_ref_expires");
+        let uplineId = null;
+        if (pendingRef && pendingExpires && Date.now() < Number(pendingExpires)) {
+          const profiles = await sbGetProfileByRef(tok, pendingRef);
+          if (profiles && profiles.length > 0) uplineId = profiles[0].id;
+        }
+        localStorage.removeItem("pending_ref");
+        localStorage.removeItem("pending_ref_expires");
+        let profile = await sbGetProfile(tok, userId);
+        if (!profile || profile.length === 0) {
+          await sbCreateProfile(tok, { id:userId, email, nome:nome.trim(), cognome:cognome.trim(), upline_id:uplineId, positioned_under:uplineId });
+          profile = await sbGetProfile(tok, userId);
+        }
+        const authData = { token:tok, userId, email, profile:profile?.[0]||null };
+        if (remember) localStorage.setItem("becrm_session", JSON.stringify(authData));
+        onAuth(authData);
+      } else {
+        setErr("Codice non valido");
+      }
+    } catch(e) { setErr(e.message||"Codice non valido o scaduto — prova a rinviarlo"); }
+    setLoading(false);
+  }
+
+  async function resendOtp() {
+    setLoading(true); setErr("");
+    try {
+      await sbResendOtp(email, "signup");
+      setOtpResent(true);
+      setTimeout(()=>setOtpResent(false), 5000);
+    } catch(e) { setErr(e.message||"Errore nel reinvio"); }
     setLoading(false);
   }
 
@@ -517,7 +562,7 @@ function AuthScreen({ onAuth }) {
           <div style={{fontWeight:900,fontSize:20,color:"var(--text)",letterSpacing:-0.5}}>Digital Legacy CRM</div>
         </div>
         <div style={{display:"flex",background:"var(--bg3)",borderRadius:10,padding:4,marginBottom:24,border:"1px solid var(--border)"}}>
-          {mode!=="forgot" && mode!=="reset" && ["login","signup"].map(m=>(
+          {mode!=="forgot" && mode!=="reset" && mode!=="verify-otp" && ["login","signup"].map(m=>(
             <button key={m} onClick={()=>{setMode(m);setErr("");}} className="tabbtn"
               style={{flex:1,background:mode===m?"var(--bg4)":"transparent",color:mode===m?"var(--a2)":"var(--muted)",boxShadow:mode===m?"inset 0 0 0 1px var(--sidebar-border)":"none"}}>
               {m==="login"?"Accedi":"Registrati"}
@@ -525,9 +570,36 @@ function AuthScreen({ onAuth }) {
           ))}
           {mode==="forgot" && <div style={{flex:1,textAlign:"center",padding:"7px 0",fontSize:12,fontWeight:700,color:"var(--a2)"}}>Recupera password</div>}
           {mode==="reset" && <div style={{flex:1,textAlign:"center",padding:"7px 0",fontSize:12,fontWeight:700,color:"var(--a2)"}}>Nuova password</div>}
+          {mode==="verify-otp" && <div style={{flex:1,textAlign:"center",padding:"7px 0",fontSize:12,fontWeight:700,color:"var(--a2)"}}>Conferma email</div>}
         </div>
 
-        {mode==="reset" ? (
+        {mode==="verify-otp" ? (
+          <>
+            <div style={{fontSize:13,color:"var(--text)",marginBottom:18,lineHeight:1.6,textAlign:"center"}}>
+              Ti abbiamo mandato un codice a 6 cifre a <b>{email}</b>.<br/>Controlla anche lo spam, e inseriscilo qui sotto.
+            </div>
+            <div style={{marginBottom:16}}>
+              <label style={{fontSize:11,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"}}>Codice</label>
+              <input value={otpCode} onChange={e=>setOtpCode(e.target.value.replace(/\D/g,"").slice(0,6))} placeholder="123456" inputMode="numeric" maxLength={6}
+                style={{textAlign:"center",fontSize:22,letterSpacing:8,fontWeight:800}} onKeyDown={e=>e.key==="Enter"&&verifyOtp()} />
+            </div>
+            {err && <div style={{background:"#ef444415",border:"1px solid #ef444435",borderRadius:9,padding:"9px 13px",fontSize:12,color:"#f87171",marginBottom:14,lineHeight:1.5}}>{err}</div>}
+            <button onClick={verifyOtp} disabled={loading}
+              style={{width:"100%",padding:"11px",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:10,cursor:loading?"not-allowed":"pointer",fontWeight:800,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8,opacity:loading?0.7:1}}>
+              {loading && <span className="spinner" />}
+              Conferma
+            </button>
+            <div style={{textAlign:"center",marginTop:16,fontSize:11,color:"var(--muted)"}}>
+              {otpResent
+                ? <span style={{color:"#10b981",fontWeight:700}}>Codice rinviato ✓</span>
+                : <span onClick={resendOtp} style={{color:"var(--a2)",cursor:"pointer",fontWeight:700}}>Non hai ricevuto il codice? Rinvia</span>
+              }
+            </div>
+            <div style={{textAlign:"center",marginTop:10,fontSize:11,color:"var(--muted)"}}>
+              <span onClick={()=>{setMode("login");setErr("");setOtpCode("");}} style={{color:"var(--muted)",cursor:"pointer"}}> Torna al login</span>
+            </div>
+          </>
+        ) : mode==="reset" ? (
           resetOk ? (
             <div style={{textAlign:"center"}}>
               <div style={{fontSize:13,color:"var(--text)",marginBottom:18,lineHeight:1.6}}>Password aggiornata! Ora puoi accedere con quella nuova.</div>
