@@ -580,8 +580,8 @@ function AuthScreen({ onAuth }) {
             </div>
             <div style={{marginBottom:16}}>
               <label style={{fontSize:11,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"}}>Codice</label>
-              <input value={otpCode} onChange={e=>setOtpCode(e.target.value.replace(/\D/g,"").slice(0,6))} placeholder="123456" inputMode="numeric" maxLength={6}
-                style={{textAlign:"center",fontSize:22,letterSpacing:8,fontWeight:800}} onKeyDown={e=>e.key==="Enter"&&verifyOtp()} />
+              <input value={otpCode} onChange={e=>setOtpCode(e.target.value.replace(/\D/g,"").slice(0,8))} placeholder="12345678" inputMode="numeric" maxLength={8}
+                style={{textAlign:"center",fontSize:20,letterSpacing:6,fontWeight:800}} onKeyDown={e=>e.key==="Enter"&&verifyOtp()} />
             </div>
             {err && <div style={{background:"#ef444415",border:"1px solid #ef444435",borderRadius:9,padding:"9px 13px",fontSize:12,color:"#f87171",marginBottom:14,lineHeight:1.5}}>{err}</div>}
             <button onClick={verifyOtp} disabled={loading}
