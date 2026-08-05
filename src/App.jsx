@@ -4,6 +4,7 @@ import { TeamView } from "./components/Team";
 import { ProfiloView } from "./components/Profilo";
 import { ListaNomiView } from "./components/ListaNomi";
 import { EventiView } from "./components/Eventi";
+import { SfidaView } from "./components/Sfida";
 import { PlanView } from "./components/Plan";
 
 const SB_URL = "https://gyxvhnwzkhjrgpqvakfw.supabase.co";
@@ -87,6 +88,8 @@ const sbListEventi       = (tok)            => sbFetch("/rest/v1/eventi?select=*
 const sbInsertEvento     = (tok, row)       => sbFetch("/rest/v1/eventi", { method:"POST", _token:tok, body:JSON.stringify(row) });
 const sbDeleteEvento     = (tok, id)        => sbFetch("/rest/v1/eventi?id=eq."+id, { method:"DELETE", _token:tok });
 const sbListEventoPersone = (tok, eventoId) => sbFetch("/rest/v1/evento_persone?select=*"+(eventoId?("&evento_id=eq."+eventoId):""), { _token:tok });
+const sbGetSfidaTicket    = (tok, eventoId) => sbFetch("/rest/v1/rpc/get_sfida_classifica_ticket", { method:"POST", _token:tok, body:JSON.stringify({ p_evento_id:eventoId }) });
+const sbGetSfidaIscrizioni = (tok, start, end) => sbFetch("/rest/v1/rpc/get_sfida_classifica_iscrizioni", { method:"POST", _token:tok, body:JSON.stringify({ p_start:start, p_end:end }) });
 const sbInsertEventoPersona = (tok, row)    => sbFetch("/rest/v1/evento_persone", { method:"POST", _token:tok, body:JSON.stringify(row) });
 const sbUpdateEventoPersona = (tok, id, row) => sbFetch("/rest/v1/evento_persone?id=eq."+id, { method:"PATCH", _token:tok, body:JSON.stringify(row) });
 const sbDeleteEventoPersona = (tok, id)     => sbFetch("/rest/v1/evento_persone?id=eq."+id, { method:"DELETE", _token:tok });
@@ -1331,6 +1334,7 @@ export default function App() {
           sbListEventoStatus={sbListEventoStatus} sbUpsertEventoStatus={sbUpsertEventoStatus}
           sbListEventoPersone={sbListEventoPersone} sbInsertEventoPersona={sbInsertEventoPersona} sbUpdateEventoPersona={sbUpdateEventoPersona} sbDeleteEventoPersona={sbDeleteEventoPersona}
           onTicketCountChange={setTicketVendutiCount} />}
+        {view==="sfida"   && <SfidaView auth={auth} eventi={eventi} sbGetSfidaTicket={sbGetSfidaTicket} sbGetSfidaIscrizioni={sbGetSfidaIscrizioni} showToast={showToast} />}
         {view==="plan"    && <PlanView auth={auth} downline={downline} positions={positions} dlProspects={dlProspects} isLeader={!!auth.profile?.is_leader}
           sbListEventi={sbListEventi} sbListEventoStatus={sbListEventoStatus} sbGetPiano={sbGetPiano} sbSetPiano={sbSetPiano} showToast={showToast} />}
         {view==="profilo" && <ProfiloView auth={auth} onUpdateProfile={updateProfile} downlineCount={downline.length} showToast={showToast} onUpdateRinnovo={updateRinnovo} />}
@@ -1344,6 +1348,7 @@ export default function App() {
           {id:"team",label:"Team",badge:downline.length||0},
           {id:"nomi",label:"Lista"},
           {id:"eventi",label:"Eventi"},
+          {id:"sfida",label:"Sfida"},
           {id:"profilo",label:"Profilo"},
         ].map(item=>{
           const active=view===item.id;
@@ -1386,6 +1391,7 @@ function Sidebar({ view, setView, data, urgenti, onAdd, onExport, auth, onLogout
     { id:"team",    icon:"", label:"Team", badge:downlineCount||0 },
     { id:"nomi",    icon:"", label:"Lista Nomi" },
     { id:"eventi",  icon:"", label:"Eventi" },
+    { id:"sfida",   icon:"", label:"La Sfida" },
     { id:"plan",    icon:"", label:"Plan" },
     { id:"profilo", icon:"", label:"Profilo" },
   ];
