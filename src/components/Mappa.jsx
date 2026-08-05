@@ -102,6 +102,20 @@ const CITTA_COORDS = {
   "BAGHERIA":[13.5,38.08],"CALTAGIRONE":[14.52,37.24],"MODICA":[14.77,36.85],"VITTORIA":[14.53,36.95],
   "MILAZZO":[15.24,38.22],"BARCELLONA POZZO DI GOTTO":[15.22,38.15],
   "QUARTU SANT'ELENA":[9.22,39.24],"ALGHERO":[8.32,40.56],"CARBONIA":[8.52,39.17],"IGLESIAS":[8.53,39.31],
+  "ORTE":[12.38,42.46],"TEVEROLA":[14.15,40.98],"FALCONE":[15.15,38.1],"ACQUI TERME":[8.47,44.68],
+  "NICHELINO":[7.65,45.0],"DOMODOSSOLA":[8.29,46.11],"SUSTINENTE":[11.05,45.06],
+  "MONCALIERI":[7.68,45.0],"GRUGLIASCO":[7.58,45.07],"COLLEGNO":[7.58,45.08],"RIVOLI":[7.52,45.07],
+  "SETTIMO TORINESE":[7.77,45.14],"CHIERI":[7.82,45.02],"PINEROLO":[7.33,44.89],
+  "CASALE MONFERRATO":[8.45,45.14],"NOVI LIGURE":[8.79,44.76],"TORTONA":[8.86,44.9],
+  "CHIVASSO":[7.88,45.19],"CARMAGNOLA":[7.72,44.85],
+  "CINISELLO":[9.22,45.55],"PADERNO DUGNANO":[9.17,45.57],"COLOGNO MONZESE":[9.28,45.53],
+  "CORSICO":[9.09,45.44],"SAN DONATO MILANESE":[9.27,45.42],"ROZZANO":[9.15,45.38],
+  "ORTE":[12.38,42.46],"TEVEROLA":[14.15,40.98],"FALCONE":[15.15,38.1],"ACQUI TERME":[8.47,44.68],
+  "NICHELINO":[7.65,45.0],"DOMODOSSOLA":[8.29,46.11],"SUSTINENTE":[11.06,45.09],
+  "SETTIMO TORINESE":[7.77,45.14],"MONCALIERI":[7.68,45.0],"RIVOLI":[7.52,45.07],"COLLEGNO":[7.58,45.08],
+  "GRUGLIASCO":[7.58,45.07],"CHIVASSO":[8.02,45.19],"PINEROLO":[7.33,44.89],
+  "PADERNO DUGNANO":[9.17,45.57],"CORSICO":[9.11,45.43],"CESANO MADERNO":[9.14,45.63],
+  "CASTELLANZA":[8.9,45.63],"SARONNO":[9.04,45.63],"CANTU":[9.13,45.74],"CANTÙ":[9.13,45.74],
 };
 function normCitta(raw) {
   if (!raw) return "";
@@ -113,9 +127,18 @@ function normCitta(raw) {
   s = s.replace(/\s+/g," ");
   return s;
 }
+const REGIONI_CAPOLUOGO = {
+  "PIEMONTE":"TORINO","VALLE D'AOSTA":"AOSTA","VALLE DAOSTA":"AOSTA","LOMBARDIA":"MILANO",
+  "TRENTINO":"TRENTO","TRENTINO ALTO ADIGE":"TRENTO","VENETO":"VENEZIA","FRIULI":"TRIESTE",
+  "FRIULI VENEZIA GIULIA":"TRIESTE","LIGURIA":"GENOVA","EMILIA ROMAGNA":"BOLOGNA","EMILIA":"BOLOGNA",
+  "TOSCANA":"FIRENZE","UMBRIA":"PERUGIA","MARCHE":"ANCONA","LAZIO":"ROMA","ABRUZZO":"L'AQUILA",
+  "MOLISE":"CAMPOBASSO","CAMPANIA":"NAPOLI","PUGLIA":"BARI","BASILICATA":"POTENZA",
+  "CALABRIA":"CATANZARO","SICILIA":"PALERMO","SARDEGNA":"CAGLIARI",
+};
 function coordOf(rawCitta) {
   const n = normCitta(rawCitta);
   if (CITTA_COORDS[n]) return CITTA_COORDS[n];
+  if (REGIONI_CAPOLUOGO[n]) return CITTA_COORDS[REGIONI_CAPOLUOGO[n]];
   // prova solo la prima parola (es. "Milano Loreto" -> "Milano")
   const first = n.split(" ")[0];
   if (CITTA_COORDS[first]) return CITTA_COORDS[first];
@@ -130,14 +153,20 @@ const LAYERS = {
 
 function aggregaPerCitta(rows) {
   // rows: [{citta,cnt}] con nomi grezzi dal DB -> raggruppa per città NORMALIZZATA e trova coordinate
-  const acc = {}; const nonRiconosciute = [];
+  const acc = {}; const nonRicMap = {};
   (rows||[]).forEach(r => {
     const coord = coordOf(r.citta);
-    if (!coord) { nonRiconosciute.push(r.citta+" ("+r.cnt+")"); return; }
+    if (!coord) {
+      const key = normCitta(r.citta);
+      if (!nonRicMap[key]) nonRicMap[key] = { label:(r.citta||"").trim(), cnt:0 };
+      nonRicMap[key].cnt += Number(r.cnt)||0;
+      return;
+    }
     const key = coord.join(",");
     if (!acc[key]) acc[key] = { coord, citta:r.citta, cnt:0 };
     acc[key].cnt += Number(r.cnt)||0;
   });
+  const nonRiconosciute = Object.values(nonRicMap).map(x => x.label+" ("+x.cnt+")");
   return { punti: Object.values(acc), nonRiconosciute };
 }
 
