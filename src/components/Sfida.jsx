@@ -124,7 +124,7 @@ export function SfidaView({ auth, eventi, sbGetSfidaTicket, sbGetSfidaIscrizioni
             </div>
           </div>
           <Podio righe={classificaTicket} unita={{key:"ticket_venduti",label:"ticket"}} colore="#f59e0b" loading={loadingT} />
-          {mieePosizioneTicket === -1 && !loadingT && (
+          {miePosizioneTicket === -1 && !loadingT && (
             <div style={{ padding: "10px 18px", fontSize: 11, color: "var(--muted)", borderTop: "1px solid #0d1b3355", textAlign: "center" }}>Non sei ancora in top 10 — continua a vendere per entrarci</div>
           )}
         </div>
