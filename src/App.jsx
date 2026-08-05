@@ -107,6 +107,7 @@ function toApp(r) {
     checklist:r.checklist||{kyc:false,pandadoc:false,click:false},
     interesse:r.interesse||"", statoColore:r.stato_colore||"",
     rinnovoTipo:r.rinnovo_tipo||"", rinnovoScadenza:r.rinnovo_scadenza||"", attivo:r.attivo!==false,
+    ticketEventoId:r.ticket_evento_id||"",
   };
 }
 function toDB(p, uid) {
@@ -119,6 +120,7 @@ function toDB(p, uid) {
     checklist:p.checklist||{kyc:false,pandadoc:false,click:false},
     interesse:p.interesse||null, stato_colore:p.statoColore||null,
     rinnovo_tipo:p.rinnovoTipo||null, rinnovo_scadenza:p.rinnovoScadenza||null, attivo:p.attivo!==false,
+    ticket_evento_id:p.ticketEventoId||null,
   };
 }
 
@@ -730,6 +732,7 @@ export default function App() {
   const [saving, setSaving]       = useState(false);
   const [downline, setDownline]   = useState([]);
   const [clienti, setClienti]     = useState([]);
+  const [eventi, setEventi]       = useState([]);
   const [allProfiles, setAllProfiles] = useState([]);
   const [showEventoReminder, setShowEventoReminder] = useState(false);
   const [ticketVendutiCount, setTicketVendutiCount] = useState(0);
@@ -808,6 +811,10 @@ export default function App() {
         const cl = await sbGetClienti(auth.token);
         setClienti((cl||[]).map(r=>({id:r.id,nome:r.nome,cognome:r.cognome||"",citta:r.citta||"",positionedUnder:r.positioned_under,rinnovoTipo:r.rinnovo_tipo||"",rinnovoScadenza:r.rinnovo_scadenza||"",attivo:r.attivo!==false,team:r.team||""})));
       } catch(e) { /* tabella clienti non ancora creata o errore permessi: non bloccare il resto */ }
+      try {
+        const ev = await sbListEventi(auth.token);
+        setEventi(ev||[]);
+      } catch(e) { /* non bloccare il resto se fallisce */ }
       if (mine.length > 0) {
         const uids = mine.map(p => p.id);
         const dp = await sbGetDownlineProspects(auth.token, uids);
@@ -1021,6 +1028,19 @@ export default function App() {
       if (data.find(x=>x.id===id)) setData(d=>d.map(x=>x.id===id?upd:x));
       else setDlProspects(d=>d.map(x=>x.id===id?{...upd,_userId:ownerId,_ownerName:x._ownerName}:x));
       setSel(upd);
+    } catch(e) { showToast("Errore salvataggio","#ef4444"); }
+  }
+
+  async function setTicketEvento(id, eventoId) {
+    const p=data.find(x=>x.id===id)||dlProspects.find(x=>x.id===id); if (!p) return;
+    const ownerId=p._userId||auth.userId;
+    const upd={...p,ticketEventoId:eventoId||""};
+    try {
+      await sbUpdate(auth.token,id,toDB(upd,ownerId));
+      if (data.find(x=>x.id===id)) setData(d=>d.map(x=>x.id===id?upd:x));
+      else setDlProspects(d=>d.map(x=>x.id===id?{...upd,_userId:ownerId,_ownerName:x._ownerName}:x));
+      setSel(upd);
+      showToast(eventoId?"Ticket assegnato ":"Ticket rimosso","#10b981");
     } catch(e) { showToast("Errore salvataggio","#ef4444"); }
   }
 
@@ -1306,7 +1326,7 @@ export default function App() {
         {view==="stats"   && <Statistiche data={data} dlProspects={teamProspects} downline={downline} />}
         {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} clienti={clienti} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onUpdateRinnovo={updateRinnovo} onSetLeader={setLeader} onSetAttivo={setAttivo} onAddCliente={openAddCliente} onUpdateCliente={updateClienteQuick} onDeleteCliente={deleteClienteQuick} LUDOVICO_ID={LUDOVICO_ID} />}
         {view==="nomi"    && <ListaNomiView auth={auth} onInvitaProspect={invitaProspect} />}
-        {view==="eventi"  && <EventiView auth={auth} allProfiles={allProfiles} downline={downline} positions={positions} showToast={showToast}
+        {view==="eventi"  && <EventiView auth={auth} allProfiles={allProfiles} downline={downline} positions={positions} showToast={showToast} data={data} dlProspects={dlProspects} onSetTicketEvento={setTicketEvento}
           sbListEventi={sbListEventi}
           sbListEventoStatus={sbListEventoStatus} sbUpsertEventoStatus={sbUpsertEventoStatus}
           onTicketCountChange={setTicketVendutiCount} />}
@@ -1344,7 +1364,7 @@ export default function App() {
         <div onClick={closeModal} style={{position:"fixed",inset:0,background:"#00000090",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:16,animation:"fadeIn .2s"}}>
           <div className={"pop"} onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:520,maxHeight:"90vh",overflowY:"auto",borderRadius:"16px"}}>
             {modal==="detail"
-              ? <DetailModal p={sel} onEdit={()=>{setForm({...sel});setModal("edit");}} onAdvance={()=>advanceFase(sel)} onFollowUp={()=>moveFase(sel,"FOLLOW_UP")} onNonInt={()=>moveFase(sel,"NON_INT")} onNonPiace={()=>moveFase(sel,"NON_PIACE")} onRiattiva={()=>moveFase(sel,"RIATTIVA")} onClose={closeModal} onUpdateProfilo={pr=>updateProfilo(sel.id,pr)} onUpdateChecklist={cl=>updateChecklist(sel.id,cl)} onDeleteStorico={fase=>deleteStorico(sel.id,fase)} onUpdateStoricoData={(fase,data,newFase,newStorico)=>updateStoricoData(sel.id,fase,data,newFase,newStorico)} onSetStatoColore={v=>setStatoColore(sel.id,v)} />
+              ? <DetailModal p={sel} onEdit={()=>{setForm({...sel});setModal("edit");}} onAdvance={()=>advanceFase(sel)} onFollowUp={()=>moveFase(sel,"FOLLOW_UP")} onNonInt={()=>moveFase(sel,"NON_INT")} onNonPiace={()=>moveFase(sel,"NON_PIACE")} onRiattiva={()=>moveFase(sel,"RIATTIVA")} onClose={closeModal} onUpdateProfilo={pr=>updateProfilo(sel.id,pr)} onUpdateChecklist={cl=>updateChecklist(sel.id,cl)} onDeleteStorico={fase=>deleteStorico(sel.id,fase)} onUpdateStoricoData={(fase,data,newFase,newStorico)=>updateStoricoData(sel.id,fase,data,newFase,newStorico)} onSetStatoColore={v=>setStatoColore(sel.id,v)} eventi={eventi} onSetTicketEvento={eid=>setTicketEvento(sel.id,eid)} />
               : modal==="cliente"
               ? <ClienteQuickModal form={form} setForm={setForm} onSave={saveClienteQuick} onClose={closeModal} isLeader={!!auth.profile?.is_leader || auth.userId===LUDOVICO_ID} downline={downline} saving={saving} />
               : <FormModal form={form} setForm={setForm} onSave={saveForm} onClose={closeModal} onDelete={modal==="edit"?()=>deleteProp(form.id):null} isEdit={modal==="edit"} isLeader={!!auth.profile?.is_leader || auth.userId===LUDOVICO_ID} downline={downline} />
@@ -2139,7 +2159,7 @@ function ProfilazioneTab({ p, onUpdateProfilo }) {
 }
 
 //  DETAIL MODAL 
-function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onNonPiace, onRiattiva, onClose, onUpdateProfilo, onUpdateChecklist, onDeleteStorico, onUpdateStoricoData, onSetStatoColore }) {
+function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onNonPiace, onRiattiva, onClose, onUpdateProfilo, onUpdateChecklist, onDeleteStorico, onUpdateStoricoData, onSetStatoColore, eventi, onSetTicketEvento }) {
   const [activeTab,setActiveTab]=useState("dettagli");
   const [stepPopup, setStepPopup]=useState(null); // {fase, date}
   const [stepDate, setStepDate]=useState("");
@@ -2278,6 +2298,15 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onNonPiace, o
                 </div>
               );
             })()}
+            {eventi&&eventi.length>0&&(
+              <div style={{...box,gridColumn:"1/-1",background:p.ticketEventoId?"#f59e0b12":"var(--bg3)",border:p.ticketEventoId?"1px solid #f59e0b30":"1px solid var(--border2)"}}>
+                <div style={lbl}> Ticket evento</div>
+                <select value={p.ticketEventoId||""} onChange={e=>onSetTicketEvento(e.target.value||null)} style={{marginTop:6,fontSize:12,padding:"7px 10px"}}>
+                  <option value="">Nessun ticket</option>
+                  {eventi.map(ev=><option key={ev.id} value={ev.id}>{ev.nome}</option>)}
+                </select>
+              </div>
+            )}
           </div>
           {storico.length>0&&(<div style={{...box,marginBottom:9}}><div style={lbl}> Storico percorso</div><div style={{display:"flex",flexDirection:"column",gap:6,marginTop:8}}>{storico.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:9}}><span style={{width:8,height:8,borderRadius:99,background:FASE_CLR[s.fase],flexShrink:0,boxShadow:"0 0 6px "+FASE_CLR[s.fase]+"70"}}/><span style={{fontSize:12.5,fontWeight:700,color:"var(--text)",minWidth:64}}>{FASE_LABEL[s.fase]}</span><input type="date" defaultValue={s.data} onBlur={e=>{if(e.target.value&&e.target.value!==s.data)onUpdateStoricoData(s.fase,e.target.value);}} style={{fontSize:11,padding:"2px 6px",width:"auto",minWidth:0,background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:6,color:"var(--muted)",cursor:"pointer"}}/><span style={{fontSize:10,color:"var(--muted)",marginLeft:"auto"}}>Ciclo {cicloOfDate(s.data)||"\u2014"}</span>{storico.length>1&&<button onClick={()=>onDeleteStorico(s.fase)} style={{background:"#ef444415",border:"1px solid #ef444430",borderRadius:6,color:"#f87171",cursor:"pointer",fontSize:11,fontWeight:800,padding:"2px 7px",marginLeft:4,lineHeight:1}}>x</button>}</div>))}</div></div>)}
           {p.note&&<div style={{...box,marginBottom:9}}><div style={lbl}> Note</div><p style={{color:"var(--text)",lineHeight:1.6,fontSize:13,marginTop:4}}>{p.note}</p></div>}

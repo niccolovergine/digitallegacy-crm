@@ -8,7 +8,7 @@ function Av({ n, c, color = "var(--a1)", size = 34 }) {
   );
 }
 
-export function EventiView({ auth, allProfiles, downline, positions, showToast,
+export function EventiView({ auth, allProfiles, downline, positions, showToast, data, dlProspects, onSetTicketEvento,
   sbListEventi,
   sbListEventoStatus, sbUpsertEventoStatus,
   onTicketCountChange }) {
@@ -108,6 +108,35 @@ export function EventiView({ auth, allProfiles, downline, positions, showToast,
   }, [logisticaStats.sedute]);
 
   const evCorrente = eventi.find(e => e.id === eventoAttivo);
+
+  // ---- Biglietti venduti (dettaglio) — prospect con ticket_evento_id = evento attivo ----
+  const [ticketSearch, setTicketSearch] = useState("");
+  const [ticketMarketer, setTicketMarketer] = useState("");
+
+  const bigliettiDettaglio = useMemo(() => {
+    const all = [...(data||[]).map(p=>({...p,_userId:auth.userId})), ...(dlProspects||[])];
+    return all.filter(p => p.ticketEventoId === eventoAttivo);
+  }, [data, dlProspects, eventoAttivo, auth.userId]);
+
+  const marketerOptions = useMemo(() => {
+    const ids = [...new Set(bigliettiDettaglio.map(p=>p._userId))];
+    return ids.map(id => {
+      if (id===auth.userId) return {id, label:"Tu"};
+      const m = downline.find(d=>d.id===id);
+      return {id, label: m ? (m.nome||m.email)+" "+(m.cognome||"") : "Sconosciuto"};
+    });
+  }, [bigliettiDettaglio, downline, auth.userId]);
+
+  const bigliettiFiltrati = useMemo(() => {
+    let list = bigliettiDettaglio;
+    if (ticketMarketer) list = list.filter(p=>p._userId===ticketMarketer);
+    if (ticketSearch.trim()) {
+      const q = ticketSearch.trim().toLowerCase();
+      list = list.filter(p => (p.nome||"").toLowerCase().includes(q) || (p.cognome||"").toLowerCase().includes(q) || (p.citta||"").toLowerCase().includes(q));
+    }
+    return list;
+  }, [bigliettiDettaglio, ticketMarketer, ticketSearch]);
+
 
   return (
     <div style={{ padding: "2rem 2.2rem", maxWidth: 1280, margin: "0 auto" }}>
@@ -232,6 +261,57 @@ export function EventiView({ auth, allProfiles, downline, positions, showToast,
                   </tbody>
                 </table>
               </div>
+            </div>
+          )}
+
+          {/* Biglietti venduti — dettaglio prospect */}
+          {evCorrente && (
+            <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: "1.4rem", marginTop: 18 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text)" }}>Biglietti venduti {"\u2014"} dettaglio</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{bigliettiFiltrati.length} {bigliettiFiltrati.length===1?"persona":"persone"} con ticket per {evCorrente.nome}</div>
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <input value={ticketSearch} onChange={e=>setTicketSearch(e.target.value)} placeholder="Cerca nome, cognome, città..." style={{ width: 220, fontSize: 12, padding: "7px 11px", background: "var(--bg3)", border: "1px solid var(--border2)", borderRadius: 8, color: "var(--text)" }} />
+                  <select value={ticketMarketer} onChange={e=>setTicketMarketer(e.target.value)} style={{ width: "auto", minWidth: 160, fontSize: 12, padding: "7px 11px" }}>
+                    <option value="">Tutti i marketer</option>
+                    {marketerOptions.map(m=><option key={m.id} value={m.id}>{m.label}</option>)}
+                  </select>
+                </div>
+              </div>
+              {bigliettiFiltrati.length===0
+                ? <div style={{ padding: "2.4rem", textAlign: "center", color: "var(--border2)", fontSize: 13 }}>Nessun biglietto assegnato {ticketSearch||ticketMarketer?"con questi filtri":"ancora per questo evento"}</div>
+                : <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 680 }}>
+                    <thead>
+                      <tr style={{ borderBottom: "1px solid #11203a" }}>
+                        {["Nome","Cognome","Città","Marketer"].map(h => (
+                          <th key={h} style={{ textAlign: "left", color: "var(--muted)", fontWeight: 700, fontSize: 10, textTransform: "uppercase", padding: "10px 14px", whiteSpace: "nowrap" }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bigliettiFiltrati.map(p => {
+                        const marketer = marketerOptions.find(m=>m.id===p._userId);
+                        return (
+                          <tr key={p.id} style={{ borderBottom: "1px solid #0d1b3355" }}>
+                            <td style={{ padding: "10px 14px" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                                <Av n={p.nome} c={p.cognome} color="#f59e0b" size={28} />
+                                <span style={{ fontWeight: 700, fontSize: 13, color: "var(--text)" }}>{p.nome}</span>
+                              </div>
+                            </td>
+                            <td style={{ padding: "10px 14px", fontSize: 13, color: "var(--text)" }}>{p.cognome||"\u2014"}</td>
+                            <td style={{ padding: "10px 14px", fontSize: 13, color: "var(--text)" }}>{p.citta||"\u2014"}</td>
+                            <td style={{ padding: "10px 14px", fontSize: 12, color: "var(--muted)" }}>{marketer?.label||"\u2014"}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              }
             </div>
           )}
         </>
