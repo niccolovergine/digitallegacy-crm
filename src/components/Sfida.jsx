@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 
-const SFIDA_START = "2026-08-01";
+const SFIDA_START = "2026-06-20"; // inizio ciclo 79 (il ciclo scorso), così prende anche quei dati
 const SFIDA_END   = "2026-09-06";
 
 function Av({ n, c, color = "var(--a1)", size = 34 }) {
@@ -132,7 +132,7 @@ export function SfidaView({ auth, eventi, sbGetSfidaTicket, sbGetSfidaIscrizioni
         <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden" }}>
           <div style={{ padding: "1.2rem 1.4rem", borderBottom: "1px solid #11203a" }}>
             <div style={{ fontSize: 14, fontWeight: 800, color: "var(--text)" }}> Top 10 — Punti da iscrizioni</div>
-            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>CV dei pacchetti venduti personalmente, dal 1° agosto al 6 settembre</div>
+            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>CV dei pacchetti venduti personalmente, dal 20 giugno (ciclo 79) al 6 settembre</div>
           </div>
           <Podio righe={classificaIscrizioni} unita={{key:"punti",label:"pt"}} colore="#8b5cf6" loading={loadingI} />
           {mieePosizioneIscrizioni === -1 && !loadingI && (
