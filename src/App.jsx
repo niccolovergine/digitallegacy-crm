@@ -5,6 +5,7 @@ import { ProfiloView } from "./components/Profilo";
 import { ListaNomiView } from "./components/ListaNomi";
 import { EventiView } from "./components/Eventi";
 import { SfidaView } from "./components/Sfida";
+import { MappaSezione } from "./components/Mappa";
 import { PlanView } from "./components/Plan";
 
 const SB_URL = "https://gyxvhnwzkhjrgpqvakfw.supabase.co";
@@ -90,6 +91,9 @@ const sbDeleteEvento     = (tok, id)        => sbFetch("/rest/v1/eventi?id=eq."+
 const sbListEventoPersone = (tok, eventoId) => sbFetch("/rest/v1/evento_persone?select=*"+(eventoId?("&evento_id=eq."+eventoId):""), { _token:tok });
 const sbGetSfidaTicket    = (tok, eventoId) => sbFetch("/rest/v1/rpc/get_sfida_classifica_ticket", { method:"POST", _token:tok, body:JSON.stringify({ p_evento_id:eventoId }) });
 const sbGetSfidaIscrizioni = (tok, start, end) => sbFetch("/rest/v1/rpc/get_sfida_classifica_iscrizioni", { method:"POST", _token:tok, body:JSON.stringify({ p_start:start, p_end:end }) });
+const sbGetMappaAttivi     = (tok)             => sbFetch("/rest/v1/rpc/get_mappa_attivi", { method:"POST", _token:tok, body:JSON.stringify({}) });
+const sbGetMappaTicket     = (tok, eventoId)   => sbFetch("/rest/v1/rpc/get_mappa_ticket", { method:"POST", _token:tok, body:JSON.stringify({ p_evento_id:eventoId }) });
+const sbGetMappaIscrizioni = (tok, start, end) => sbFetch("/rest/v1/rpc/get_mappa_iscrizioni", { method:"POST", _token:tok, body:JSON.stringify({ p_start:start, p_end:end }) });
 const sbInsertEventoPersona = (tok, row)    => sbFetch("/rest/v1/evento_persone", { method:"POST", _token:tok, body:JSON.stringify(row) });
 const sbUpdateEventoPersona = (tok, id, row) => sbFetch("/rest/v1/evento_persone?id=eq."+id, { method:"PATCH", _token:tok, body:JSON.stringify(row) });
 const sbDeleteEventoPersona = (tok, id)     => sbFetch("/rest/v1/evento_persone?id=eq."+id, { method:"DELETE", _token:tok });
@@ -216,6 +220,9 @@ const CICLO_CORRENTE = (() => {
   return CICLI[CICLI.length-1][0];
 })();
 const CICLO_NUMS = CICLI.map(r=>r[0]).sort((a,b)=>b-a);
+const CICLO_CORRENTE_DATE = CICLI.find(r=>r[0]===CICLO_CORRENTE) || CICLI[CICLI.length-1];
+const CICLO_CORRENTE_INIZIO = CICLO_CORRENTE_DATE[1];
+const CICLO_CORRENTE_FINE   = CICLO_CORRENTE_DATE[2];
 
 function cicloOfDate(d) { if (!d) return null; for (const [c,s,e] of CICLI) if (d>=s && d<e) return c; return null; }
 function cicloLabel(c) {
@@ -1335,6 +1342,8 @@ export default function App() {
           sbListEventoPersone={sbListEventoPersone} sbInsertEventoPersona={sbInsertEventoPersona} sbUpdateEventoPersona={sbUpdateEventoPersona} sbDeleteEventoPersona={sbDeleteEventoPersona}
           onTicketCountChange={setTicketVendutiCount} />}
         {view==="sfida"   && <SfidaView auth={auth} eventi={eventi} sbGetSfidaTicket={sbGetSfidaTicket} sbGetSfidaIscrizioni={sbGetSfidaIscrizioni} showToast={showToast} />}
+        {view==="mappa"   && <MappaSezione auth={auth} eventi={eventi} sbGetMappaAttivi={sbGetMappaAttivi} sbGetMappaTicket={sbGetMappaTicket} sbGetMappaIscrizioni={sbGetMappaIscrizioni}
+          sfidaStart={CICLO_CORRENTE_INIZIO} sfidaEnd={CICLO_CORRENTE_FINE} showToast={showToast} />}
         {view==="plan"    && <PlanView auth={auth} downline={downline} positions={positions} dlProspects={dlProspects} isLeader={!!auth.profile?.is_leader}
           sbListEventi={sbListEventi} sbListEventoStatus={sbListEventoStatus} sbGetPiano={sbGetPiano} sbSetPiano={sbSetPiano} showToast={showToast} />}
         {view==="profilo" && <ProfiloView auth={auth} onUpdateProfile={updateProfile} downlineCount={downline.length} showToast={showToast} onUpdateRinnovo={updateRinnovo} />}
@@ -1392,6 +1401,7 @@ function Sidebar({ view, setView, data, urgenti, onAdd, onExport, auth, onLogout
     { id:"nomi",    icon:"", label:"Lista Nomi" },
     { id:"eventi",  icon:"", label:"Eventi" },
     { id:"sfida",   icon:"", label:"La Sfida" },
+    { id:"mappa",   icon:"", label:"Mappa" },
     { id:"plan",    icon:"", label:"Plan" },
     { id:"profilo", icon:"", label:"Profilo" },
   ];
