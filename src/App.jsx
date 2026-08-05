@@ -1329,6 +1329,7 @@ export default function App() {
         {view==="eventi"  && <EventiView auth={auth} allProfiles={allProfiles} downline={downline} positions={positions} showToast={showToast} data={data} dlProspects={dlProspects} onSetTicketEvento={setTicketEvento}
           sbListEventi={sbListEventi}
           sbListEventoStatus={sbListEventoStatus} sbUpsertEventoStatus={sbUpsertEventoStatus}
+          sbListEventoPersone={sbListEventoPersone} sbInsertEventoPersona={sbInsertEventoPersona} sbUpdateEventoPersona={sbUpdateEventoPersona} sbDeleteEventoPersona={sbDeleteEventoPersona}
           onTicketCountChange={setTicketVendutiCount} />}
         {view==="plan"    && <PlanView auth={auth} downline={downline} positions={positions} dlProspects={dlProspects} isLeader={!!auth.profile?.is_leader}
           sbListEventi={sbListEventi} sbListEventoStatus={sbListEventoStatus} sbGetPiano={sbGetPiano} sbSetPiano={sbSetPiano} showToast={showToast} />}

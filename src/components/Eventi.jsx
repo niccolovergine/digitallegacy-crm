@@ -11,17 +11,26 @@ function Av({ n, c, color = "var(--a1)", size = 34 }) {
 export function EventiView({ auth, allProfiles, downline, positions, showToast, data, dlProspects, onSetTicketEvento,
   sbListEventi,
   sbListEventoStatus, sbUpsertEventoStatus,
+  sbListEventoPersone, sbInsertEventoPersona, sbUpdateEventoPersona, sbDeleteEventoPersona,
   onTicketCountChange }) {
 
   const [eventi, setEventi] = useState([]);
   const [eventoAttivo, setEventoAttivo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [statusMembri, setStatusMembri] = useState([]); // righe evento_membri_status per l'evento attivo
+  const [personeEvento, setPersoneEvento] = useState([]); // righe evento_persone (dettaglio extra venduti) per l'evento attivo
+  const [ticketBuyersFor, setTicketBuyersFor] = useState(null); // member id di cui sto gestendo l'elenco acquirenti
+
+  function refreshPersone() {
+    if (!auth || !eventoAttivo || !sbListEventoPersone) return;
+    sbListEventoPersone(auth.token, eventoAttivo).then(rows => setPersoneEvento(rows || [])).catch(() => {});
+  }
 
   useEffect(() => {
     if (!auth || !eventoAttivo || !sbListEventoStatus) { setStatusMembri([]); return; }
     sbListEventoStatus(auth.token, eventoAttivo).then(rows => setStatusMembri(rows || []))
       .catch(() => {});
+    refreshPersone();
   }, [auth, eventoAttivo]);
 
   async function aggiornaStatus(memberId, patch) {
@@ -42,6 +51,36 @@ export function EventiView({ auth, allProfiles, downline, positions, showToast, 
     try {
       await sbUpsertEventoStatus(auth.token, merged);
     } catch (e) { showToast("Errore: " + e.message, "#ef4444"); }
+  }
+
+  async function addPersona(memberId, nome, cognome, citta) {
+    if (!nome?.trim()) { showToast("Inserisci almeno il nome","#ef4444"); return; }
+    const row = { evento_id: eventoAttivo, user_id: memberId, nome: nome.trim(), cognome: (cognome||"").trim(), citta: (citta||"").trim(), confermato: false, categoria: "team" };
+    try {
+      const res = await sbInsertEventoPersona(auth.token, row);
+      const created = Array.isArray(res) ? res[0] : res;
+      setPersoneEvento(p => [...p, created || row]);
+      showToast("Aggiunto ");
+    } catch(e) { showToast("Errore: "+e.message, "#ef4444"); }
+  }
+
+  async function togglePersonaConfermato(personaId, memberId, value) {
+    setPersoneEvento(p => p.map(x => x.id===personaId ? {...x, confermato:value} : x));
+    try {
+      await sbUpdateEventoPersona(auth.token, personaId, { confermato: value });
+      const confermati = personeEvento.filter(x => x.user_id === memberId && (x.id===personaId ? value : x.confermato)).length;
+      await aggiornaStatus(memberId, { ticket_extra_venduti: confermati });
+    } catch(e) { showToast("Errore: "+e.message, "#ef4444"); }
+  }
+
+  async function deletePersona(personaId, memberId) {
+    const prev = personeEvento;
+    setPersoneEvento(p => p.filter(x => x.id!==personaId));
+    try {
+      await sbDeleteEventoPersona(auth.token, personaId);
+      const confermati = prev.filter(x => x.user_id === memberId && x.id!==personaId && x.confermato).length;
+      await aggiornaStatus(memberId, { ticket_extra_venduti: confermati });
+    } catch(e) { showToast("Errore: "+e.message, "#ef4444"); setPersoneEvento(prev); }
   }
 
   useEffect(() => {
@@ -71,6 +110,7 @@ export function EventiView({ auth, allProfiles, downline, positions, showToast, 
     const list = [self, ...downline];
     return list.map(m => {
       const s = statusMembri.find(x => x.user_id === m.id) || {};
+      const mieEntries = personeEvento.filter(x => x.user_id === m.id);
       return {
         id: m.id, nome: m.nome, cognome: m.cognome, leg: getLegForMe(m.id),
         ha_ticket: s.ha_ticket || false,
@@ -78,9 +118,12 @@ export function EventiView({ auth, allProfiles, downline, positions, showToast, 
         ticket_extra_venduti: s.ticket_extra_venduti || 0,
         hotel: s.hotel || false,
         viaggio: s.viaggio || false,
+        entriesCount: mieEntries.length,
+        confermatiCount: mieEntries.filter(x=>x.confermato).length,
+        needsMigration: mieEntries.length===0 && (s.ticket_extra_venduti||0) > 0,
       };
     });
-  }, [auth, downline, positions, statusMembri]);
+  }, [auth, downline, positions, statusMembri, personeEvento]);
 
   const membriFiltrati = useMemo(() =>
     membriEvento.filter(m => !fLegEvento || m.leg === fLegEvento),
@@ -248,7 +291,12 @@ export function EventiView({ auth, allProfiles, downline, positions, showToast, 
                           <input type="number" min="0" value={m.ticket_extra} onChange={e => aggiornaStatus(m.id, { ticket_extra: Math.max(0, Number(e.target.value) || 0) })} style={{ width: 64, fontSize: 12, padding: "5px 8px" }} />
                         </td>
                         <td style={{ padding: "10px 14px" }}>
-                          <input type="number" min="0" value={m.ticket_extra_venduti} onChange={e => aggiornaStatus(m.id, { ticket_extra_venduti: Math.max(0, Number(e.target.value) || 0) })} style={{ width: 64, fontSize: 12, padding: "5px 8px" }} />
+                          <button onClick={()=>setTicketBuyersFor(m.id)}
+                            style={{ display:"flex", alignItems:"center", gap:6, padding: "6px 12px", borderRadius: 8, cursor: "pointer", fontWeight: 800, fontSize: 13, fontFamily:"inherit",
+                              background: m.needsMigration ? "#ef444418" : "var(--bg3)", border: m.needsMigration ? "1px solid #ef444450" : "1px solid var(--border2)", color: m.needsMigration ? "#f87171" : "var(--text)" }}>
+                            {m.confermatiCount}
+                            {m.needsMigration && <span style={{fontSize:10,fontWeight:900}}> {m.ticket_extra_venduti} da completare</span>}
+                          </button>
                         </td>
                         <td style={{ padding: "10px 14px" }}>
                           <input type="checkbox" checked={m.hotel} onChange={e => aggiornaStatus(m.id, { hotel: e.target.checked })} style={{ width: 18, height: 18, cursor: "pointer" }} />
@@ -316,6 +364,81 @@ export function EventiView({ auth, allProfiles, downline, positions, showToast, 
           )}
         </>
       )}
+
+      {ticketBuyersFor && (()=>{
+        const membro = membriEvento.find(m=>m.id===ticketBuyersFor);
+        const entries = personeEvento.filter(x=>x.user_id===ticketBuyersFor);
+        return <TicketBuyersModal membro={membro} entries={entries} evCorrente={evCorrente}
+          onClose={()=>setTicketBuyersFor(null)}
+          onAdd={(nome,cognome,citta)=>addPersona(ticketBuyersFor,nome,cognome,citta)}
+          onToggle={(pid,val)=>togglePersonaConfermato(pid,ticketBuyersFor,val)}
+          onDelete={(pid)=>deletePersona(pid,ticketBuyersFor)} />;
+      })()}
+    </div>
+  );
+}
+
+function TicketBuyersModal({ membro, entries, evCorrente, onClose, onAdd, onToggle, onDelete }) {
+  const [nome, setNome] = useState("");
+  const [cognome, setCognome] = useState("");
+  const [citta, setCitta] = useState("");
+
+  function submit() {
+    if (!nome.trim()) return;
+    onAdd(nome, cognome, citta);
+    setNome(""); setCognome(""); setCitta("");
+  }
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:"#000000cc", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000, padding:20 }} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{ background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:16, padding:"1.6rem", maxWidth:560, width:"100%", maxHeight:"85vh", overflowY:"auto", boxShadow:"0 20px 70px #000000aa" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:4 }}>
+          <div>
+            <h2 style={{ fontWeight:900, fontSize:17, color:"var(--text)" }}>Ticket extra venduti</h2>
+            <div style={{ fontSize:12, color:"var(--muted)", marginTop:2 }}>{membro ? (membro.nome||"")+" "+(membro.cognome||"") : ""} {"\u2014"} {evCorrente?.nome}</div>
+          </div>
+          <button onClick={onClose} style={{ background:"var(--bg4)", color:"#7da8d8", border:"1px solid var(--border2)", borderRadius:8, cursor:"pointer", padding:"4px 10px", fontSize:14 }}></button>
+        </div>
+        <p style={{ fontSize:12, color:"var(--muted)", margin:"10px 0 16px" }}>Aggiungi chi ha comprato un ticket extra da questa persona. Spunta "confermato" solo quando il ticket è stato davvero pagato — solo quelli confermati contano nel totale.</p>
+
+        {membro?.needsMigration && (
+          <div style={{ background:"#ef444415", border:"1px solid #ef444435", borderRadius:9, padding:"9px 13px", fontSize:12, color:"#f87171", marginBottom:14, lineHeight:1.5 }}>
+            Prima avevi segnato <b>{membro.ticket_extra_venduti}</b> ticket venduti senza dettaglio — aggiungili qui sotto uno per uno.
+          </div>
+        )}
+
+        <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:18 }}>
+          {entries.length===0
+            ? <div style={{ textAlign:"center", padding:"1.2rem", color:"var(--border2)", fontSize:12 }}>Nessun acquirente ancora</div>
+            : entries.map(en=>(
+              <div key={en.id} style={{ display:"flex", alignItems:"center", gap:10, background:"var(--bg3)", border:"1px solid var(--border2)", borderRadius:10, padding:"9px 12px" }}>
+                <label style={{ display:"flex", alignItems:"center", cursor:"pointer" }}>
+                  <input type="checkbox" checked={!!en.confermato} onChange={e=>onToggle(en.id, e.target.checked)} style={{ width:17, height:17, cursor:"pointer" }} />
+                </label>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontWeight:700, fontSize:13, color:"var(--text)" }}>{en.nome} {en.cognome||""}</div>
+                  {en.citta && <div style={{ fontSize:11, color:"var(--muted)" }}>{en.citta}</div>}
+                </div>
+                {en.confermato
+                  ? <span style={{ fontSize:10, fontWeight:800, color:"#10b981", background:"#10b98118", padding:"3px 8px", borderRadius:6 }}>CONFERMATO</span>
+                  : <span style={{ fontSize:10, fontWeight:800, color:"#f59e0b", background:"#f59e0b18", padding:"3px 8px", borderRadius:6 }}>DA CONFERMARE</span>
+                }
+                <button onClick={()=>onDelete(en.id)} style={{ background:"#ef444415", border:"1px solid #ef444430", borderRadius:6, color:"#f87171", cursor:"pointer", fontSize:11, fontWeight:800, padding:"4px 8px" }}>Rimuovi</button>
+              </div>
+            ))
+          }
+        </div>
+
+        <div style={{ borderTop:"1px solid var(--border2)", paddingTop:14 }}>
+          <div style={{ fontSize:11, fontWeight:700, color:"var(--muted)", textTransform:"uppercase", letterSpacing:.6, marginBottom:8 }}>Aggiungi acquirente</div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
+            <input value={nome} onChange={e=>setNome(e.target.value)} placeholder="Nome" />
+            <input value={cognome} onChange={e=>setCognome(e.target.value)} placeholder="Cognome" />
+          </div>
+          <input value={citta} onChange={e=>setCitta(e.target.value)} placeholder="Città" style={{ marginBottom:12 }} onKeyDown={e=>e.key==="Enter"&&submit()} />
+          <button onClick={submit} style={{ width:"100%", padding:"10px", background:"linear-gradient(135deg,#10b981,#10b981bb)", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:800, fontSize:13 }}>+ Aggiungi</button>
+        </div>
+      </div>
     </div>
   );
 }
