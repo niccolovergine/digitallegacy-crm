@@ -19,8 +19,7 @@ function cicloLabel(c){const r=CICLI.find(x=>x[0]===Number(c));if(!r)return"Cicl
 function dataByCiclo(arr,c){const r=CICLI.find(x=>x[0]===Number(c));if(!r)return[];return arr.filter(p=>p.conosciutoAt&&p.conosciutoAt>=r[1]&&p.conosciutoAt<r[2]);}
 const fmt=d=>d?new Date(d+"T12:00:00").toLocaleDateString("it-IT"):"\u2014";
 
-const RINNOVO_CV={mensile_60:60,mensile_90:90,semestrale_75:75,semestrale_90:90,annuale_75:75,annuale_90:90};
-const RINNOVO_LABEL={mensile_60:"Mensile (60CV)",mensile_90:"Mensile (90CV)",semestrale_75:"Semestrale (75CV)",semestrale_90:"Semestrale (90CV)",annuale_75:"Annuale (75CV)",annuale_90:"Annuale (90CV)"};
+
 function giorniAlla(dateStr){
   if(!dateStr)return null;
   const oggi=new Date();oggi.setHours(0,0,0,0);
@@ -360,8 +359,9 @@ function TreeCanvas({ memberId, memberNome, memberCognome, memberEmail, allMembe
 
 
 
-export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddManual,positions,onOpenProspect,onPositionInTree,onUpdateRinnovo,onSetLeader,onSetAttivo,onAddCliente,onUpdateCliente,onDeleteCliente,LUDOVICO_ID}){
+export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddManual,positions,onOpenProspect,onPositionInTree,onSetLeader,onSetAttivo,onAddCliente,onUpdateCliente,onDeleteCliente,LUDOVICO_ID}){
   const isRoot = auth.userId === LUDOVICO_ID; // solo il titolare del CRM può nominare i leader, indipendentemente da dove si trova nell'albero
+  const canToggleAttivo = isRoot || !!auth.profile?.is_leader; // i Leader possono disattivare i membri della loro downline
   const[selectedMember,setSelectedMember]=useState(null);
   const[teamFilter,setTeamFilter]=useState("all");
   const[copied,setCopied]=useState(false);
@@ -553,7 +553,7 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddMa
       )}
 
       <div style={{display:"flex",background:"var(--bg3)",borderRadius:10,padding:4,marginBottom:16,border:"1px solid var(--border)"}}>
-        {[{id:"dashboard",label:"Dashboard"},{id:"albero",label:"Albero"},{id:"membri",label:"Membri"},{id:"rinnovi",label:"Rinnovi"}].map(t=>(
+        {[{id:"dashboard",label:"Dashboard"},{id:"albero",label:"Albero"},{id:"membri",label:"Membri"}].map(t=>(
           <button key={t.id} onClick={()=>setActiveTeamTab(t.id)}
             style={{flex:1,padding:"8px 16px",borderRadius:8,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"inherit",transition:"all .2s",background:activeTeamTab===t.id?"var(--bg4)":"transparent",color:activeTeamTab===t.id?"var(--a2)":"var(--muted)",boxShadow:activeTeamTab===t.id?"inset 0 0 0 1px var(--sidebar-border)":"none"}}>
             {t.label}
@@ -688,7 +688,7 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddMa
               :filteredMembers.length===0
               ?<div style={{padding:"3rem",textAlign:"center",color:"var(--border2)"}}><p style={{fontSize:14}}>Nessun membro trovato per "{memberSearch}"</p></div>
               :<table style={{width:"100%",borderCollapse:"collapse"}}>
-                <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Membro","Squadra",...(isRoot?["Leader","Attivo"]:[]),"Prospect","Iscritti","Conv%","BV","Azione",""].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
+                <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Membro","Squadra",...(isRoot?["Leader"]:[]),...(canToggleAttivo?["Attivo"]:[]),"Prospect","Iscritti","Conv%","BV","Azione",""].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
                 <tbody>{filteredMembers.map(m=>{
                   const mP=getMemberProspects(m.id);
                   const ms=teamStats(mP);
@@ -719,9 +719,9 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddMa
                           </label>
                         </td>
                       )}
-                      {isRoot && (
+                      {canToggleAttivo && (
                         <td style={{padding:"12px 16px"}}>
-                          <label style={{display:"inline-flex",alignItems:"center",gap:6,cursor:"pointer"}} title="Se disattivato, il membro resta nell'albero ma viene escluso da Jarvis, rinnovi e conteggi attivi">
+                          <label style={{display:"inline-flex",alignItems:"center",gap:6,cursor:"pointer"}} title="Se disattivato, il membro resta nell'albero ma viene escluso dai conteggi attivi">
                             <input type="checkbox" checked={m.attivo!==false} onChange={e=>onSetAttivo(m.id,e.target.checked)} style={{width:16,height:16,cursor:"pointer"}} />
                             {m.attivo===false && <span style={{fontSize:10,fontWeight:800,color:"#ef4444"}}>Inattivo</span>}
                           </label>
@@ -758,7 +758,7 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddMa
                 {filteredClienti.length===0
                   ? <div style={{padding:"2rem",textAlign:"center",color:"var(--border2)",fontSize:13}}>Nessun cliente in questa vista</div>
                   : <table style={{width:"100%",borderCollapse:"collapse"}}>
-                    <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Cliente","Di chi è","Gamba","Tipo rinnovo","Scadenza","Attivo",""].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
+                    <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Cliente","Di chi è","Gamba","Attivo",""].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
                     <tbody>{filteredClienti.map(c=>{
                       const owner=c.positionedUnder===auth.userId?null:downline.find(d=>d.id===c.positionedUnder);
                       const teamColor=c.team==="sinistra"?"var(--a1)":c.team==="destra"?"#10b981":"#6b7280";
@@ -774,20 +774,6 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddMa
                             </select>
                           </td>
                           <td style={{padding:"12px 16px"}}>
-                            <select value={c.rinnovoTipo||""} onChange={e=>onUpdateCliente(c.id,{rinnovoTipo:e.target.value})} style={{width:"auto",minWidth:120,fontSize:11,padding:"5px 9px",background:"var(--bg3)",border:"1px solid var(--border2)"}}>
-                              <option value="">Non impostato</option>
-                              <option value="mensile_60">Mensile (60CV)</option>
-                              <option value="mensile_90">Mensile (90CV)</option>
-                              <option value="semestrale_75">Semestrale (75CV)</option>
-                              <option value="semestrale_90">Semestrale (90CV)</option>
-                              <option value="annuale_75">Annuale (75CV)</option>
-                              <option value="annuale_90">Annuale (90CV)</option>
-                            </select>
-                          </td>
-                          <td style={{padding:"12px 16px"}}>
-                            <input type="date" value={c.rinnovoScadenza||""} onChange={e=>onUpdateCliente(c.id,{rinnovoScadenza:e.target.value})} style={{fontSize:11,padding:"5px 9px",background:"var(--bg3)",border:"1px solid var(--border2)",color:"var(--text)",borderRadius:7}}/>
-                          </td>
-                          <td style={{padding:"12px 16px"}}>
                             <input type="checkbox" checked={c.attivo!==false} onChange={e=>onUpdateCliente(c.id,{attivo:e.target.checked})} style={{width:16,height:16,cursor:"pointer"}} />
                           </td>
                           <td style={{padding:"12px 16px"}}><button onClick={()=>{if(window.confirm("Rimuovere "+c.nome+"?"))onDeleteCliente(c.id);}} style={{background:"#ef444415",border:"1px solid #ef444430",borderRadius:6,color:"#f87171",cursor:"pointer",fontSize:11,fontWeight:800,padding:"4px 9px"}}>Rimuovi</button></td>
@@ -800,109 +786,6 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddMa
             );
           })()}
 
-          {activeTeamTab==="rinnovi"&&(()=>{
-            const membriAttiviRinnovo=filteredMembersByTeam.filter(m=>m.attivo!==false);
-            const righeMembri=membriAttiviRinnovo.map(m=>({tipo:"membro",id:m.id,nome:m.nome,cognome:m.cognome,email:m.email,ownerLabel:null,rinnovoTipo:m.rinnovo_tipo,rinnovoScadenza:m.rinnovo_scadenza,giorni:giorniAlla(m.rinnovo_scadenza),cv:m.rinnovo_tipo?RINNOVO_CV[m.rinnovo_tipo]||0:0,onChangeTipo:v=>onUpdateRinnovo(m.id,v||null,m.rinnovo_scadenza||null),onChangeData:v=>onUpdateRinnovo(m.id,m.rinnovo_tipo||null,v||null)}));
-            const membriFiltratiIds=new Set(membriAttiviRinnovo.map(m=>m.id));
-            const clientiSub=(dlProspects||[]).filter(p=>p.fase==="SUB"&&p.rinnovoTipo&&p.attivo!==false&&membriFiltratiIds.has(p._userId));
-            const righeClienti=clientiSub.map(p=>{
-              const owner=downline.find(m=>m.id===p._userId);
-              return {tipo:"cliente",id:p.id,nome:p.nome,cognome:p.cognome,ownerLabel:owner?(owner.nome||owner.email)+" "+(owner.cognome||""):"",rinnovoTipo:p.rinnovoTipo,rinnovoScadenza:p.rinnovoScadenza,giorni:giorniAlla(p.rinnovoScadenza),cv:p.rinnovoTipo?RINNOVO_CV[p.rinnovoTipo]||0:0,onChangeTipo:null,onChangeData:null};
-            });
-            const clientiDedicatiFiltrati=(clienti||[]).filter(c=>{
-              if (c.attivo===false||!c.rinnovoTipo) return false;
-              if (teamFilter==="all") return true;
-              if (teamFilter==="nessuna") return !c.team;
-              return c.team===teamFilter;
-            });
-            const righeClientiDedicati=clientiDedicatiFiltrati.map(c=>{
-              const owner=c.positionedUnder===auth.userId?null:downline.find(m=>m.id===c.positionedUnder);
-              return {tipo:"cliente",id:"cl_"+c.id,nome:c.nome,cognome:c.cognome,ownerLabel:owner?(owner.nome||owner.email)+" "+(owner.cognome||""):"Tu",rinnovoTipo:c.rinnovoTipo,rinnovoScadenza:c.rinnovoScadenza,giorni:giorniAlla(c.rinnovoScadenza),cv:c.rinnovoTipo?RINNOVO_CV[c.rinnovoTipo]||0:0,onChangeTipo:v=>onUpdateCliente(c.id,{rinnovoTipo:v}),onChangeData:v=>onUpdateCliente(c.id,{rinnovoScadenza:v}),onDelete:()=>{if(window.confirm("Rimuovere "+c.nome+" "+(c.cognome||"")+"?"))onDeleteCliente(c.id);}};
-            });
-            const righe=[...righeMembri,...righeClienti,...righeClientiDedicati];
-            const conRinnovo=righe.filter(x=>x.rinnovoScadenza);
-            const inScadenza=righe.filter(x=>x.giorni!=null&&x.giorni>=0&&x.giorni<=7);
-            const cvPotenziale=inScadenza.reduce((acc,x)=>acc+x.cv,0);
-            const ordinati=[...righe].sort((a,b)=>{
-              if(a.giorni==null&&b.giorni==null)return 0;
-              if(a.giorni==null)return 1;
-              if(b.giorni==null)return -1;
-              return a.giorni-b.giorni;
-            });
-            return(
-              <>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:16}}>
-                  {[
-                    {label:"Rinnovi entro 7 giorni",value:inScadenza.length,color:"#f59e0b"},
-                    {label:"CV potenziale (7gg)",value:cvPotenziale,color:"#10b981"},
-                    {label:"Rinnovi impostati",value:conRinnovo.length+"/"+righe.length,color:"#8b5cf6"},
-                  ].map((k,i)=>(
-                    <div key={i} style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"16px 18px",position:"relative",overflow:"hidden"}}>
-                      <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"linear-gradient(90deg,"+k.color+","+k.color+"44)",borderRadius:"14px 14px 0 0"}}/>
-                      <div style={{fontSize:10,color:"var(--muted)",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:10}}>{k.label}</div>
-                      <div style={{fontSize:30,fontWeight:900,color:k.color,lineHeight:1}}>{k.value}</div>
-                    </div>
-                  ))}
-                </div>
-                <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden"}}>
-                  <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
-                    <div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}>Rinnovi team</div>
-                    <div style={{display:"flex",gap:6}}>
-                      {["all","sinistra","destra","nessuna"].map(f=>(
-                        <button key={f} onClick={()=>setTeamFilter(f)}
-                          style={{padding:"5px 12px",borderRadius:8,border:teamFilter===f?"1px solid #2563eb40":"1px solid transparent",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"inherit",transition:"all .2s",background:teamFilter===f?"var(--bg4)":"transparent",color:teamFilter===f?"var(--a2)":"var(--muted)"}}>
-                          {f==="all"?"Tutti":f==="nessuna"?"Non assegnati":f.charAt(0).toUpperCase()+f.slice(1)}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {righe.length===0
-                    ?<div style={{padding:"3rem",textAlign:"center",color:"var(--border2)"}}><div style={{fontSize:36,marginBottom:12}}>{"\u25c8"}</div><p style={{fontSize:14}}>Nessun membro ancora</p></div>
-                    :<table style={{width:"100%",borderCollapse:"collapse"}}>
-                      <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["","Nome","Tipo rinnovo","Scadenza","Giorni","CV potenziale",""].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
-                      <tbody>{ordinati.map(r=>{
-                        const urgente=r.giorni!=null&&r.giorni>=0&&r.giorni<=7;
-                        const scaduto=r.giorni!=null&&r.giorni<0;
-                        return(
-                          <tr key={r.tipo+"_"+r.id} style={{borderBottom:"1px solid #0d1b3355",background:urgente?"var(--a1-10)":"transparent"}}>
-                            <td style={{padding:"12px 16px"}}>
-                              <span style={{fontSize:9,fontWeight:800,padding:"3px 8px",borderRadius:6,textTransform:"uppercase",letterSpacing:.4,background:r.tipo==="cliente"?"#f59e0b18":"#8b5cf618",color:r.tipo==="cliente"?"#f59e0b":"#8b5cf6"}}>{r.tipo==="cliente"?"Cliente":"Membro"}</span>
-                            </td>
-                            <td style={{padding:"12px 16px"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Av n={r.nome||r.email} c={r.cognome} color={urgente?"#f59e0b":"#6b7280"}/><div><div style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{r.nome||r.email} {r.cognome||""}</div>{r.ownerLabel&&<div style={{color:"var(--muted)",fontSize:10}}>di {r.ownerLabel}</div>}</div></div></td>
-                            <td style={{padding:"12px 16px"}}>
-                              {r.onChangeTipo
-                                ?<select value={r.rinnovoTipo||""} onChange={e=>r.onChangeTipo(e.target.value)} style={{width:"auto",minWidth:120,fontSize:11,padding:"5px 9px",background:"var(--bg3)",border:"1px solid var(--border2)"}}>
-                                  <option value="">Non impostato</option>
-                                  <option value="mensile_60">Mensile (60CV)</option>
-                                  <option value="mensile_90">Mensile (90CV)</option>
-                                  <option value="semestrale_75">Semestrale (75CV)</option>
-                                  <option value="semestrale_90">Semestrale (90CV)</option>
-                                  <option value="annuale_75">Annuale (75CV)</option>
-                                  <option value="annuale_90">Annuale (90CV)</option>
-                                </select>
-                                :<span style={{fontSize:12,color:"var(--text)",fontWeight:600}}>{RINNOVO_LABEL[r.rinnovoTipo]||"\u2014"}</span>
-                              }
-                            </td>
-                            <td style={{padding:"12px 16px"}}>
-                              {r.onChangeData
-                                ?<input type="date" value={r.rinnovoScadenza||""} onChange={e=>r.onChangeData(e.target.value)} style={{fontSize:11,padding:"5px 9px",background:"var(--bg3)",border:"1px solid var(--border2)",color:"var(--text)",borderRadius:7}}/>
-                                :<span style={{fontSize:12,color:"var(--text)"}}>{r.rinnovoScadenza||"\u2014"}</span>
-                              }
-                            </td>
-                            <td style={{padding:"12px 16px",fontWeight:800,fontSize:13,color:scaduto?"#ef4444":urgente?"#f59e0b":"var(--text)"}}>
-                              {r.giorni==null?"\u2014":scaduto?"Scaduto":r.giorni+"g"}
-                            </td>
-                            <td style={{padding:"12px 16px",fontWeight:800,fontSize:13,color:"#10b981"}}>{r.cv?r.cv+" CV":"\u2014"}</td>
-                            <td style={{padding:"12px 16px"}}>{r.onDelete&&<button onClick={r.onDelete} style={{background:"#ef444415",border:"1px solid #ef444430",borderRadius:6,color:"#f87171",cursor:"pointer",fontSize:11,fontWeight:800,padding:"4px 9px"}}>Rimuovi</button>}</td>
-                          </tr>
-                        );
-                      })}</tbody>
-                    </table>
-                  }
-                </div>
-              </>
-            );
-          })()}
         </>
       )}
     </div>

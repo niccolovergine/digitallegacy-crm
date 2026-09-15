@@ -36,7 +36,7 @@ async function sbFetch(path, opts = {}) {
 
 const sbGetProfileByRef = (tok, code) => sbFetch("/rest/v1/profiles?referral_code=eq." + code + "&select=*", { _token: tok });
 
-export function ProfiloView({ auth, onUpdateProfile, downlineCount, onUpdateRinnovo }) {
+export function ProfiloView({ auth, onUpdateProfile, downlineCount }) {
   const p = auth.profile || {};
   const [nome,      setNome]      = useState(p.nome || "");
   const [cognome,   setCognome]   = useState(p.cognome || "");
@@ -45,9 +45,6 @@ export function ProfiloView({ auth, onUpdateProfile, downlineCount, onUpdateRinn
   const [instagram, setInstagram] = useState(p.instagram || "");
   const [sponsorId, setSponsorId] = useState("");
   const [sponsorName, setSponsorName] = useState(null);
-  const [rinnovoTipo, setRinnovoTipo] = useState(p.rinnovo_tipo || "");
-  const [rinnovoScadenza, setRinnovoScadenza] = useState(p.rinnovo_scadenza || "");
-  const [savingRinnovo, setSavingRinnovo] = useState(false);
   const [saving,    setSaving]    = useState(false);
   const [savingSponsor, setSavingSponsor] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -74,15 +71,6 @@ export function ProfiloView({ auth, onUpdateProfile, downlineCount, onUpdateRinn
       showMsg("Profilo aggiornato");
     } catch(e) { showMsg("Errore: " + e.message, "#ef4444"); }
     setSaving(false);
-  }
-
-  async function saveRinnovo() {
-    setSavingRinnovo(true);
-    try {
-      await onUpdateRinnovo(auth.userId, rinnovoTipo || null, rinnovoScadenza || null);
-      showMsg("Rinnovo aggiornato");
-    } catch(e) { showMsg("Errore: " + e.message, "#ef4444"); }
-    setSavingRinnovo(false);
   }
 
   async function saveSponsor() {
@@ -144,35 +132,6 @@ export function ProfiloView({ auth, onUpdateProfile, downlineCount, onUpdateRinn
             style={{ padding: "9px 22px", background: "linear-gradient(135deg,var(--a1),var(--a2))", color: "#fff", border: "none", borderRadius: 9, cursor: saving ? "not-allowed" : "pointer", fontWeight: 800, fontSize: 13, display: "flex", alignItems: "center", gap: 7, opacity: saving ? 0.7 : 1 }}>
             {saving && <span style={{ width: 14, height: 14, border: "2px solid #ffffff44", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block", animation: "spin .7s linear infinite" }} />}
             Salva
-          </button>
-        </div>
-      </div>
-
-      <div style={{ background: "var(--bg2)", border: "1px solid #1e3a5f", borderRadius: 14, padding: "1.4rem", marginBottom: 16 }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text)", marginBottom: 4 }}>Il tuo rinnovo</div>
-        <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: 16 }}>Inserisci qui la scadenza esatta che vedi sull altro sito, cosi la tua upline sa quando aspettarsi il rinnovo.</p>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-          <div>
-            <label style={lbl}>Tipo rinnovo</label>
-            <select value={rinnovoTipo} onChange={e => setRinnovoTipo(e.target.value)}>
-              <option value="">Non impostato</option>
-              <option value="mensile_60">Mensile (60 CV)</option>
-              <option value="mensile_90">Mensile (90 CV)</option>
-              <option value="semestrale_75">Semestrale (75 CV)</option>
-              <option value="semestrale_90">Semestrale (90 CV)</option>
-              <option value="annuale_75">Annuale (75 CV)</option>
-              <option value="annuale_90">Annuale (90 CV)</option>
-            </select>
-          </div>
-          <div>
-            <label style={lbl}>Data scadenza</label>
-            <input type="date" value={rinnovoScadenza} onChange={e => setRinnovoScadenza(e.target.value)} />
-          </div>
-        </div>
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <button onClick={saveRinnovo} disabled={savingRinnovo}
-            style={{ padding: "9px 22px", background: "linear-gradient(135deg,var(--a1),var(--a2))", color: "#fff", border: "none", borderRadius: 9, cursor: savingRinnovo ? "not-allowed" : "pointer", fontWeight: 800, fontSize: 13, opacity: savingRinnovo ? 0.7 : 1 }}>
-            Salva rinnovo
           </button>
         </div>
       </div>

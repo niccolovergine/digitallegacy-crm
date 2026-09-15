@@ -86,7 +86,7 @@ export function EventiView({ auth, allProfiles, downline, positions, showToast, 
   useEffect(() => {
     if (!auth) return;
     sbListEventi(auth.token).then(rows => {
-      const list = rows || [];
+      const list = (rows || []).filter(e => !(e.nome||"").toUpperCase().includes("SQT"));
       setEventi(list);
       if (list.length > 0 && !eventoAttivo) setEventoAttivo(list[0].id);
     }).catch(e => showToast("Errore: " + e.message, "#ef4444")).finally(() => setLoading(false));

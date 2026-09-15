@@ -4,7 +4,6 @@ import { TeamView } from "./components/Team";
 import { ProfiloView } from "./components/Profilo";
 import { ListaNomiView } from "./components/ListaNomi";
 import { EventiView } from "./components/Eventi";
-import { SfidaView } from "./components/Sfida";
 import { MappaSezione } from "./components/Mappa";
 import { PlanView } from "./components/Plan";
 
@@ -73,14 +72,13 @@ const sbGetDownlineProspects = (tok, uids)  => sbFetch("/rest/v1/prospects?selec
 const sbGetProfileByRef = (tok, code)       => sbFetch("/rest/v1/profiles?referral_code=eq."+code+"&select=*", { _token:tok });
 const sbLinkDownline    = (tok, uid, uplineId) => sbFetch("/rest/v1/profiles?id=eq."+uid, { method:"PATCH", _token:tok, body:JSON.stringify({ upline_id:uplineId }) });
 const sbPositionMember  = (tok, uid, positionedUnder) => sbFetch("/rest/v1/profiles?id=eq."+uid, { method:"PATCH", _token:tok, body:JSON.stringify({ positioned_under:positionedUnder }) });
-const sbSetRinnovo      = (tok, memberId, tipo, scadenza) => sbFetch("/rest/v1/rpc/set_rinnovo", { method:"POST", _token:tok, body:JSON.stringify({ p_member_id:memberId, p_tipo:tipo, p_scadenza:scadenza }) });
 const sbSetLeader       = (tok, memberId, value)          => sbFetch("/rest/v1/rpc/set_leader", { method:"POST", _token:tok, body:JSON.stringify({ p_member_id:memberId, p_value:value }) });
 const sbSetAttivo       = (tok, memberId, value)          => sbFetch("/rest/v1/rpc/set_attivo", { method:"POST", _token:tok, body:JSON.stringify({ p_member_id:memberId, p_value:value }) });
 const sbGetPositions    = (tok)             => sbFetch("/rest/v1/team_positions?select=*", { _token:tok });
 const sbSetPosition     = (tok, uplineId, memberId, team) => sbFetch("/rest/v1/team_positions", { method:"POST", _token:tok, headers:{"Prefer":"resolution=merge-duplicates"}, body:JSON.stringify({ upline_id:uplineId, member_id:memberId, team }) });
 const sbGetClienti      = (tok)             => sbFetch("/rest/v1/rpc/get_clienti_visibili", { method:"POST", _token:tok, body:JSON.stringify({}) });
-const sbAddCliente      = (tok, row)        => sbFetch("/rest/v1/rpc/add_cliente", { method:"POST", _token:tok, body:JSON.stringify({ p_positioned_under:row.positionedUnder, p_nome:row.nome, p_cognome:row.cognome||null, p_citta:row.citta||null, p_rinnovo_tipo:row.rinnovoTipo||"", p_rinnovo_scadenza:row.rinnovoScadenza||null, p_team:row.team||"" }) });
-const sbUpdateCliente   = (tok, id, row)    => sbFetch("/rest/v1/rpc/update_cliente", { method:"POST", _token:tok, body:JSON.stringify({ p_cliente_id:id, p_nome:row.nome, p_cognome:row.cognome||null, p_citta:row.citta||null, p_rinnovo_tipo:row.rinnovoTipo||"", p_rinnovo_scadenza:row.rinnovoScadenza||null, p_attivo:row.attivo!==false, p_team:row.team||"" }) });
+const sbAddCliente      = (tok, row)        => sbFetch("/rest/v1/rpc/add_cliente", { method:"POST", _token:tok, body:JSON.stringify({ p_positioned_under:row.positionedUnder, p_nome:row.nome, p_cognome:row.cognome||null, p_citta:row.citta||null, p_rinnovo_tipo:"", p_rinnovo_scadenza:null, p_team:row.team||"" }) });
+const sbUpdateCliente   = (tok, id, row)    => sbFetch("/rest/v1/rpc/update_cliente", { method:"POST", _token:tok, body:JSON.stringify({ p_cliente_id:id, p_nome:row.nome, p_cognome:row.cognome||null, p_citta:row.citta||null, p_rinnovo_tipo:"", p_rinnovo_scadenza:null, p_attivo:row.attivo!==false, p_team:row.team||"" }) });
 const sbDeleteCliente   = (tok, id)         => sbFetch("/rest/v1/rpc/delete_cliente", { method:"POST", _token:tok, body:JSON.stringify({ p_cliente_id:id }) });
 
 // Eventi helpers
@@ -89,8 +87,6 @@ const sbListEventi       = (tok)            => sbFetch("/rest/v1/eventi?select=*
 const sbInsertEvento     = (tok, row)       => sbFetch("/rest/v1/eventi", { method:"POST", _token:tok, body:JSON.stringify(row) });
 const sbDeleteEvento     = (tok, id)        => sbFetch("/rest/v1/eventi?id=eq."+id, { method:"DELETE", _token:tok });
 const sbListEventoPersone = (tok, eventoId) => sbFetch("/rest/v1/evento_persone?select=*"+(eventoId?("&evento_id=eq."+eventoId):""), { _token:tok });
-const sbGetSfidaTicket    = (tok, eventoId) => sbFetch("/rest/v1/rpc/get_sfida_classifica_ticket", { method:"POST", _token:tok, body:JSON.stringify({ p_evento_id:eventoId }) });
-const sbGetSfidaIscrizioni = (tok, start, end) => sbFetch("/rest/v1/rpc/get_sfida_classifica_iscrizioni", { method:"POST", _token:tok, body:JSON.stringify({ p_start:start, p_end:end }) });
 const sbGetMappaAttivi     = (tok)             => sbFetch("/rest/v1/rpc/get_mappa_attivi", { method:"POST", _token:tok, body:JSON.stringify({}) });
 const sbGetMappaTicket     = (tok, eventoId)   => sbFetch("/rest/v1/rpc/get_mappa_ticket", { method:"POST", _token:tok, body:JSON.stringify({ p_evento_id:eventoId }) });
 const sbGetMappaIscrizioni = (tok, start, end) => sbFetch("/rest/v1/rpc/get_mappa_iscrizioni", { method:"POST", _token:tok, body:JSON.stringify({ p_start:start, p_end:end }) });
@@ -113,7 +109,7 @@ function toApp(r) {
     telefono:r.telefono||"", instagram:r.instagram||"",
     checklist:r.checklist||{kyc:false,pandadoc:false,click:false},
     interesse:r.interesse||"", statoColore:r.stato_colore||"",
-    rinnovoTipo:r.rinnovo_tipo||"", rinnovoScadenza:r.rinnovo_scadenza||"", attivo:r.attivo!==false,
+    attivo:r.attivo!==false,
     ticketEventoId:r.ticket_evento_id||"",
   };
 }
@@ -126,7 +122,7 @@ function toDB(p, uid) {
     telefono:p.telefono||null, instagram:p.instagram||null,
     checklist:p.checklist||{kyc:false,pandadoc:false,click:false},
     interesse:p.interesse||null, stato_colore:p.statoColore||null,
-    rinnovo_tipo:p.rinnovoTipo||null, rinnovo_scadenza:p.rinnovoScadenza||null, attivo:p.attivo!==false,
+    attivo:p.attivo!==false,
     ticket_evento_id:p.ticketEventoId||null,
   };
 }
@@ -819,11 +815,11 @@ export default function App() {
       setDownline(mine);
       try {
         const cl = await sbGetClienti(auth.token);
-        setClienti((cl||[]).map(r=>({id:r.id,nome:r.nome,cognome:r.cognome||"",citta:r.citta||"",positionedUnder:r.positioned_under,rinnovoTipo:r.rinnovo_tipo||"",rinnovoScadenza:r.rinnovo_scadenza||"",attivo:r.attivo!==false,team:r.team||""})));
+        setClienti((cl||[]).map(r=>({id:r.id,nome:r.nome,cognome:r.cognome||"",citta:r.citta||"",positionedUnder:r.positioned_under,attivo:r.attivo!==false,team:r.team||""})));
       } catch(e) { /* tabella clienti non ancora creata o errore permessi: non bloccare il resto */ }
       try {
         const ev = await sbListEventi(auth.token);
-        setEventi(ev||[]);
+        setEventi((ev||[]).filter(e => !(e.nome||"").toUpperCase().includes("SQT")));
       } catch(e) { /* non bloccare il resto se fallisce */ }
       if (mine.length > 0) {
         const uids = mine.map(p => p.id);
@@ -944,11 +940,10 @@ export default function App() {
     const positionedUnder = clienteForm._userId || auth.userId;
     try {
       const res = await sbAddCliente(auth.token, {
-        positionedUnder, nome:clienteForm.nome, cognome:clienteForm.cognome||"", citta:clienteForm.citta||"",
-        rinnovoTipo:clienteForm.rinnovoTipo||"", rinnovoScadenza:clienteForm.rinnovoScadenza||"", team:clienteForm.team||"",
+        positionedUnder, nome:clienteForm.nome, cognome:clienteForm.cognome||"", citta:clienteForm.citta||"", team:clienteForm.team||"",
       });
       const newId = Array.isArray(res) ? res[0] : res;
-      setClienti(c=>[...c,{id:newId,nome:clienteForm.nome,cognome:clienteForm.cognome||"",citta:clienteForm.citta||"",positionedUnder,rinnovoTipo:clienteForm.rinnovoTipo||"",rinnovoScadenza:clienteForm.rinnovoScadenza||"",attivo:true,team:clienteForm.team||""}]);
+      setClienti(c=>[...c,{id:newId,nome:clienteForm.nome,cognome:clienteForm.cognome||"",citta:clienteForm.citta||"",positionedUnder,attivo:true,team:clienteForm.team||""}]);
       showToast("Cliente aggiunto ");
       closeModal();
     } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
@@ -1172,18 +1167,6 @@ export default function App() {
     } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
   }
 
-  async function updateRinnovo(memberId, tipo, scadenza) {
-    try {
-      await sbSetRinnovo(auth.token, memberId, tipo, scadenza);
-      if (memberId === auth.userId) {
-        setAuth(a => ({ ...a, profile: { ...a.profile, rinnovo_tipo:tipo, rinnovo_scadenza:scadenza } }));
-      } else {
-        setDownline(d => d.map(m => m.id===memberId ? { ...m, rinnovo_tipo:tipo, rinnovo_scadenza:scadenza } : m));
-      }
-      showToast("Rinnovo aggiornato");
-    } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
-  }
-
   async function setLeader(memberId, value) {
     try {
       await sbSetLeader(auth.token, memberId, value);
@@ -1334,19 +1317,18 @@ export default function App() {
         {view==="dash"  && <Dash cd={cd} cdSub={cdSub} cdAct={cdAct} cdFU={cdFU} cdNI={cdNI} cdConv={cdConv} totSub={totSub} totConv={totConv} totAll={dashData.length} funnelCounts={funnelCounts} funnelMax={funnelMax} urgenti={urgenti} dashCiclo={dashCiclo} setDashCiclo={setDashCiclo} onOpen={openDetail} dashMode={dashMode} setDashMode={setDashMode} hasTeam={dlProspects.length>0} ticketVenduti={ticketVendutiCount} />}
         {view==="lista" && <Lista prospects={listaData} total={listaMode==="team"?teamProspects.length:data.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} fCitta={fCitta} setFCitta={setFCitta} fInteresse={fInteresse} setFInteresse={setFInteresse} fPercorso={fPercorso} setFPercorso={setFPercorso} fLeg={fLeg} setFLeg={setFLeg} fMembroTeam={fMembroTeam} setFMembroTeam={setFMembroTeam} downline={downline} onOpen={openDetail} onAdd={openAdd} listaMode={listaMode} setListaMode={setListaMode} hasTeam={dlProspects.length>0} />}
         {view==="stats"   && <Statistiche data={data} dlProspects={teamProspects} downline={downline} />}
-        {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} clienti={clienti} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onUpdateRinnovo={updateRinnovo} onSetLeader={setLeader} onSetAttivo={setAttivo} onAddCliente={openAddCliente} onUpdateCliente={updateClienteQuick} onDeleteCliente={deleteClienteQuick} LUDOVICO_ID={LUDOVICO_ID} />}
+        {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} clienti={clienti} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onSetLeader={setLeader} onSetAttivo={setAttivo} onAddCliente={openAddCliente} onUpdateCliente={updateClienteQuick} onDeleteCliente={deleteClienteQuick} LUDOVICO_ID={LUDOVICO_ID} />}
         {view==="nomi"    && <ListaNomiView auth={auth} onInvitaProspect={invitaProspect} />}
         {view==="eventi"  && <EventiView auth={auth} allProfiles={allProfiles} downline={downline} positions={positions} showToast={showToast} data={data} dlProspects={dlProspects} onSetTicketEvento={setTicketEvento}
           sbListEventi={sbListEventi}
           sbListEventoStatus={sbListEventoStatus} sbUpsertEventoStatus={sbUpsertEventoStatus}
           sbListEventoPersone={sbListEventoPersone} sbInsertEventoPersona={sbInsertEventoPersona} sbUpdateEventoPersona={sbUpdateEventoPersona} sbDeleteEventoPersona={sbDeleteEventoPersona}
           onTicketCountChange={setTicketVendutiCount} />}
-        {view==="sfida"   && <SfidaView auth={auth} eventi={eventi} sbGetSfidaTicket={sbGetSfidaTicket} sbGetSfidaIscrizioni={sbGetSfidaIscrizioni} showToast={showToast} />}
         {view==="mappa"   && <MappaSezione auth={auth} eventi={eventi} sbGetMappaAttivi={sbGetMappaAttivi} sbGetMappaTicket={sbGetMappaTicket} sbGetMappaIscrizioni={sbGetMappaIscrizioni}
           sfidaStart={CICLO_CORRENTE_INIZIO} sfidaEnd={CICLO_CORRENTE_FINE} showToast={showToast} />}
         {view==="plan"    && <PlanView auth={auth} downline={downline} positions={positions} dlProspects={dlProspects} isLeader={!!auth.profile?.is_leader}
           sbListEventi={sbListEventi} sbListEventoStatus={sbListEventoStatus} sbGetPiano={sbGetPiano} sbSetPiano={sbSetPiano} showToast={showToast} />}
-        {view==="profilo" && <ProfiloView auth={auth} onUpdateProfile={updateProfile} downlineCount={downline.length} showToast={showToast} onUpdateRinnovo={updateRinnovo} />}
+        {view==="profilo" && <ProfiloView auth={auth} onUpdateProfile={updateProfile} downlineCount={downline.length} showToast={showToast} />}
       </main>
 
       {/* Mobile bottom nav - shown via CSS on mobile only */}
@@ -1357,7 +1339,6 @@ export default function App() {
           {id:"team",label:"Team",badge:downline.length||0},
           {id:"nomi",label:"Lista"},
           {id:"eventi",label:"Eventi"},
-          {id:"sfida",label:"Sfida"},
           {id:"profilo",label:"Profilo"},
         ].map(item=>{
           const active=view===item.id;
@@ -1400,7 +1381,6 @@ function Sidebar({ view, setView, data, urgenti, onAdd, onExport, auth, onLogout
     { id:"team",    icon:"", label:"Team", badge:downlineCount||0 },
     { id:"nomi",    icon:"", label:"Lista Nomi" },
     { id:"eventi",  icon:"", label:"Eventi" },
-    { id:"sfida",   icon:"", label:"La Sfida" },
     { id:"mappa",   icon:"", label:"Mappa" },
     { id:"plan",    icon:"", label:"Plan" },
     { id:"profilo", icon:"", label:"Profilo" },
@@ -1422,12 +1402,6 @@ function Sidebar({ view, setView, data, urgenti, onAdd, onExport, auth, onLogout
       <button onClick={onAdd} style={{marginTop:14,padding:"10px",fontSize:13,fontWeight:800,background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:10,cursor:"pointer"}}>
         + Nuovo Prospect
       </button>
-
-      {urgenti.length>0 && (
-        <div className="pulse" style={{marginTop:8,background:"#ef444412",border:"1px solid #ef444435",borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",gap:8,color:"#f87171",fontSize:12,fontWeight:700}}>
-           {urgenti.length} urgent{urgenti.length===1?"e":"i"}
-        </div>
-      )}
 
       <div style={{borderTop:"1px solid #11203a",paddingTop:14,marginTop:16,display:"flex",flexDirection:"column",gap:7}}>
         <div style={{fontSize:10,fontWeight:800,color:"var(--border2)",textTransform:"uppercase",letterSpacing:1.2,marginBottom:2}}>Backup</div>
@@ -1969,27 +1943,9 @@ function ClienteQuickModal({ form, setForm, onSave, onClose, isLeader, downline,
           <input value={form.cognome||""} onChange={e=>set("cognome",e.target.value)} placeholder="Cognome" />
         </div>
       </div>
-      <div style={{marginBottom:14}}>
+      <div style={{marginBottom:20}}>
         <label style={lbl}>Città</label>
         <input value={form.citta||""} onChange={e=>set("citta",e.target.value)} placeholder="Città" />
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
-        <div>
-          <label style={lbl}>Tipo rinnovo</label>
-          <select value={form.rinnovoTipo||""} onChange={e=>set("rinnovoTipo",e.target.value)}>
-            <option value="">Non impostato</option>
-            <option value="mensile_60">Mensile (60 CV)</option>
-            <option value="mensile_90">Mensile (90 CV)</option>
-            <option value="semestrale_75">Semestrale (75 CV)</option>
-            <option value="semestrale_90">Semestrale (90 CV)</option>
-            <option value="annuale_75">Annuale (75 CV)</option>
-            <option value="annuale_90">Annuale (90 CV)</option>
-          </select>
-        </div>
-        <div>
-          <label style={lbl}>Data rinnovo</label>
-          <input type="date" value={form.rinnovoScadenza||""} onChange={e=>set("rinnovoScadenza",e.target.value)} />
-        </div>
       </div>
 
       <div style={{display:"flex",gap:9,justifyContent:"flex-end"}}>
@@ -2065,32 +2021,6 @@ function FormModal({ form, setForm, onSave, onClose, onDelete, isEdit, isLeader,
                 {form.pacchetto==="altro" ? (form.bvCustom||0)+" BV prodotti" : bvOfPacchetto(form.pacchetto)+" BV prodotti"}
               </div>
             )}
-            <div style={{marginTop:14,paddingTop:14,borderTop:"1px solid var(--border2)"}}>
-              <div style={{fontSize:12,fontWeight:800,color:"var(--text)",marginBottom:2}}>Rinnovo cliente</div>
-              <p style={{fontSize:11,color:"var(--muted)",marginBottom:10}}>Facoltativo — se lo imposti, questo iscritto entra nel conteggio Rinnovi del team senza bisogno che si crei un account.</p>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-                <div>
-                  <label style={lbl}>Tipo rinnovo</label>
-                  <select value={form.rinnovoTipo||""} onChange={e=>set("rinnovoTipo",e.target.value)}>
-                    <option value="">Non impostato</option>
-                    <option value="mensile_60">Mensile (60 CV)</option>
-                    <option value="mensile_90">Mensile (90 CV)</option>
-                    <option value="semestrale_75">Semestrale (75 CV)</option>
-                    <option value="semestrale_90">Semestrale (90 CV)</option>
-                    <option value="annuale_75">Annuale (75 CV)</option>
-                    <option value="annuale_90">Annuale (90 CV)</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={lbl}>Data scadenza</label>
-                  <input type="date" value={form.rinnovoScadenza||""} onChange={e=>set("rinnovoScadenza",e.target.value)} />
-                </div>
-              </div>
-              <label style={{display:"inline-flex",alignItems:"center",gap:8,marginTop:10,cursor:"pointer"}}>
-                <input type="checkbox" checked={form.attivo!==false} onChange={e=>set("attivo",e.target.checked)} style={{width:16,height:16,cursor:"pointer"}} />
-                <span style={{fontSize:12,fontWeight:700,color:form.attivo===false?"#ef4444":"var(--muted)"}}>{form.attivo===false?"Cliente inattivo (ha mollato)":"Cliente attivo"}</span>
-              </label>
-            </div>
           </div>
         )}
       </div>
@@ -2297,24 +2227,6 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onNonPiace, o
                 </div>
               </div>
             )}
-            {p.fase==="SUB"&&(()=>{
-              const RINNOVO_LABEL2={mensile_60:"Mensile (60CV)",mensile_90:"Mensile (90CV)",semestrale_75:"Semestrale (75CV)",semestrale_90:"Semestrale (90CV)",annuale_75:"Annuale (75CV)",annuale_90:"Annuale (90CV)"};
-              const giorni = p.rinnovoScadenza ? Math.ceil((new Date(p.rinnovoScadenza)-new Date(new Date().toDateString()))/86400000) : null;
-              const scaduto = giorni!=null && giorni<0;
-              const urgente = giorni!=null && giorni>=0 && giorni<=7;
-              return (
-                <div style={{...box,gridColumn:"1/-1",background:p.attivo===false?"#ef444412":"#8b5cf612",border:p.attivo===false?"1px solid #ef444430":"1px solid #8b5cf630"}}>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
-                    <div style={lbl}>Rinnovo cliente</div>
-                    {p.attivo===false&&<span style={{fontSize:10,fontWeight:800,color:"#ef4444"}}>INATTIVO</span>}
-                  </div>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:6}}>
-                    <span style={{color:"#a78bfa",fontWeight:800,fontSize:13}}>{p.rinnovoTipo?RINNOVO_LABEL2[p.rinnovoTipo]||p.rinnovoTipo:"Non impostato"}</span>
-                    <span style={{fontSize:12,color:"var(--text)"}}>{p.rinnovoScadenza?p.rinnovoScadenza:"\u2014"}{giorni!=null&&<span style={{marginLeft:6,fontWeight:800,color:scaduto?"#ef4444":urgente?"#f59e0b":"var(--muted)"}}>({scaduto?"Scaduto":giorni+"g"})</span>}</span>
-                  </div>
-                </div>
-              );
-            })()}
             {eventi&&eventi.length>0&&(
               <div style={{...box,gridColumn:"1/-1",background:p.ticketEventoId?"#f59e0b12":"var(--bg3)",border:p.ticketEventoId?"1px solid #f59e0b30":"1px solid var(--border2)"}}>
                 <div style={lbl}> Ticket evento</div>
