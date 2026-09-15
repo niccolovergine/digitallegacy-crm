@@ -470,7 +470,13 @@ function AuthScreen({ onAuth }) {
           }
           localStorage.removeItem("pending_ref");
           localStorage.removeItem("pending_ref_expires");
-          await sbCreateProfile(tok, { id:userId, email, nome:nome.trim(), cognome:cognome.trim(), upline_id:uplineId, positioned_under:uplineId });
+          const existing = await sbGetProfile(tok, userId);
+          if (!existing || existing.length === 0) {
+            await sbCreateProfile(tok, { id:userId, email, nome:nome.trim(), cognome:cognome.trim(), upline_id:uplineId, positioned_under:uplineId });
+          } else {
+            // Il trigger di Supabase crea già un profilo vuoto alla registrazione: lo aggiorniamo con nome/cognome/sponsor invece di riscontrare un conflitto
+            await sbUpdateProfile(tok, userId, { nome:nome.trim(), cognome:cognome.trim(), upline_id:uplineId, positioned_under:uplineId });
+          }
           const profile = await sbGetProfile(tok, userId);
           const authData = { token:tok, userId, email, profile:profile?.[0]||null };
           if (remember) localStorage.setItem("becrm_session", JSON.stringify(authData));
@@ -519,8 +525,11 @@ function AuthScreen({ onAuth }) {
         let profile = await sbGetProfile(tok, userId);
         if (!profile || profile.length === 0) {
           await sbCreateProfile(tok, { id:userId, email, nome:nome.trim(), cognome:cognome.trim(), upline_id:uplineId, positioned_under:uplineId });
-          profile = await sbGetProfile(tok, userId);
+        } else {
+          // Il trigger di Supabase crea già un profilo vuoto alla registrazione: lo aggiorniamo con nome/cognome/sponsor
+          await sbUpdateProfile(tok, userId, { nome:nome.trim(), cognome:cognome.trim(), upline_id:uplineId, positioned_under:uplineId });
         }
+        profile = await sbGetProfile(tok, userId);
         const authData = { token:tok, userId, email, profile:profile?.[0]||null };
         if (remember) localStorage.setItem("becrm_session", JSON.stringify(authData));
         onAuth(authData);
@@ -863,6 +872,7 @@ export default function App() {
   function getOwnerToken() { return auth.token; }
   function openAdd()    { setForm({fase:"INVITO",fonte:"Instagram",conosciutoAt:today()}); setModal("add"); }
   function openAddCliente() { setForm({}); setModal("cliente"); }
+  function openAddMembro()  { setForm({}); setModal("membro"); }
   function openDetail(p){ setSel(p); setModal("detail"); }
   function closeModal() { setModal(null); setSel(null); setForm({}); }
 
@@ -925,6 +935,43 @@ export default function App() {
     } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
     closeModal();
   }
+
+  async function addMembroQuick(membroForm) {
+    if (!membroForm.nome?.trim()) { showToast("Inserisci almeno il nome","#ef4444"); return null; }
+    if (!membroForm.email?.trim()) { showToast("Inserisci l'email","#ef4444"); return null; }
+    setSaving(true);
+    const positionedUnder = membroForm._userId || auth.userId;
+    const randomPass = Math.random().toString(36).slice(-8) + "A1!";
+    try {
+      const res = await sbSignUp(membroForm.email.trim(), randomPass);
+      if (!res || !res.access_token) {
+        showToast("Per usare questa funzione serve disattivare \"Confirm email\" nelle impostazioni Auth di Supabase","#ef4444");
+        setSaving(false);
+        return null;
+      }
+      const newTok = res.access_token;
+      const newUserId = res.user.id;
+      const payload = { nome:membroForm.nome.trim(), cognome:(membroForm.cognome||"").trim(), upline_id:positionedUnder, positioned_under:positionedUnder };
+      const existing = await sbGetProfile(newTok, newUserId);
+      if (!existing || existing.length === 0) {
+        await sbCreateProfile(newTok, { id:newUserId, email:membroForm.email.trim(), ...payload });
+      } else {
+        await sbUpdateProfile(newTok, newUserId, payload);
+      }
+      if (membroForm.team) {
+        await sbSetPosition(auth.token, positionedUnder, newUserId, membroForm.team);
+      }
+      setDownline(d=>[...d, { id:newUserId, nome:payload.nome, cognome:payload.cognome, email:membroForm.email.trim(), positioned_under:positionedUnder, attivo:true }]);
+      showToast("Membro creato ");
+      setSaving(false);
+      return { userId:newUserId, password:randomPass };
+    } catch(e) {
+      showToast("Errore: "+e.message,"#ef4444");
+      setSaving(false);
+      return null;
+    }
+  }
+
 
   async function saveClienteQuick(clienteForm) {
     if (!clienteForm.nome?.trim()) { showToast("Inserisci almeno il nome","#ef4444"); return; }
@@ -1317,7 +1364,7 @@ export default function App() {
         {view==="dash"  && <Dash cd={cd} cdSub={cdSub} cdAct={cdAct} cdFU={cdFU} cdNI={cdNI} cdConv={cdConv} totSub={totSub} totConv={totConv} totAll={dashData.length} funnelCounts={funnelCounts} funnelMax={funnelMax} urgenti={urgenti} dashCiclo={dashCiclo} setDashCiclo={setDashCiclo} onOpen={openDetail} dashMode={dashMode} setDashMode={setDashMode} hasTeam={dlProspects.length>0} ticketVenduti={ticketVendutiCount} />}
         {view==="lista" && <Lista prospects={listaData} total={listaMode==="team"?teamProspects.length:data.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} fCitta={fCitta} setFCitta={setFCitta} fInteresse={fInteresse} setFInteresse={setFInteresse} fPercorso={fPercorso} setFPercorso={setFPercorso} fLeg={fLeg} setFLeg={setFLeg} fMembroTeam={fMembroTeam} setFMembroTeam={setFMembroTeam} downline={downline} onOpen={openDetail} onAdd={openAdd} listaMode={listaMode} setListaMode={setListaMode} hasTeam={dlProspects.length>0} />}
         {view==="stats"   && <Statistiche data={data} dlProspects={teamProspects} downline={downline} />}
-        {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} clienti={clienti} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onSetLeader={setLeader} onSetAttivo={setAttivo} onAddCliente={openAddCliente} onUpdateCliente={updateClienteQuick} onDeleteCliente={deleteClienteQuick} LUDOVICO_ID={LUDOVICO_ID} />}
+        {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} clienti={clienti} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onSetLeader={setLeader} onSetAttivo={setAttivo} onAddCliente={openAddCliente} onAddMembro={openAddMembro} onUpdateCliente={updateClienteQuick} onDeleteCliente={deleteClienteQuick} LUDOVICO_ID={LUDOVICO_ID} />}
         {view==="nomi"    && <ListaNomiView auth={auth} onInvitaProspect={invitaProspect} />}
         {view==="eventi"  && <EventiView auth={auth} allProfiles={allProfiles} downline={downline} positions={positions} showToast={showToast} data={data} dlProspects={dlProspects} onSetTicketEvento={setTicketEvento}
           sbListEventi={sbListEventi}
@@ -1363,6 +1410,8 @@ export default function App() {
               ? <DetailModal p={sel} onEdit={()=>{setForm({...sel});setModal("edit");}} onAdvance={()=>advanceFase(sel)} onFollowUp={()=>moveFase(sel,"FOLLOW_UP")} onNonInt={()=>moveFase(sel,"NON_INT")} onNonPiace={()=>moveFase(sel,"NON_PIACE")} onRiattiva={()=>moveFase(sel,"RIATTIVA")} onClose={closeModal} onUpdateProfilo={pr=>updateProfilo(sel.id,pr)} onUpdateChecklist={cl=>updateChecklist(sel.id,cl)} onDeleteStorico={fase=>deleteStorico(sel.id,fase)} onUpdateStoricoData={(fase,data,newFase,newStorico)=>updateStoricoData(sel.id,fase,data,newFase,newStorico)} onSetStatoColore={v=>setStatoColore(sel.id,v)} eventi={eventi} onSetTicketEvento={eid=>setTicketEvento(sel.id,eid)} />
               : modal==="cliente"
               ? <ClienteQuickModal form={form} setForm={setForm} onSave={saveClienteQuick} onClose={closeModal} isLeader={!!auth.profile?.is_leader || auth.userId===LUDOVICO_ID} downline={downline} saving={saving} />
+              : modal==="membro"
+              ? <MembroQuickModal form={form} setForm={setForm} onSave={addMembroQuick} onClose={closeModal} isLeader={!!auth.profile?.is_leader || auth.userId===LUDOVICO_ID} downline={downline} saving={saving} />
               : <FormModal form={form} setForm={setForm} onSave={saveForm} onClose={closeModal} onDelete={modal==="edit"?()=>deleteProp(form.id):null} isEdit={modal==="edit"} isLeader={!!auth.profile?.is_leader || auth.userId===LUDOVICO_ID} downline={downline} />
             }
           </div>
@@ -1951,6 +2000,87 @@ function ClienteQuickModal({ form, setForm, onSave, onClose, isLeader, downline,
       <div style={{display:"flex",gap:9,justifyContent:"flex-end"}}>
         <button onClick={onClose} style={{padding:"9px 15px",background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:9,cursor:"pointer",fontWeight:600,fontSize:13}}>Annulla</button>
         <button onClick={()=>onSave(form)} disabled={saving} style={{padding:"9px 20px",background:"linear-gradient(135deg,#10b981,#10b981bb)",color:"#fff",border:"none",borderRadius:9,cursor:saving?"not-allowed":"pointer",fontWeight:800,fontSize:13,opacity:saving?0.7:1}}>{saving?"Aggiungo...":"Aggiungi cliente"}</button>
+      </div>
+    </div>
+  );
+}
+
+function MembroQuickModal({ form, setForm, onSave, onClose, isLeader, downline, saving }) {
+  const set=(k,v)=>setForm(f=>({...f,[k]:v}));
+  const lbl={fontSize:11,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"};
+  const [risultato, setRisultato] = useState(null); // {password} dopo la creazione riuscita
+  const [copiato, setCopiato] = useState(false);
+
+  async function submit() {
+    const res = await onSave(form);
+    if (res) setRisultato(res);
+  }
+
+  if (risultato) {
+    return (
+      <div style={{background:"var(--bg2)",border:"1px solid var(--border2)",borderRadius:16,padding:"1.6rem",maxWidth:440,boxShadow:"0 20px 70px #000000aa"}}>
+        <h2 style={{fontWeight:900,fontSize:17,color:"var(--text)",marginBottom:10}}> Membro creato</h2>
+        <p style={{fontSize:12,color:"var(--muted)",marginBottom:16,lineHeight:1.6}}>Manda a <b style={{color:"var(--text)"}}>{form.email}</b> queste credenziali per il primo accesso — potrà cambiare la password quando vuole da "Password dimenticata".</p>
+        <div style={{background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:10,padding:"12px 14px",marginBottom:16}}>
+          <div style={{fontSize:10,color:"var(--muted)",fontWeight:700,textTransform:"uppercase",marginBottom:4}}>Email</div>
+          <div style={{fontSize:13,color:"var(--text)",fontWeight:700,marginBottom:10}}>{form.email}</div>
+          <div style={{fontSize:10,color:"var(--muted)",fontWeight:700,textTransform:"uppercase",marginBottom:4}}>Password temporanea</div>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <div style={{fontSize:15,color:"#10b981",fontWeight:900,letterSpacing:1,fontFamily:"monospace"}}>{risultato.password}</div>
+            <button onClick={()=>{navigator.clipboard.writeText(risultato.password);setCopiato(true);setTimeout(()=>setCopiato(false),2000);}}
+              style={{padding:"4px 10px",background:"var(--bg4)",color:"var(--a2)",border:"1px solid var(--border2)",borderRadius:7,cursor:"pointer",fontSize:11,fontWeight:700}}>
+              {copiato?"Copiata ✓":"Copia"}
+            </button>
+          </div>
+        </div>
+        <button onClick={onClose} style={{width:"100%",padding:"10px",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:13}}>Fatto</button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{background:"var(--bg2)",border:"1px solid var(--border2)",borderRadius:16,padding:"1.6rem",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 20px 70px #000000aa"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+        <h2 style={{fontWeight:900,fontSize:17,color:"var(--text)"}}>+ Aggiungi membro</h2>
+        <button onClick={onClose} style={{background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:8,cursor:"pointer",padding:"4px 10px",fontSize:14}}></button>
+      </div>
+      <p style={{fontSize:12,color:"var(--muted)",marginBottom:18}}>Crea l'account direttamente — niente link né codici, viene posizionato subito nell'albero.</p>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
+        <div>
+          <label style={lbl}>Nome *</label>
+          <input value={form.nome||""} onChange={e=>set("nome",e.target.value)} placeholder="Nome" />
+        </div>
+        <div>
+          <label style={lbl}>Cognome</label>
+          <input value={form.cognome||""} onChange={e=>set("cognome",e.target.value)} placeholder="Cognome" />
+        </div>
+      </div>
+      <div style={{marginBottom:14}}>
+        <label style={lbl}>Email *</label>
+        <input type="email" value={form.email||""} onChange={e=>set("email",e.target.value)} placeholder="email@esempio.com" />
+      </div>
+      {isLeader && (
+        <div style={{marginBottom:14}}>
+          <label style={lbl}>Sotto chi lo metti</label>
+          <select value={form._userId||""} onChange={e=>set("_userId",e.target.value||null)}>
+            <option value="">Tu</option>
+            {(downline||[]).map(m=><option key={m.id} value={m.id}>{m.nome||m.email} {m.cognome||""}</option>)}
+          </select>
+        </div>
+      )}
+      <div style={{marginBottom:20}}>
+        <label style={lbl}>Gamba</label>
+        <select value={form.team||""} onChange={e=>set("team",e.target.value)}>
+          <option value="">Non assegnata</option>
+          <option value="sinistra">Sinistra</option>
+          <option value="destra">Destra</option>
+        </select>
+      </div>
+
+      <div style={{display:"flex",gap:9,justifyContent:"flex-end"}}>
+        <button onClick={onClose} style={{padding:"9px 15px",background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:9,cursor:"pointer",fontWeight:600,fontSize:13}}>Annulla</button>
+        <button onClick={submit} disabled={saving} style={{padding:"9px 20px",background:"linear-gradient(135deg,#10b981,#10b981bb)",color:"#fff",border:"none",borderRadius:9,cursor:saving?"not-allowed":"pointer",fontWeight:800,fontSize:13,opacity:saving?0.7:1}}>{saving?"Creo...":"Crea membro"}</button>
       </div>
     </div>
   );
