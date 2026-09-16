@@ -68,7 +68,7 @@ const sbCreateProfile   = (tok, row)        => sbFetch("/rest/v1/profiles", { me
 const sbUpdateProfile   = (tok, uid, row)   => sbFetch("/rest/v1/profiles?id=eq."+uid, { method:"PATCH", _token:tok, body:JSON.stringify(row) });
 const sbGetDownline     = (tok)             => sbFetch("/rest/v1/profiles?select=*&positioned_under=not.is.null", { _token:tok });
 const sbGetAllProfiles  = (tok)             => sbFetch("/rest/v1/profiles?select=*", { _token:tok });
-const sbGetDownlineProspects = (tok, uids)  => sbFetch("/rest/v1/prospects?select=*&order=created_at.asc&user_id=in.("+uids.join(",")+")", { _token:tok });
+const sbGetDownlineProspects = (tok, uids)  => sbFetch("/rest/v1/rpc/get_prospects_for_users", { method:"POST", _token:tok, body:JSON.stringify({ p_user_ids: uids }) });
 const sbGetProfileByRef = (tok, code)       => sbFetch("/rest/v1/profiles?referral_code=eq."+code+"&select=*", { _token:tok });
 const sbLinkDownline    = (tok, uid, uplineId) => sbFetch("/rest/v1/profiles?id=eq."+uid, { method:"PATCH", _token:tok, body:JSON.stringify({ upline_id:uplineId }) });
 const sbPositionMember  = (tok, uid, positionedUnder) => sbFetch("/rest/v1/profiles?id=eq."+uid, { method:"PATCH", _token:tok, body:JSON.stringify({ positioned_under:positionedUnder }) });
