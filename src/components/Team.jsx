@@ -31,7 +31,7 @@ function Av({n,c,color,size=34}){
   );
 }
 
-export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positions,onOpenProspect,onSetLeader,onSetAttivo,onAddCliente,onAddMembro,onUpdateCliente,onDeleteCliente,sbGetListaNomiTeam,LUDOVICO_ID}){
+export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positions,onOpenProspect,onSetLeader,onSetAttivo,onAddCliente,onAddMembro,onAddProspectForMember,onUpdateCliente,onDeleteCliente,sbGetListaNomiTeam,LUDOVICO_ID}){
   const isRoot = auth.userId === LUDOVICO_ID;
   const canToggleAttivo = isRoot || !!auth.profile?.is_leader;
   const[selectedMember,setSelectedMember]=useState(null);
@@ -120,7 +120,14 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positio
           ))}
         </div>
         <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden"}}>
-          <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a",fontSize:13,fontWeight:800,color:"var(--text)"}}>Prospect di {selectedMember.nome||selectedMember.email}</div>
+          <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
+            <div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}>Prospect di {selectedMember.nome||selectedMember.email}</div>
+            {onAddProspectForMember && (
+              <button onClick={()=>onAddProspectForMember(selectedMember.id)} style={{padding:"7px 14px",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontWeight:800,fontSize:12}}>
+                + Aggiungi prospect
+              </button>
+            )}
+          </div>
           {mP.length===0
             ?<div style={{padding:"3rem",textAlign:"center",color:"var(--border2)"}}>Nessun prospect ancora</div>
             :<div style={{overflowX:"auto"}}>
