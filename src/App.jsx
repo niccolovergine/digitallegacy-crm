@@ -846,6 +846,7 @@ export default function App() {
     try { await sbSignOut(auth.token); } catch(e){}
     localStorage.removeItem("becrm_session");
     setAuth(null); setData([]); setReady(true);
+    setDlProspects([]); setDownline([]); setPositions([]); setAllProfiles([]); setClienti([]); setEventi([]);
   }
 
   async function saveForm() {
@@ -1401,40 +1402,9 @@ function Sidebar({ view, setView, data, urgenti, onAdd, onExport, auth, onLogout
         </button>
       ))}
 
-      <button onClick={onAdd} style={{marginTop:14,padding:"10px",fontSize:13,fontWeight:800,background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:10,cursor:"pointer"}}>
-        + Nuovo Prospect
-      </button>
-
       <div style={{borderTop:"1px solid #11203a",paddingTop:14,marginTop:16,display:"flex",flexDirection:"column",gap:7}}>
         <div style={{fontSize:10,fontWeight:800,color:"var(--border2)",textTransform:"uppercase",letterSpacing:1.2,marginBottom:2}}>Backup</div>
         <button onClick={onExport} style={{padding:"8px 10px",background:"var(--bg4)",color:"var(--a2)",border:"1px solid var(--border2)",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:12,textAlign:"left"}}> Esporta in Fogli</button>
-      </div>
-
-      <div style={{marginTop:14,borderTop:"1px solid var(--border)",paddingTop:14}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-          <div style={{fontSize:10,fontWeight:800,color:"var(--border2)",textTransform:"uppercase",letterSpacing:1.2}}>Totale ora</div>
-          <div style={{display:"flex",background:"var(--bg3)",borderRadius:6,padding:2,border:"1px solid var(--border)"}}>
-            {["tutti","ciclo"].map(m=>(
-              <button key={m} onClick={()=>setSidebarMode(m)}
-                style={{padding:"2px 7px",borderRadius:4,border:"none",cursor:"pointer",fontSize:9,fontWeight:800,fontFamily:"inherit",background:sidebarMode===m?"var(--a1)":"transparent",color:sidebarMode===m?"#fff":"var(--muted)",transition:"all .15s"}}>
-                {m==="tutti"?"Tutti":"C"+CICLO_CORRENTE}
-              </button>
-            ))}
-          </div>
-        </div>
-        {FASI.map(f=>{
-          const n = sidebarMode==="ciclo"
-            ? data.filter(p=>p.fase===f && cicloOfDate(p.conosciutoAt)===CICLO_CORRENTE).length
-            : data.filter(p=>p.fase===f).length;
-          return (
-            <div key={f} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"3px 2px"}}>
-              <span style={{display:"flex",alignItems:"center",gap:7,fontSize:11,color:"var(--muted)"}}>
-                <span style={{width:7,height:7,borderRadius:99,background:FASE_CLR[f],flexShrink:0}} />{FASE_LABEL[f]}
-              </span>
-              <span style={{fontWeight:800,fontSize:12,color:n>0?FASE_CLR[f]:"var(--border2)"}}>{n}</span>
-            </div>
-          );
-        })}
       </div>
 
       <div style={{marginTop:"auto",paddingTop:14,borderTop:"1px solid #11203a"}}>
