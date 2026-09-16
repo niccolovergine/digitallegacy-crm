@@ -104,7 +104,7 @@ function toApp(r) {
     id:r.id, nome:r.nome||"", cognome:r.cognome||"", citta:r.citta||"",
     fonte:r.fonte||"Instagram", fase:r.fase||"INVITO",
     conosciutoAt:r.conosciuto_at||"", followUp:r.follow_up||"",
-    note:r.note||"", storico:r.storico||[], profilazione:r.profilazione||{},
+    note:r.note||"", storico:r.storico||[],
     pacchetto:r.pacchetto||"", bvCustom:r.bv_custom||0,
     telefono:r.telefono||"", instagram:r.instagram||"",
     checklist:r.checklist||{kyc:false,pandadoc:false,click:false},
@@ -117,7 +117,7 @@ function toDB(p, uid) {
   return {
     id:p.id, user_id:uid, nome:p.nome, cognome:p.cognome, citta:p.citta,
     fonte:p.fonte, fase:p.fase, conosciuto_at:p.conosciutoAt,
-    follow_up:p.followUp||null, note:p.note, storico:p.storico, profilazione:p.profilazione,
+    follow_up:p.followUp||null, note:p.note, storico:p.storico,
     pacchetto:p.pacchetto||null, bv_custom:p.bvCustom||null,
     telefono:p.telefono||null, instagram:p.instagram||null,
     checklist:p.checklist||{kyc:false,pandadoc:false,click:false},
@@ -167,41 +167,6 @@ const STATO_COLORE_LABEL = {
   iscritto:"iscritto", sparito:"sparito", da_risentire:"da risentire più avanti", iscrizione_fissata:"iscrizione fissata",
 };
 const ROW_TINT_LEGENDA = STATO_COLORE_OPTS.map(k=>({ colore:STATO_COLORE_MAP[k], label:STATO_COLORE_LABEL[k] }));
-
-const PLEASURES = [
-  { key:"tempo", label:"Tempo" },
-  { key:"relazioni", label:"Relazioni / Esperienze" },
-  { key:"crescita", label:"Crescita Personale" },
-  { key:"internet_money", label:"Internet Money" },
-  { key:"extra_mensile", label:"Extra Mensile" },
-  { key:"investimenti", label:"Investimenti" },
-];
-const FORZA = [
-  { key:"soldi", label:"Soldi" },
-  { key:"istruzione", label:"Istruzione" },
-  { key:"sociale", label:"Sociale" },
-];
-const PROFILO_TOTAL = PLEASURES.length + FORZA.length;
-
-const TV = [null, "-", ".", "+"];
-const TC = { null:"var(--border2)", "-":"#ef4444", ".":"#f59e0b", "+":"#10b981" };
-const TL = { "-":"\u2013", ".":"\u00b7", "+":"+" };
-function nextToggle(v) { const i = TV.indexOf(v); return TV[(i+1) % TV.length]; }
-
-function profiloBadge(p) {
-  const pr = p.profilazione || {};
-  let pos = 0, comp = 0;
-  PLEASURES.forEach(f => { const v = pr.pleasures?.[f.key]; if (v!=null) comp++; if (v==="+") pos++; });
-  FORZA.forEach(f => { const v = pr.forza?.[f.key]; if (v!=null) comp++; if (v==="+") pos++; });
-  return { positivi:pos, compilati:comp };
-}
-
-const JUNG = [
-  { key:"blu",    label:"BLU",    sub:"Metodo e professionalita", desc:"Analitico, preciso, orientato al processo.",   bg:"linear-gradient(135deg,#3b4fd4,#6366f1)", border:"#6366f1", glow:"#6366f155" },
-  { key:"rosso",  label:"ROSSO",  sub:"Risultati",                desc:"Diretto, competitivo, orientato all'azione.",  bg:"linear-gradient(135deg,#c2410c,#ef4444)", border:"#ef4444", glow:"#ef444455" },
-  { key:"giallo", label:"GIALLO", sub:"Umanita e leggerezza",     desc:"Entusiasta, socievole, ottimista.",             bg:"linear-gradient(135deg,#b45309,#f59e0b)", border:"#f59e0b", glow:"#f59e0b55" },
-  { key:"verde",  label:"VERDE",  sub:"Disposizione ad aiutare",  desc:"Empatico, paziente, affidabile.",              bg:"linear-gradient(135deg,#047857,#10b981)", border:"#10b981", glow:"#10b98155" },
-];
 
 const CICLI = [
   [73,"2026-01-03","2026-01-31"],[74,"2026-01-31","2026-02-28"],[75,"2026-02-28","2026-03-28"],
@@ -1024,7 +989,6 @@ export default function App() {
       telefono: fields.telefono||"",
       instagram: fields.instagram||"",
       note: fields.note||"",
-      profilazione: fields.profilazione||{},
       fonte: "Lista Nomi",
       fase: "INVITO",
       conosciutoAt: fields.conosciutoAt||today(),
@@ -1093,18 +1057,6 @@ export default function App() {
       else setDlProspects(d=>d.map(x=>x.id===id?{...upd,_userId:ownerId,_ownerName:x._ownerName}:x));
       setSel(upd);
       showToast(eventoId?"Ticket assegnato ":"Ticket rimosso","#10b981");
-    } catch(e) { showToast("Errore salvataggio","#ef4444"); }
-  }
-
-  async function updateProfilo(id,profilazione) {
-    const p=data.find(x=>x.id===id)||dlProspects.find(x=>x.id===id); if (!p) return;
-    const ownerId=p._userId||auth.userId;
-    const upd={...p,profilazione};
-    try {
-      await sbUpdate(auth.token,id,toDB(upd,ownerId));
-      if (data.find(x=>x.id===id)) setData(d=>d.map(x=>x.id===id?upd:x));
-      else setDlProspects(d=>d.map(x=>x.id===id?{...upd,_userId:ownerId,_ownerName:x._ownerName}:x));
-      setSel(upd);
     } catch(e) { showToast("Errore salvataggio","#ef4444"); }
   }
 
@@ -1407,7 +1359,7 @@ export default function App() {
         <div onClick={closeModal} style={{position:"fixed",inset:0,background:"#00000090",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:16,animation:"fadeIn .2s"}}>
           <div className={"pop"} onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:520,maxHeight:"90vh",overflowY:"auto",borderRadius:"16px"}}>
             {modal==="detail"
-              ? <DetailModal p={sel} onEdit={()=>{setForm({...sel});setModal("edit");}} onAdvance={()=>advanceFase(sel)} onFollowUp={()=>moveFase(sel,"FOLLOW_UP")} onNonInt={()=>moveFase(sel,"NON_INT")} onNonPiace={()=>moveFase(sel,"NON_PIACE")} onRiattiva={()=>moveFase(sel,"RIATTIVA")} onClose={closeModal} onUpdateProfilo={pr=>updateProfilo(sel.id,pr)} onUpdateChecklist={cl=>updateChecklist(sel.id,cl)} onDeleteStorico={fase=>deleteStorico(sel.id,fase)} onUpdateStoricoData={(fase,data,newFase,newStorico)=>updateStoricoData(sel.id,fase,data,newFase,newStorico)} onSetStatoColore={v=>setStatoColore(sel.id,v)} eventi={eventi} onSetTicketEvento={eid=>setTicketEvento(sel.id,eid)} />
+              ? <DetailModal p={sel} onEdit={()=>{setForm({...sel});setModal("edit");}} onAdvance={()=>advanceFase(sel)} onFollowUp={()=>moveFase(sel,"FOLLOW_UP")} onNonInt={()=>moveFase(sel,"NON_INT")} onNonPiace={()=>moveFase(sel,"NON_PIACE")} onRiattiva={()=>moveFase(sel,"RIATTIVA")} onClose={closeModal} onUpdateChecklist={cl=>updateChecklist(sel.id,cl)} onDeleteStorico={fase=>deleteStorico(sel.id,fase)} onUpdateStoricoData={(fase,data,newFase,newStorico)=>updateStoricoData(sel.id,fase,data,newFase,newStorico)} onSetStatoColore={v=>setStatoColore(sel.id,v)} eventi={eventi} onSetTicketEvento={eid=>setTicketEvento(sel.id,eid)} />
               : modal==="cliente"
               ? <ClienteQuickModal form={form} setForm={setForm} onSave={saveClienteQuick} onClose={closeModal} isLeader={!!auth.profile?.is_leader || auth.userId===LUDOVICO_ID} downline={downline} saving={saving} />
               : modal==="membro"
@@ -1901,17 +1853,9 @@ function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, s
         ?<div style={{textAlign:"center",padding:"4rem",color:"var(--border2)"}}><div style={{fontSize:44,marginBottom:12}}></div><p style={{fontSize:14,marginBottom:14}}>Nessun prospect trovato</p><button onClick={onAdd} style={{padding:"9px 20px",fontSize:13,fontWeight:800,background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:10,cursor:"pointer"}}>Aggiungi il primo</button></div>
         :<div className="tbl-wrap" style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden"}}>
           <table style={{width:"100%",borderCollapse:"collapse",minWidth:700}}>
-            <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Prospect",...(listaMode==="team"?["Di"]:[]),"Ciclo","Conosciuto","Fonte","Fase","Interesse","Checklist","Profilo","Pers.",""].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",letterSpacing:.8,padding:"12px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
+            <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Prospect",...(listaMode==="team"?["Di"]:[]),"Ciclo","Conosciuto","Fonte","Fase","Interesse","Checklist",""].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",letterSpacing:.8,padding:"12px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
             <tbody>{prospects.map(p=>{
               const c=cicloOfDate(p.conosciutoAt);
-              const badge=profiloBadge(p);
-              const bc=badge.compilati===0?"var(--border2)":badge.positivi>=6?"#10b981":badge.positivi>=3?"var(--a2)":"#f59e0b";
-              const jung = (() => {
-                const j = p.profilazione?.jung;
-                if (!j) return [];
-                if (Array.isArray(j)) return JUNG.filter(x=>j.includes(x.key));
-                return JUNG.filter(x=>x.key===j);
-              })();
               const tint = STATO_COLORE_MAP[p.statoColore];
               return (
                 <tr key={p.id} className="hrow" onClick={()=>onOpen(p)} style={{cursor:"pointer",borderBottom:"1px solid #0d1b3355",background:tint?tint+"14":"transparent",borderLeft:tint?"3px solid "+tint:"3px solid transparent"}}>
@@ -1939,8 +1883,6 @@ function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, s
                       : <span style={{color:"var(--border2)",fontSize:11}}>\u2014</span>
                     }
                   </td>
-                  <td style={{padding:"12px 16px"}}>{badge.compilati===0?<span style={{color:"var(--border2)",fontSize:11}}>\u2014</span>:<span style={{display:"inline-flex",alignItems:"center",gap:4,borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:800,color:bc,background:bc+"18",border:"1px solid "+bc+"30"}}> {badge.positivi}/{PROFILO_TOTAL}</span>}</td>
-                  <td style={{padding:"12px 16px"}}>{jung.length>0?<div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{jung.map(j=><span key={j.key} title={j.sub} style={{display:"inline-flex",alignItems:"center",gap:4,borderRadius:6,padding:"2px 7px",fontSize:10,fontWeight:800,color:j.border,background:j.border+"18",border:"1px solid "+j.border+"35"}}><span style={{width:6,height:6,borderRadius:"50%",background:j.border,flexShrink:0}}/>{j.label}</span>)}</div>:<span style={{color:"var(--border2)",fontSize:11}}>{"—"}</span>}</td>
                   <td style={{padding:"12px 16px",color:"var(--border2)",fontSize:16}}>{"\u203a"}</td>
                 </tr>
               );
@@ -2164,79 +2106,8 @@ function FormModal({ form, setForm, onSave, onClose, onDelete, isEdit, isLeader,
   );
 }
 
-//  PROFILAZIONE 
-function ProfilazioneTab({ p, onUpdateProfilo }) {
-  const pr=p.profilazione||{pleasures:{},forza:{}};
-  function toggle(section,key){const current=pr[section]?.[key]??null;const next=nextToggle(current);onUpdateProfilo({pleasures:{...pr.pleasures},forza:{...pr.forza},[section]:{...(pr[section]||{}),[key]:next}});}
-  function selectJung(key){
-    const current = Array.isArray(pr.jung) ? pr.jung : (pr.jung ? [pr.jung] : []);
-    const next = current.includes(key) ? current.filter(k=>k!==key) : [...current, key];
-    onUpdateProfilo({pleasures:{...pr.pleasures},forza:{...pr.forza},jung:next.length===0?null:next});
-  }
-  function ToggleGroup({title,fields,section,icon}){
-    return(
-      <div style={{marginBottom:18}}>
-        <div style={{fontSize:10,fontWeight:800,color:"var(--muted)",textTransform:"uppercase",letterSpacing:1.2,marginBottom:10,display:"flex",alignItems:"center",gap:6}}><span>{icon}</span>{title}</div>
-        <div style={{display:"flex",flexDirection:"column",gap:7}}>
-          {fields.map(f=>{
-            const val=pr[section]?.[f.key]??null;const clr=TC[val]||TC.null;
-            return(
-              <div key={f.key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--bg3)",borderRadius:9,padding:"9px 12px",border:"1px solid "+(val!=null?clr+"40":"var(--border)")}}>
-                <span style={{fontSize:12,color:val!=null?"var(--text)":"var(--muted)",fontWeight:val!=null?600:400}}>{f.label}</span>
-                <div style={{display:"flex",gap:5}}>
-                  {TV.filter(v=>v!==null).map(v=>{
-                    const active=val===v;
-                    const vc=TC[v];
-                    return(
-                      <button key={v} className="togbtn"
-                        onClick={()=>{
-                          const next = active ? null : v;
-                          const updSection = {...(pr[section]||{}), [f.key]: next};
-                          onUpdateProfilo({pleasures:{...pr.pleasures}, forza:{...pr.forza}, jung:pr.jung, [section]:updSection});
-                        }}
-                        style={{background:active?vc+"33":"var(--bg4)",color:active?vc:"var(--muted)",border:"1.5px solid "+(active?vc:"var(--border2)"),boxShadow:active?"0 0 8px "+vc+"40":"none"}}
-                        title={v==="-"?"No":v==="."?"Forse":"Si"}>
-                        {TL[v]}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-  const badge=profiloBadge(p);const pct=Math.round(badge.positivi/PROFILO_TOTAL*100);const bc=pct>=60?"#10b981":pct>=30?"var(--a2)":"#f59e0b";
-  const sj = Array.isArray(pr.jung) ? pr.jung : (pr.jung ? [pr.jung] : []);
-  const selectedJungs = JUNG.filter(j=>sj.includes(j.key));
-  return(
-    <div>
-      <div style={{background:"var(--bg3)",borderRadius:10,padding:"12px 14px",marginBottom:16,border:"1px solid var(--border)"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><span style={{fontSize:11,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.8}}>Score profilazione</span><span style={{fontWeight:900,fontSize:16,color:bc}}> {badge.positivi}/{PROFILO_TOTAL}</span></div>
-        <div style={{height:6,background:"var(--bg4)",borderRadius:99,overflow:"hidden"}}><div style={{height:"100%",width:pct+"%",background:"linear-gradient(90deg,"+bc+"88,"+bc+")",borderRadius:99,transition:"width .4s ease",boxShadow:"0 0 8px "+bc+"50"}}/></div>
-        <div style={{display:"flex",justifyContent:"space-between",marginTop:5}}><span style={{fontSize:10,color:"var(--muted)"}}>{badge.compilati}/{PROFILO_TOTAL} compilati</span><span style={{fontSize:10,color:bc,fontWeight:700}}>{pct}% positivi</span></div>
-      </div>
-      <ToggleGroup title="Pleasures — Cosa lo motiva" icon="" fields={PLEASURES} section="pleasures"/>
-      <ToggleGroup title="Punti di Forza — Cosa ha gia" icon="" fields={FORZA} section="forza"/>
-      <div style={{marginBottom:4}}>
-        <div style={{fontSize:10,fontWeight:800,color:"var(--muted)",textTransform:"uppercase",letterSpacing:1.2,marginBottom:10,display:"flex",alignItems:"center",gap:6}}><span></span>Personalita — Colori Jung</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:10}}>
-          {JUNG.map(j=>{const active=sj.includes(j.key);return(<button key={j.key} onClick={()=>selectJung(j.key)} style={{background:active?j.bg:"var(--bg3)",border:"2px solid "+(active?j.border:"var(--border2)"),borderRadius:12,padding:"14px 14px 12px",cursor:"pointer",textAlign:"left",transition:"all .2s",boxShadow:active?"0 0 18px "+j.glow:"none",position:"relative",overflow:"hidden"}}>{active&&<div style={{position:"absolute",top:8,right:10,width:18,height:18,borderRadius:"50%",background:"#ffffff33",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:900,color:"#fff"}}></div>}<div style={{fontWeight:900,fontSize:14,color:active?"#fff":j.border,marginBottom:3}}>{j.label}</div><div style={{fontSize:10,fontWeight:700,color:active?"rgba(255,255,255,.85)":"var(--muted)",marginBottom:5}}>{j.sub}</div><div style={{fontSize:10,color:active?"rgba(255,255,255,.65)":"var(--muted)",lineHeight:1.45}}>{j.desc}</div></button>);})}
-        </div>
-        {selectedJungs.length>0
-          ?<div style={{display:"flex",flexDirection:"column",gap:6}}>{selectedJungs.map(j=><div key={j.key} style={{background:j.border+"15",border:"1px solid "+j.border+"35",borderRadius:10,padding:"10px 13px",display:"flex",alignItems:"center",gap:10}}><div style={{width:10,height:10,borderRadius:"50%",background:j.border,flexShrink:0,boxShadow:"0 0 8px "+j.border}}/><div><span style={{fontSize:11,fontWeight:800,color:j.border}}>{j.label}</span><span style={{fontSize:11,color:"var(--muted)",marginLeft:6}}>{"\u00b7"} {j.sub}</span></div></div>)}</div>
-          :<div style={{background:"var(--bg3)",borderRadius:9,padding:"9px 12px",border:"1px dashed var(--border2)",textAlign:"center"}}><span style={{fontSize:11,color:"var(--border2)"}}>Nessun colore selezionato</span></div>
-        }
-      </div>
-      <div style={{background:"var(--bg3)",borderRadius:9,padding:"10px 12px",border:"1px solid var(--border)",marginTop:12}}><div style={{fontSize:10,color:"var(--border2)",fontStyle:"italic",lineHeight:1.5}}>Le persone non comprano il prodotto, ma la trasformazione</div></div>
-    </div>
-  );
-}
-
 //  DETAIL MODAL 
-function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onNonPiace, onRiattiva, onClose, onUpdateProfilo, onUpdateChecklist, onDeleteStorico, onUpdateStoricoData, onSetStatoColore, eventi, onSetTicketEvento }) {
+function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onNonPiace, onRiattiva, onClose, onUpdateChecklist, onDeleteStorico, onUpdateStoricoData, onSetStatoColore, eventi, onSetTicketEvento }) {
   const [activeTab,setActiveTab]=useState("dettagli");
   const [stepPopup, setStepPopup]=useState(null); // {fase, date}
   const [stepDate, setStepDate]=useState("");
@@ -2281,12 +2152,7 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onNonPiace, o
           })}
         </div>
       </div>
-      <div style={{display:"flex",gap:6,marginBottom:16,background:"var(--bg3)",padding:4,borderRadius:10,border:"1px solid var(--border)"}}>
-        {[{id:"dettagli",label:" Dettagli"},{id:"profilazione",label:" Profilazione"}].map(t=>(
-          <button key={t.id} className="tabbtn" onClick={()=>setActiveTab(t.id)} style={{flex:1,background:activeTab===t.id?"var(--bg4)":"transparent",color:activeTab===t.id?"var(--a2)":"var(--muted)",boxShadow:activeTab===t.id?"inset 0 0 0 1px var(--sidebar-border)":"none"}}>{t.label}</button>
-        ))}
-      </div>
-      {activeTab==="dettagli"&&(
+      {(
         <>
           {!isSpeciale&&(
             <div style={{display:"flex",alignItems:"center",marginBottom:20,overflowX:"auto",paddingBottom:4}}>
@@ -2396,7 +2262,7 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onNonPiace, o
           {!isSpeciale&&(<div style={{borderTop:"1px solid #0d1b33",marginTop:13,paddingTop:13,display:"flex",gap:9,flexWrap:"wrap"}}><div style={{fontSize:10,color:"var(--border2)",width:"100%",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:2}}>Stato speciale</div>{p.fase!=="FOLLOW_UP"&&<button onClick={onFollowUp} style={{padding:"8px 13px",background:"#f59e0b16",color:"#fbbf24",border:"1px solid #f59e0b38",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:12}}> Follow Up caldo</button>}{p.fase!=="NON_INT"&&<button onClick={onNonInt} style={{padding:"8px 13px",background:"#ef444414",color:"#f87171",border:"1px solid #ef444436",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:12}}> Non interessato</button>}{p.fase!=="NON_PIACE"&&<button onClick={onNonPiace} style={{padding:"8px 13px",background:"#ec489918",color:"#f472b6",border:"1px solid #ec489938",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:12}}> Non mi piace</button>}</div>)}
         </>
       )}
-      {activeTab==="profilazione"&&<ProfilazioneTab p={p} onUpdateProfilo={onUpdateProfilo}/>}
+
     </div>
   );
 }
