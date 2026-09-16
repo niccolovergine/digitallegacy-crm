@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const FASE_CLR = {INVITO:"#8b5cf6",FUP1:"var(--a1)",FUP2:"#3b82f6",PACK:"var(--a2)",CLOSING:"#22d3ee",SUB:"#10b981",FOLLOW_UP:"#f59e0b",NON_INT:"#6b7280"};
 const FASE_LABEL = {INVITO:"Invito",FUP1:"FUP 1",FUP2:"FUP 2",PACK:"Pack",CLOSING:"Closing",SUB:"Iscritto",FOLLOW_UP:"Follow Up",NON_INT:"Non Int."};
@@ -31,13 +31,24 @@ function Av({n,c,color,size=34}){
   );
 }
 
-export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positions,onOpenProspect,onSetLeader,onSetAttivo,onAddCliente,onAddMembro,onUpdateCliente,onDeleteCliente,LUDOVICO_ID}){
+export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positions,onOpenProspect,onSetLeader,onSetAttivo,onAddCliente,onAddMembro,onUpdateCliente,onDeleteCliente,sbGetListaNomiTeam,LUDOVICO_ID}){
   const isRoot = auth.userId === LUDOVICO_ID;
   const canToggleAttivo = isRoot || !!auth.profile?.is_leader;
   const[selectedMember,setSelectedMember]=useState(null);
   const[teamFilter,setTeamFilter]=useState("all");
   const[copied,setCopied]=useState(false);
   const[memberSearch,setMemberSearch]=useState("");
+  const[listaNomiMembro,setListaNomiMembro]=useState([]);
+  const[loadingListaNomi,setLoadingListaNomi]=useState(false);
+
+  useEffect(()=>{
+    if(!selectedMember||!sbGetListaNomiTeam){setListaNomiMembro([]);return;}
+    setLoadingListaNomi(true);
+    sbGetListaNomiTeam(auth.token,selectedMember.id)
+      .then(rows=>setListaNomiMembro(rows||[]))
+      .catch(()=>setListaNomiMembro([]))
+      .finally(()=>setLoadingListaNomi(false));
+  },[selectedMember]);
 
   const referralLink=auth?.profile?.referral_code?window.location.origin+"?ref="+auth.profile.referral_code:null;
   function copyLink(){if(!referralLink)return;navigator.clipboard.writeText(referralLink).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});}
@@ -109,7 +120,7 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positio
           ))}
         </div>
         <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden"}}>
-          <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a",fontSize:13,fontWeight:800,color:"var(--text)"}}>Lista nomi di {selectedMember.nome||selectedMember.email}</div>
+          <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a",fontSize:13,fontWeight:800,color:"var(--text)"}}>Prospect di {selectedMember.nome||selectedMember.email}</div>
           {mP.length===0
             ?<div style={{padding:"3rem",textAlign:"center",color:"var(--border2)"}}>Nessun prospect ancora</div>
             :<div style={{overflowX:"auto"}}>
@@ -128,6 +139,35 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positio
               );})}</tbody>
             </table>
           </div>
+          }
+        </div>
+
+        <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden",marginTop:20}}>
+          <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a"}}>
+            <div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}>Lista nomi di {selectedMember.nome||selectedMember.email}</div>
+            <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>Nomi ancora da invitare, non ancora diventati prospect</div>
+          </div>
+          {loadingListaNomi
+            ? <div style={{padding:"2rem",textAlign:"center",color:"var(--border2)",fontSize:13}}>Carico...</div>
+            : listaNomiMembro.length===0
+            ? <div style={{padding:"2rem",textAlign:"center",color:"var(--border2)",fontSize:13}}>Nessun nome ancora in lista</div>
+            : <div style={{overflowX:"auto"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",minWidth:680}}>
+                <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Nome","Città","Telefono","Instagram","Temp.","Note"].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
+                <tbody>{listaNomiMembro.map(n=>{
+                  const tempColor = n.temperatura==="Caldo"?"#ef4444":n.temperatura==="Tiepido"?"#f59e0b":n.temperatura==="Freddo"?"#3b82f6":null;
+                  return (
+                  <tr key={n.id} style={{borderBottom:"1px solid #0d1b3355"}}>
+                    <td style={{padding:"11px 16px"}}><div style={{display:"flex",alignItems:"center",gap:9}}><Av n={n.nome} c={n.cognome} color="#8b5cf6"/><span style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{n.nome} {n.cognome||""}</span></div></td>
+                    <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12}}>{n.citta||"\u2014"}</td>
+                    <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12}}>{n.telefono||"\u2014"}</td>
+                    <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12}}>{n.instagram||"\u2014"}</td>
+                    <td style={{padding:"11px 16px"}}>{tempColor?<span style={{fontSize:11,fontWeight:800,padding:"2px 8px",borderRadius:6,color:tempColor,background:tempColor+"20"}}>{n.temperatura}</span>:<span style={{color:"var(--border2)",fontSize:11}}>\u2014</span>}</td>
+                    <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12,maxWidth:220,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n.note||"\u2014"}</td>
+                  </tr>
+                );})}</tbody>
+              </table>
+            </div>
           }
         </div>
       </div>
