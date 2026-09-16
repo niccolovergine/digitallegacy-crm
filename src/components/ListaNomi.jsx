@@ -24,29 +24,6 @@ const sbInsertNome = (tok, row) => sbFetch("/rest/v1/lista_nomi", { method:"POST
 const sbUpdateNome = (tok, id, row) => sbFetch("/rest/v1/lista_nomi?id=eq."+id, { method:"PATCH", _token:tok, body:JSON.stringify(row) });
 const sbDeleteNome = (tok, id) => sbFetch("/rest/v1/lista_nomi?id=eq."+id, { method:"DELETE", _token:tok });
 
-const PLEASURES = [
-  { key:"tempo", label:"Tempo" },
-  { key:"relazioni", label:"Relazioni / Esperienze" },
-  { key:"crescita", label:"Crescita Personale" },
-  { key:"internet_money", label:"Internet Money" },
-  { key:"extra_mensile", label:"Extra Mensile" },
-  { key:"investimenti", label:"Investimenti" },
-];
-const FORZA = [
-  { key:"soldi", label:"Soldi" },
-  { key:"istruzione", label:"Istruzione" },
-  { key:"sociale", label:"Sociale" },
-];
-const JUNG = [
-  { key:"blu",    label:"BLU",    sub:"Metodo e professionalita",  bg:"linear-gradient(135deg,#3b4fd4,#6366f1)", border:"#6366f1" },
-  { key:"rosso",  label:"ROSSO",  sub:"Risultati",                 bg:"linear-gradient(135deg,#c2410c,#ef4444)", border:"#ef4444" },
-  { key:"giallo", label:"GIALLO", sub:"Umanita e leggerezza",      bg:"linear-gradient(135deg,#b45309,#f59e0b)", border:"#f59e0b" },
-  { key:"verde",  label:"VERDE",  sub:"Disposizione ad aiutare",   bg:"linear-gradient(135deg,#047857,#10b981)", border:"#10b981" },
-];
-const TV = [null, "-", ".", "+"];
-const TC = { null:"var(--border2)", "-":"#ef4444", ".":"#f59e0b", "+":"#10b981" };
-const TL = { "-":"\u2013", ".":"\u00b7", "+":"+" };
-
 const TEMPERATURE = ["Caldo", "Tiepido", "Freddo"];
 const TEMP_CLR = { Caldo:"#ef4444", Tiepido:"#f59e0b", Freddo:"#3b82f6" };
 
@@ -61,87 +38,10 @@ function Av({ n, c, size=34 }) {
   );
 }
 
-function ProfilazionePanel({ profilazione, onChange }) {
-  const pr = profilazione || { pleasures:{}, forza:{} };
-
-  function toggle(section, key) {
-    const current = pr[section]?.[key] ?? null;
-    const i = TV.indexOf(current);
-    const next = TV[(i+1) % TV.length];
-    onChange({ ...pr, [section]: { ...(pr[section]||{}), [key]: next } });
-  }
-
-  function selectJung(key) {
-    const current = Array.isArray(pr.jung) ? pr.jung : (pr.jung ? [pr.jung] : []);
-    const next = current.includes(key) ? current.filter(k=>k!==key) : [...current, key];
-    onChange({ ...pr, jung: next.length===0 ? null : next });
-  }
-
-  function ToggleGroup({ title, fields, section }) {
-    return (
-      <div style={{marginBottom:16}}>
-        <div style={{fontSize:10,fontWeight:800,color:"var(--muted)",textTransform:"uppercase",letterSpacing:1.2,marginBottom:8}}>{title}</div>
-        <div style={{display:"flex",flexDirection:"column",gap:6}}>
-          {fields.map(f => {
-            const val = pr[section]?.[f.key] ?? null;
-            const clr = TC[val] || TC.null;
-            return (
-              <div key={f.key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--bg3)",borderRadius:9,padding:"8px 11px",border:"1px solid "+(val!=null?clr+"40":"var(--border)")}}>
-                <span style={{fontSize:12,color:val!=null?"var(--text)":"var(--muted)"}}>{f.label}</span>
-                <div style={{display:"flex",gap:5}}>
-                  {TV.filter(v=>v!==null).map(v => {
-                    const active = val === v;
-                    const vc = TC[v];
-                    return (
-                      <button key={v} onClick={() => {
-                        const next = active ? null : v;
-                        onChange({ ...pr, [section]: { ...(pr[section]||{}), [f.key]: next } });
-                      }}
-                        style={{width:28,height:26,borderRadius:6,border:"1.5px solid "+(active?vc:"var(--border2)"),cursor:"pointer",fontSize:13,fontWeight:900,fontFamily:"inherit",background:active?vc+"33":"var(--bg4)",color:active?vc:"var(--muted)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                        {TL[v]}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  const sj = Array.isArray(pr.jung) ? pr.jung : (pr.jung ? [pr.jung] : []);
-  const selectedJungs = JUNG.filter(j => sj.includes(j.key));
-
-  return (
-    <div>
-      <ToggleGroup title="Pleasures" fields={PLEASURES} section="pleasures" />
-      <ToggleGroup title="Punti di Forza" fields={FORZA} section="forza" />
-      <div style={{marginBottom:8}}>
-        <div style={{fontSize:10,fontWeight:800,color:"var(--muted)",textTransform:"uppercase",letterSpacing:1.2,marginBottom:8}}>Personalita Jung</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
-          {JUNG.map(j => {
-            const active = sj.includes(j.key);
-            return (
-              <button key={j.key} onClick={() => selectJung(j.key)}
-                style={{background:active?j.bg:"var(--bg3)",border:"2px solid "+(active?j.border:"var(--border2)"),borderRadius:10,padding:"10px 12px",cursor:"pointer",textAlign:"left",transition:"all .2s"}}>
-                <div style={{fontWeight:900,fontSize:13,color:active?"#fff":j.border}}>{j.label}</div>
-                <div style={{fontSize:10,color:active?"rgba(255,255,255,.8)":"var(--muted)",marginTop:2}}>{j.sub}</div>
-              </button>
-            );
-          })}
-        </div>
-        {selectedJungs.length>0&&<div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{selectedJungs.map(j=><div key={j.key} style={{background:j.border+"15",border:"1px solid "+j.border+"35",borderRadius:9,padding:"6px 11px",fontSize:11,color:j.border,fontWeight:700}}>{j.label} {"\u00b7"} {j.sub}</div>)}</div>}
-      </div>
-    </div>
-  );
-}
-
 function PersonaModal({ persona, onSave, onClose, onDelete, onInvita, isEdit }) {
-  const [form, setForm] = useState(persona || { nome:"", cognome:"", citta:"", telefono:"", instagram:"", note:"", profilazione:{ pleasures:{}, forza:{} }, invitato:false });
-  const [tab, setTab] = useState("dati");
+  const [form, setForm] = useState(persona || { nome:"", cognome:"", citta:"", telefono:"", instagram:"", note:"", invitato:false });
   const lbl = { fontSize:11, fontWeight:700, color:"var(--muted)", textTransform:"uppercase", letterSpacing:.8, marginBottom:5, display:"block" };
+  const isFreddo = form.temperatura === "Freddo";
 
   return (
     <div style={{background:"var(--bg2)",border:"1px solid var(--border2)",borderRadius:16,padding:"1.6rem",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 20px 70px #000000aa"}}>
@@ -150,44 +50,31 @@ function PersonaModal({ persona, onSave, onClose, onDelete, onInvita, isEdit }) 
         <button onClick={onClose} style={{background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:8,cursor:"pointer",padding:"4px 10px",fontSize:14}}>X</button>
       </div>
 
-      <div style={{display:"flex",background:"var(--bg3)",borderRadius:10,padding:4,marginBottom:16,border:"1px solid var(--border)"}}>
-        {[{id:"dati",label:"Dati"},{id:"profilazione",label:"Profilazione"}].map(t=>(
-          <button key={t.id} onClick={()=>setTab(t.id)}
-            style={{flex:1,padding:"7px",borderRadius:8,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"inherit",background:tab===t.id?"var(--bg4)":"transparent",color:tab===t.id?"var(--a2)":"var(--muted)",boxShadow:tab===t.id?"inset 0 0 0 1px var(--sidebar-border)":"none"}}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {tab==="dati" && (
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
-          <div><label style={lbl}>Nome</label><input value={form.nome||""} onChange={e=>setForm(f=>({...f,nome:e.target.value}))} placeholder="Mario" /></div>
-          <div><label style={lbl}>Cognome</label><input value={form.cognome||""} onChange={e=>setForm(f=>({...f,cognome:e.target.value}))} placeholder="Rossi" /></div>
-          <div style={{gridColumn:"1/-1"}}><label style={lbl}>Citta</label><input value={form.citta||""} onChange={e=>setForm(f=>({...f,citta:e.target.value}))} placeholder="Milano" /></div>
-          <div><label style={lbl}>Telefono</label><input value={form.telefono||""} onChange={e=>setForm(f=>({...f,telefono:e.target.value}))} placeholder="+39 333 000 0000" /></div>
-          <div><label style={lbl}>Instagram</label><input value={form.instagram||""} onChange={e=>setForm(f=>({...f,instagram:e.target.value}))} placeholder="@username" /></div>
-          <div style={{gridColumn:"1/-1"}}><label style={lbl}>Note</label><textarea value={form.note||""} onChange={e=>setForm(f=>({...f,note:e.target.value}))} style={{height:70,resize:"vertical"}} placeholder="Note personali..." /></div>
-          <div style={{gridColumn:"1/-1"}}>
-            <label style={lbl}>Temperatura contatto</label>
-            <div style={{display:"flex",gap:8}}>
-              {TEMPERATURE.map(t=>{
-                const active=form.temperatura===t;
-                const color=TEMP_CLR[t];
-                return(
-                  <button key={t} onClick={()=>setForm(f=>({...f,temperatura:active?null:t}))}
-                    style={{flex:1,padding:"9px",background:active?color+"25":"var(--bg3)",border:"2px solid "+(active?color:"var(--border2)"),borderRadius:9,cursor:"pointer",color:active?color:"var(--muted)",fontWeight:700,fontSize:13,fontFamily:"inherit",transition:"all .2s"}}>
-                    {t}
-                  </button>
-                );
-              })}
-            </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+        <div><label style={lbl}>Nome</label><input value={form.nome||""} onChange={e=>setForm(f=>({...f,nome:e.target.value}))} placeholder="Mario" /></div>
+        <div><label style={lbl}>Cognome</label><input value={form.cognome||""} onChange={e=>setForm(f=>({...f,cognome:e.target.value}))} placeholder="Rossi" /></div>
+        <div style={{gridColumn:"1/-1"}}><label style={lbl}>Citta</label><input value={form.citta||""} onChange={e=>setForm(f=>({...f,citta:e.target.value}))} placeholder="Milano" /></div>
+        <div><label style={lbl}>Telefono</label><input value={form.telefono||""} onChange={e=>setForm(f=>({...f,telefono:e.target.value}))} placeholder="+39 333 000 0000" /></div>
+        <div style={{gridColumn:"1/-1"}}>
+          <label style={lbl}>Temperatura contatto</label>
+          <div style={{display:"flex",gap:8}}>
+            {TEMPERATURE.map(t=>{
+              const active=form.temperatura===t;
+              const color=TEMP_CLR[t];
+              return(
+                <button key={t} onClick={()=>setForm(f=>({...f,temperatura:active?null:t}))}
+                  style={{flex:1,padding:"9px",background:active?color+"25":"var(--bg3)",border:"2px solid "+(active?color:"var(--border2)"),borderRadius:9,cursor:"pointer",color:active?color:"var(--muted)",fontWeight:700,fontSize:13,fontFamily:"inherit",transition:"all .2s"}}>
+                  {t}
+                </button>
+              );
+            })}
           </div>
         </div>
-      )}
-
-      {tab==="profilazione" && (
-        <ProfilazionePanel profilazione={form.profilazione} onChange={pr=>setForm(f=>({...f,profilazione:pr}))} />
-      )}
+        {isFreddo && (
+          <div style={{gridColumn:"1/-1"}}><label style={lbl}>Instagram</label><input value={form.instagram||""} onChange={e=>setForm(f=>({...f,instagram:e.target.value}))} placeholder="@username" /></div>
+        )}
+        <div style={{gridColumn:"1/-1"}}><label style={lbl}>Note</label><textarea value={form.note||""} onChange={e=>setForm(f=>({...f,note:e.target.value}))} style={{height:70,resize:"vertical"}} placeholder="Note personali..." /></div>
+      </div>
 
       <div style={{display:"flex",gap:9,justifyContent:"flex-end",flexWrap:"wrap",marginTop:8}}>
         {onDelete && <button onClick={onDelete} style={{padding:"9px 14px",background:"#ef444415",color:"#f87171",border:"1px solid #ef444438",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:13}}>Elimina</button>}
@@ -225,12 +112,12 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
     if (!form.nome?.trim()) return;
     try {
       if (modal === "add") {
-        const row = { id:genId(), user_id:auth.userId, nome:form.nome, cognome:form.cognome||null, citta:form.citta||null, telefono:form.telefono||null, instagram:form.instagram||null, note:form.note||null, profilazione:form.profilazione||{}, invitato:false, temperatura:form.temperatura||null };
+        const row = { id:genId(), user_id:auth.userId, nome:form.nome, cognome:form.cognome||null, citta:form.citta||null, telefono:form.telefono||null, instagram:form.instagram||null, note:form.note||null, invitato:false, temperatura:form.temperatura||null };
         await sbInsertNome(auth.token, row);
         setLista(l=>[row,...l]);
         showToast("Aggiunto");
       } else {
-        const row = { nome:form.nome, cognome:form.cognome||null, citta:form.citta||null, telefono:form.telefono||null, instagram:form.instagram||null, note:form.note||null, profilazione:form.profilazione||{}, temperatura:form.temperatura||null };
+        const row = { nome:form.nome, cognome:form.cognome||null, citta:form.citta||null, telefono:form.telefono||null, instagram:form.instagram||null, note:form.note||null, temperatura:form.temperatura||null };
         await sbUpdateNome(auth.token, sel.id, row);
         setLista(l=>l.map(x=>x.id===sel.id?{...x,...row}:x));
         showToast("Aggiornato");
@@ -261,7 +148,6 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
         telefono: form.telefono||"",
         instagram: form.instagram||"",
         note: form.note||"",
-        profilazione: form.profilazione||{},
         fonte: "Offline",
         fase: "INVITO",
         conosciutoAt: today(),
@@ -333,12 +219,11 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
                   </div>
                   <table style={{width:"100%",borderCollapse:"collapse"}}>
                     <thead><tr style={{borderBottom:"1px solid #11203a"}}>
-                      {["Nome","Citta","Telefono","Instagram","Temp.","Note","Profilo",""].map(h=>(
+                      {["Nome","Citta","Telefono","Instagram","Temp.","Note",""].map(h=>(
                         <th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>{h}</th>
                       ))}
                     </tr></thead>
                     <tbody>{daInvitare.map(p=>{
-                      const jung = (() => { const j=p.profilazione?.jung; if(!j)return[]; if(Array.isArray(j))return JUNG.filter(x=>j.includes(x.key)); return JUNG.filter(x=>x.key===j); })();
                       return (
                         <tr key={p.id} onClick={()=>{setSel(p);setModal("edit");}} style={{borderBottom:"1px solid #0d1b3355",cursor:"pointer"}} className="hrow">
                           <td style={{padding:"11px 16px"}}><div style={{display:"flex",alignItems:"center",gap:9}}><Av n={p.nome} c={p.cognome}/><span style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{p.nome} {p.cognome}</span></div></td>
@@ -347,7 +232,6 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
                           <td style={{padding:"11px 16px",fontSize:12}}>{p.instagram?<a href={"https://instagram.com/"+p.instagram.replace("@","")} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()} style={{color:"#c084fc",textDecoration:"none"}}>{p.instagram.startsWith("@")?p.instagram:"@"+p.instagram}</a>:"\u2014"}</td>
                           <td style={{padding:"11px 16px"}}>{p.temperatura?<span style={{fontSize:11,fontWeight:800,padding:"2px 8px",borderRadius:6,color:TEMP_CLR[p.temperatura],background:TEMP_CLR[p.temperatura]+"20"}}>{p.temperatura}</span>:"\u2014"}</td>
                           <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12,maxWidth:200}}><div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.note||"\u2014"}</div></td>
-                          <td style={{padding:"11px 16px"}}>{jung.length>0?jung.map(j=><span key={j.key} style={{fontSize:10,fontWeight:800,color:j.border,background:j.border+"18",borderRadius:6,padding:"2px 7px",marginRight:3}}>{j.label}</span>):"\u2014"}</td>
                           <td style={{padding:"11px 16px",color:"var(--border2)",fontSize:16}}>{"\u203a"}</td>
                         </tr>
                       );
