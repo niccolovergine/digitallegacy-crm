@@ -1,7 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import { useState } from "react";
 
-const FASI_DASH = ["FUP1","FUP2","PACK","CLOSING","SUB"];
 const FASE_CLR = {INVITO:"#8b5cf6",FUP1:"var(--a1)",FUP2:"#3b82f6",PACK:"var(--a2)",CLOSING:"#22d3ee",SUB:"#10b981",FOLLOW_UP:"#f59e0b",NON_INT:"#6b7280"};
 const FASE_LABEL = {INVITO:"Invito",FUP1:"FUP 1",FUP2:"FUP 2",PACK:"Pack",CLOSING:"Closing",SUB:"Iscritto",FOLLOW_UP:"Follow Up",NON_INT:"Non Int."};
 const PACCHETTI = [{key:"starter",label:"Starter",bv:100},{key:"standard",label:"Standard",bv:250},{key:"premium",label:"Premium",bv:550},{key:"signature",label:"Signature",bv:1025},{key:"altro",label:"Altro",bv:0}];
@@ -11,21 +9,10 @@ function bvOfPacchetto(key, bvCustom){
   return p?p.bv:0;
 }
 
-const CICLI=[[73,"2026-01-03","2026-01-31"],[74,"2026-01-31","2026-02-28"],[75,"2026-02-28","2026-03-28"],[76,"2026-03-28","2026-04-25"],[77,"2026-04-25","2026-05-23"],[78,"2026-05-23","2026-06-20"],[79,"2026-06-20","2026-07-18"],[80,"2026-07-18","2026-08-15"],[81,"2026-08-15","2026-09-12"],[82,"2026-09-12","2026-10-10"],[83,"2026-10-10","2026-11-07"],[84,"2026-11-07","2026-12-05"],[85,"2026-12-05","2027-01-02"]];
-const CICLO_CORRENTE=(()=>{const t=new Date().toISOString().split("T")[0];for(const[c,s,e]of CICLI)if(t>=s&&t<e)return c;return CICLI[CICLI.length-1][0];})();
-const CICLO_NUMS=CICLI.map(r=>r[0]).sort((a,b)=>b-a);
-function cicloOfDate(d){if(!d)return null;for(const[c,s,e]of CICLI)if(d>=s&&d<e)return c;return null;}
-function cicloLabel(c){const r=CICLI.find(x=>x[0]===Number(c));if(!r)return"Ciclo "+c;const fd=s=>new Date(s+"T12:00:00").toLocaleDateString("it-IT",{day:"numeric",month:"short"});return fd(r[1])+" \u2013 "+fd(r[2]);}
-function dataByCiclo(arr,c){const r=CICLI.find(x=>x[0]===Number(c));if(!r)return[];return arr.filter(p=>p.conosciutoAt&&p.conosciutoAt>=r[1]&&p.conosciutoAt<r[2]);}
+const STATO_COLORE_MAP = { iscritto:"#10b981", sparito:"#ef4444", da_risentire:"#f59e0b", iscrizione_fissata:"#3b82f6" };
+const STATO_COLORE_LABEL = { iscritto:"Iscritto", sparito:"Sparito", da_risentire:"Da risentire più avanti", iscrizione_fissata:"Iscrizione fissata" };
+
 const fmt=d=>d?new Date(d+"T12:00:00").toLocaleDateString("it-IT"):"\u2014";
-
-
-function giorniAlla(dateStr){
-  if(!dateStr)return null;
-  const oggi=new Date();oggi.setHours(0,0,0,0);
-  const target=new Date(dateStr+"T00:00:00");
-  return Math.round((target-oggi)/86400000);
-}
 
 function teamStats(prospects){
   const total=prospects.length;
@@ -36,16 +23,6 @@ function teamStats(prospects){
   return{total,sub,act,conv,bv};
 }
 
-function profiloBadge(p){
-  const PLEASURES=[{key:"tempo"},{key:"relazioni"},{key:"crescita"},{key:"internet_money"},{key:"extra_mensile"},{key:"investimenti"}];
-  const FORZA=[{key:"soldi"},{key:"istruzione"},{key:"sociale"}];
-  const pr=p.profilazione||{};
-  let pos=0,comp=0;
-  PLEASURES.forEach(f=>{const v=pr.pleasures?.[f.key];if(v!=null)comp++;if(v==="+")pos++;});
-  FORZA.forEach(f=>{const v=pr.forza?.[f.key];if(v!=null)comp++;if(v==="+")pos++;});
-  return{positivi:pos,compilati:comp};
-}
-
 function Av({n,c,color,size=34}){
   return(
     <div style={{width:size,height:size,borderRadius:"50%",flexShrink:0,background:"linear-gradient(135deg,"+color+","+color+"99)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:900,fontSize:size*0.32,boxShadow:"0 0 10px "+color+"35"}}>
@@ -54,338 +31,16 @@ function Av({n,c,color,size=34}){
   );
 }
 
-function PanZoomTree({ children }) {
-  const containerRef = useRef(null);
-  const contentRef = useRef(null);
-  const [scale, setScale] = useState(0.85);
-  const [pos, setPos] = useState({ x: 0, y: 0 });
-  const dragState = useRef({ dragging: false, startX: 0, startY: 0, origX: 0, origY: 0 });
-
-  const clampScale = (s) => Math.min(2, Math.max(0.3, s));
-
-  function zoomBy(delta, clientX, clientY) {
-    setScale(prev => {
-      const next = clampScale(prev + delta);
-      if (containerRef.current && clientX != null) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const cx = clientX - rect.left;
-        const cy = clientY - rect.top;
-        setPos(p => ({
-          x: cx - ((cx - p.x) / prev) * next,
-          y: cy - ((cy - p.y) / prev) * next,
-        }));
-      }
-      return next;
-    });
-  }
-
-  function onWheel(e) {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? -0.08 : 0.08;
-    zoomBy(delta, e.clientX, e.clientY);
-  }
-
-  function onMouseDown(e) {
-    if (e.button !== 0) return;
-    dragState.current = { dragging: true, startX: e.clientX, startY: e.clientY, origX: pos.x, origY: pos.y };
-    if (containerRef.current) containerRef.current.style.cursor = "grabbing";
-  }
-
-  const onMouseMove = useCallback((e) => {
-    if (!dragState.current.dragging) return;
-    const dx = e.clientX - dragState.current.startX;
-    const dy = e.clientY - dragState.current.startY;
-    setPos({ x: dragState.current.origX + dx, y: dragState.current.origY + dy });
-  }, []);
-
-  const onMouseUp = useCallback(() => {
-    dragState.current.dragging = false;
-    if (containerRef.current) containerRef.current.style.cursor = "grab";
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-    };
-  }, [onMouseMove, onMouseUp]);
-
-  // Touch support (mobile pinch/drag)
-  const touchState = useRef({ lastDist: null, lastMid: null });
-  function touchDist(t) { const dx = t[0].clientX - t[1].clientX, dy = t[0].clientY - t[1].clientY; return Math.hypot(dx, dy); }
-  function touchMid(t) { return { x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 }; }
-
-  function onTouchStart(e) {
-    if (e.touches.length === 1) {
-      dragState.current = { dragging: true, startX: e.touches[0].clientX, startY: e.touches[0].clientY, origX: pos.x, origY: pos.y };
-    } else if (e.touches.length === 2) {
-      touchState.current.lastDist = touchDist(e.touches);
-      touchState.current.lastMid = touchMid(e.touches);
-    }
-  }
-  function onTouchMove(e) {
-    if (e.touches.length === 1 && dragState.current.dragging) {
-      const dx = e.touches[0].clientX - dragState.current.startX;
-      const dy = e.touches[0].clientY - dragState.current.startY;
-      setPos({ x: dragState.current.origX + dx, y: dragState.current.origY + dy });
-    } else if (e.touches.length === 2) {
-      const dist = touchDist(e.touches);
-      if (touchState.current.lastDist) {
-        const ratio = dist / touchState.current.lastDist;
-        setScale(prev => clampScale(prev * ratio));
-      }
-      touchState.current.lastDist = dist;
-    }
-  }
-  function onTouchEnd() {
-    dragState.current.dragging = false;
-    touchState.current.lastDist = null;
-  }
-
-  function resetView() { setScale(0.85); setPos({ x: 0, y: 0 }); }
-
-  return (
-    <div style={{ position: "relative" }}>
-      <div
-        ref={containerRef}
-        onWheel={onWheel}
-        onMouseDown={onMouseDown}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-        style={{
-          width: "100%",
-          height: 560,
-          overflow: "hidden",
-          borderRadius: 12,
-          background: "var(--bg3)",
-          cursor: "grab",
-          touchAction: "none",
-          position: "relative",
-        }}
-      >
-        <div
-          ref={contentRef}
-          style={{
-            position: "absolute",
-            left: "50%",
-            top: 24,
-            transform: `translate(${pos.x}px, ${pos.y}px) translateX(-50%) scale(${scale})`,
-            transformOrigin: "top center",
-            transition: dragState.current.dragging ? "none" : "transform .05s linear",
-          }}
-        >
-          {children}
-        </div>
-      </div>
-
-      <div style={{ position: "absolute", bottom: 12, right: 12, display: "flex", flexDirection: "column", gap: 6, background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 10, padding: 6 }}>
-        <button onClick={() => zoomBy(0.15)} style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid var(--border2)", background: "var(--bg4)", color: "var(--text)", fontSize: 16, fontWeight: 800, cursor: "pointer" }}>+</button>
-        <button onClick={() => zoomBy(-0.15)} style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid var(--border2)", background: "var(--bg4)", color: "var(--text)", fontSize: 16, fontWeight: 800, cursor: "pointer" }}>{"\u2212"}</button>
-        <button onClick={resetView} style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid var(--border2)", background: "var(--bg4)", color: "var(--muted)", fontSize: 11, fontWeight: 800, cursor: "pointer" }}>{"\u27f3"}</button>
-      </div>
-
-      <div style={{ position: "absolute", bottom: 12, left: 12, fontSize: 10, color: "var(--muted)", background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 8, padding: "5px 9px" }}>
-        Trascina per spostarti {"\u00b7"} scorri per zoomare
-      </div>
-    </div>
-  );
-}
-
-
-// ===== ALBERO GENEALOGICO: layout calcolato =====
-// Dimensioni fisse dei nodi e spaziatura, usate per calcolare le posizioni
-const NODE_W = 132;
-const SLOT_W = 120;
-const H_GAP = 22;      // spazio orizzontale minimo tra fratelli (centro a centro extra)
-const V_GAP = 92;      // distanza verticale tra un livello e il successivo
-const LABEL_H = 18;    // spazio per la label "Sinistra/Destra" sopra ogni nodo non-root
-
-function buildTreeData(memberId, memberNome, memberCognome, memberEmail, allMembers, dlProspects, positions, depth, side) {
-  function getPos(mId, upId) { const p = positions.find(p => p.member_id === mId && p.upline_id === upId); return p?.team || null; }
-  const children = allMembers.filter(m => m.positioned_under === memberId);
-  const sin = children.filter(m => getPos(m.id, memberId) === "sinistra");
-  const de = children.filter(m => getPos(m.id, memberId) === "destra");
-  const mP = dlProspects.filter(p => p._userId === memberId);
-  const ms = teamStats(mP);
-
-  const leftChild = sin.length > 0
-    ? buildTreeData(sin[0].id, sin[0].nome, sin[0].cognome, sin[0].email, allMembers, dlProspects, positions, depth + 1, "sinistra")
-    : { empty: true, side: "sinistra", id: "empty-sin-" + memberId };
-  const rightChild = de.length > 0
-    ? buildTreeData(de[0].id, de[0].nome, de[0].cognome, de[0].email, allMembers, dlProspects, positions, depth + 1, "destra")
-    : { empty: true, side: "destra", id: "empty-de-" + memberId };
-
-  return {
-    id: memberId, nome: memberNome, cognome: memberCognome, email: memberEmail,
-    depth, side, isRoot: depth === 0, ms,
-    left: leftChild, right: rightChild,
-  };
-}
-
-// Calcola larghezza del sottoalbero (in "unita di nodo") ricorsivamente.
-// Una foglia (o slot vuoto) occupa 1 unita; un nodo interno occupa la somma dei suoi figli (min 1).
-function subtreeWidth(node) {
-  if (node.empty) return 1;
-  const lw = subtreeWidth(node.left);
-  const rw = subtreeWidth(node.right);
-  node._w = Math.max(lw + rw, 1);
-  return node._w;
-}
-
-// Assegna coordinate x (in unita) e y (in livelli) a ogni nodo, centrando ogni genitore
-// esattamente tra il centro del proprio sottoalbero sinistro e quello destro.
-function assignPositions(node, xOffset) {
-  if (node.empty) {
-    node._x = xOffset + 0.5;
-    node._y = node.depthForLayout;
-    return;
-  }
-  const lw = node.left.empty ? 1 : node.left._w;
-  assignPositions(node.left, xOffset);
-  assignPositions(node.right, xOffset + lw);
-  node._x = (node.left._x + node.right._x) / 2;
-  node._y = node.depth;
-}
-
-function setDepthForEmpties(node, depth) {
-  if (node.empty) { node.depthForLayout = depth; return; }
-  setDepthForEmpties(node.left, depth + 1);
-  setDepthForEmpties(node.right, depth + 1);
-}
-
-// Raccoglie tutti i nodi (reali + slot vuoti) e i collegamenti (linee) in liste piatte,
-// pronte per essere renderizzate con coordinate pixel assolute.
-function flattenTree(node, nodes, edges, parentPx) {
-  const unitW = NODE_W + H_GAP;
-  const px = { x: node._x * unitW, y: node._y * (V_GAP) };
-
-  if (parentPx) edges.push({ x1: parentPx.x, y1: parentPx.y, x2: px.x, y2: px.y, side: node.side });
-
-  if (node.empty) {
-    nodes.push({ type: "empty", x: px.x, y: px.y, side: node.side, parentId: node.id.replace(/^empty-(sin|de)-/, "") });
-    return;
-  }
-  nodes.push({ type: "member", x: px.x, y: px.y, id: node.id, nome: node.nome, cognome: node.cognome, email: node.email, isRoot: node.isRoot, ms: node.ms, side: node.side });
-  flattenTree(node.left, nodes, edges, px);
-  flattenTree(node.right, nodes, edges, px);
-}
-
-function computeTreeLayout(memberId, memberNome, memberCognome, memberEmail, allMembers, dlProspects, positions) {
-  const root = buildTreeData(memberId, memberNome, memberCognome, memberEmail, allMembers, dlProspects, positions, 0, null);
-  setDepthForEmpties(root, 0);
-  subtreeWidth(root);
-  assignPositions(root, 0);
-  const nodes = [], edges = [];
-  flattenTree(root, nodes, edges, null);
-  const maxX = Math.max(...nodes.map(n => n.x)) + NODE_W;
-  const minX = Math.min(...nodes.map(n => n.x));
-  const maxY = Math.max(...nodes.map(n => n.y)) + V_GAP;
-  return { nodes, edges, width: maxX - minX + 40, height: maxY + 60, offsetX: -minX + 20 };
-}
-
-function TreeCanvas({ memberId, memberNome, memberCognome, memberEmail, allMembers, dlProspects, positions, onSelect, selectedForPlacement, onPlaceHere }) {
-  const layout = computeTreeLayout(memberId, memberNome, memberCognome, memberEmail, allMembers, dlProspects, positions);
-  const canPlace = !!selectedForPlacement;
-
-  return (
-    <div style={{ position: "relative", width: layout.width, height: layout.height }}>
-      <svg width={layout.width} height={layout.height} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none" }}>
-        {layout.edges.map((e, i) => {
-          const x1 = e.x1 + layout.offsetX + NODE_W / 2, y1 = e.y1 + 38;
-          const x2 = e.x2 + layout.offsetX + NODE_W / 2, y2 = e.y2 + LABEL_H;
-          const midY = (y1 + y2) / 2;
-          const color = e.side === "sinistra" ? "var(--a1)" : "#10b981";
-          return (
-            <path key={i}
-              d={`M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}`}
-              stroke={color} strokeOpacity={0.35} strokeWidth={1.5} fill="none" />
-          );
-        })}
-      </svg>
-
-      {layout.nodes.map((n, i) => {
-        const left = n.x + layout.offsetX;
-        if (n.type === "empty") {
-          const labelColor = n.side === "sinistra" ? "var(--a1)" : "#10b981";
-          return (
-            <div key={"e" + i} style={{ position: "absolute", left, top: n.y, width: NODE_W, display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <div style={{ fontSize: 9, fontWeight: 800, color: labelColor, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 3, whiteSpace: "nowrap" }}>
-                {n.side === "sinistra" ? "\u2190 Sinistra" : "Destra \u2192"}
-              </div>
-              {!canPlace ? (
-                <div style={{ width: SLOT_W, height: 44, border: "2px dashed var(--border2)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontSize: 10, color: "var(--border2)" }}>vuoto</span>
-                </div>
-              ) : (
-                <div onClick={() => onPlaceHere && onPlaceHere(n.parentId, n.side)}
-                  style={{ width: SLOT_W, height: 44, border: "2px dashed " + labelColor, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: labelColor + "12", transition: "all .2s" }}>
-                  <span style={{ fontSize: 11, color: labelColor, fontWeight: 700 }}>+ Posiziona</span>
-                </div>
-              )}
-            </div>
-          );
-        }
-        const labelColor = n.side === "sinistra" ? "var(--a1)" : n.side === "destra" ? "#10b981" : null;
-        return (
-          <div key={n.id} style={{ position: "absolute", left, top: n.y, width: NODE_W, display: "flex", flexDirection: "column", alignItems: "center" }}>
-            {labelColor && (
-              <div style={{ fontSize: 9, fontWeight: 800, color: labelColor, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 3, whiteSpace: "nowrap" }}>
-                {n.side === "sinistra" ? "\u2190 Sinistra" : "Destra \u2192"}
-              </div>
-            )}
-            <div onClick={() => !n.isRoot && onSelect && onSelect(allMembers.find(m => m.id === n.id))}
-              style={{
-                background: n.isRoot ? "linear-gradient(135deg,var(--a1),var(--a2))" : "var(--bg4)",
-                border: "2px solid " + (n.isRoot ? "var(--a1)" : "var(--border2)"),
-                borderRadius: 12, padding: "10px 14px", textAlign: "center",
-                cursor: n.isRoot ? "default" : "pointer", width: NODE_W - 8,
-                boxShadow: n.isRoot ? "0 0 20px var(--a1-25)" : "none",
-              }}>
-              <div style={{ fontWeight: 800, fontSize: 12, color: n.isRoot ? "#fff" : "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {n.nome || n.email} {n.cognome || ""}
-              </div>
-              {!n.isRoot && <div style={{ fontSize: 10, color: n.isRoot ? "rgba(255,255,255,.8)" : "var(--muted)", marginTop: 2 }}>{n.ms.sub} iscr {"\u00b7"} {n.ms.bv} BV</div>}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-// ===== fine layout albero =====
-
-
-
-export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddManual,positions,onOpenProspect,onPositionInTree,onSetLeader,onSetAttivo,onAddCliente,onAddMembro,onUpdateCliente,onDeleteCliente,LUDOVICO_ID}){
-  const isRoot = auth.userId === LUDOVICO_ID; // solo il titolare del CRM può nominare i leader, indipendentemente da dove si trova nell'albero
-  const canToggleAttivo = isRoot || !!auth.profile?.is_leader; // i Leader possono disattivare i membri della loro downline
+export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positions,onOpenProspect,onSetLeader,onSetAttivo,onAddCliente,onAddMembro,onUpdateCliente,onDeleteCliente,LUDOVICO_ID}){
+  const isRoot = auth.userId === LUDOVICO_ID;
+  const canToggleAttivo = isRoot || !!auth.profile?.is_leader;
   const[selectedMember,setSelectedMember]=useState(null);
   const[teamFilter,setTeamFilter]=useState("all");
   const[copied,setCopied]=useState(false);
-  const[teamCiclo,setTeamCiclo]=useState(CICLO_CORRENTE);
-  const[showAddModal,setShowAddModal]=useState(false);
-  const[addCode,setAddCode]=useState("");
-  const[addLoading,setAddLoading]=useState(false);
-  const[addPositionedUnder,setAddPositionedUnder]=useState("");
-  const[addTeam,setAddTeam]=useState("");
-  const[activeTeamTab,setActiveTeamTab]=useState("dashboard");
-  const[selectedForPlacement,setSelectedForPlacement]=useState(null); // membro selezionato da piazzare
   const[memberSearch,setMemberSearch]=useState("");
 
   const referralLink=auth?.profile?.referral_code?window.location.origin+"?ref="+auth.profile.referral_code:null;
-
   function copyLink(){if(!referralLink)return;navigator.clipboard.writeText(referralLink).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});}
-
-  async function handleAddManual(){
-    if(!addCode.trim())return;
-    setAddLoading(true);
-    const ok=await onAddManual(addCode,addPositionedUnder||auth.userId,addTeam||null);
-    setAddLoading(false);
-    if(ok){setShowAddModal(false);setAddCode("");setAddPositionedUnder("");setAddTeam("");}
-  }
 
   function getTeamForMe(member){
     const pos=positions.find(p=>p.member_id===member.id&&p.upline_id===auth.userId);
@@ -394,33 +49,23 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddMa
     if(parent)return getTeamForMe(parent);
     return null;
   }
-
   function getTeam(memberId,uplineId){
     const pos=positions.find(p=>p.member_id===memberId&&p.upline_id===uplineId);
     return pos?.team||null;
   }
 
-  const dlByCiclo=teamCiclo==="ALL"?dlProspects:dlProspects.filter(p=>cicloOfDate(p.conosciutoAt)===Number(teamCiclo));
-  const sinistra=downline.filter(m=>getTeamForMe(m)==="sinistra");
-  const destra=downline.filter(m=>getTeamForMe(m)==="destra");
-  const noTeam=downline.filter(m=>!getTeamForMe(m));
-  // Membri in attesa di posizionamento (hanno squadra ma positioned_under è null)
-  const inAttesa=downline.filter(m=>!m.positioned_under&&getTeamForMe(m));
-  // Membri posizionati nell'albero
-  const posizionati=downline.filter(m=>m.positioned_under);
-  const filteredMembersByTeam=teamFilter==="all"?downline:teamFilter==="sinistra"?sinistra:teamFilter==="destra"?destra:noTeam;
+  const attiviDownline=downline.filter(m=>m.attivo!==false);
+  const inattiviDownline=downline.filter(m=>m.attivo===false);
+  const sinistra=attiviDownline.filter(m=>getTeamForMe(m)==="sinistra");
+  const destra=attiviDownline.filter(m=>getTeamForMe(m)==="destra");
+  const noTeam=attiviDownline.filter(m=>!getTeamForMe(m));
+  const filteredMembersByTeam=teamFilter==="all"?attiviDownline:teamFilter==="sinistra"?sinistra:teamFilter==="destra"?destra:teamFilter==="inattivi"?inattiviDownline:noTeam;
   const filteredMembers = !memberSearch.trim() ? filteredMembersByTeam : filteredMembersByTeam.filter(m=>{
     const q=memberSearch.trim().toLowerCase();
     return (m.nome||"").toLowerCase().includes(q) || (m.cognome||"").toLowerCase().includes(q) || (m.email||"").toLowerCase().includes(q) || (m.citta||"").toLowerCase().includes(q);
   });
-  function getMemberProspects(memberId){return dlByCiclo.filter(p=>p._userId===memberId);}
-  function squadraStats(members){return teamStats(members.flatMap(m=>getMemberProspects(m.id)));}
-  const statsS=squadraStats(sinistra);
-  const statsD=squadraStats(destra);
-  const statsTot=teamStats(dlByCiclo);
+  function getMemberProspects(memberId){return dlProspects.filter(p=>p._userId===memberId);}
   const convColor=v=>v>=20?"#10b981":v>=10?"var(--a2)":"#f59e0b";
-  const compareData=[{name:"In percorso",sinistra:statsS.act,destra:statsD.act},{name:"Iscritti",sinistra:statsS.sub,destra:statsD.sub},{name:"BV",sinistra:statsS.bv,destra:statsD.bv}];
-  const ts={background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:8,color:"var(--text)",fontSize:12};
 
   if(selectedMember){
     const mP=getMemberProspects(selectedMember.id);
@@ -431,20 +76,31 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddMa
         <button onClick={()=>setSelectedMember(null)} style={{display:"flex",alignItems:"center",gap:8,background:"none",border:"none",color:"var(--a2)",cursor:"pointer",fontSize:13,fontWeight:700,marginBottom:20}}>
           {"\u2190"} Torna al Team
         </button>
-        <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:24}}>
+        <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:24,flexWrap:"wrap"}}>
           <Av n={selectedMember.nome||selectedMember.email} c={selectedMember.cognome} color={teamColor} size={50}/>
           <div>
             <h2 style={{fontWeight:900,fontSize:22,color:"var(--text)"}}>{selectedMember.nome||selectedMember.email} {selectedMember.cognome||""}</h2>
             {selectedMember.citta&&<div style={{fontSize:12,color:"var(--muted)",marginTop:3}}>{selectedMember.citta}</div>}
             <div style={{display:"flex",gap:12,marginTop:8,flexWrap:"wrap"}}>
-              <a href={"mailto:"+selectedMember.email} style={{color:"var(--a2)",fontSize:12,textDecoration:"none",display:"flex",alignItems:"center",gap:4}}> {selectedMember.email}</a>
-              {selectedMember.telefono&&<a href={"tel:"+selectedMember.telefono} style={{color:"var(--a2)",fontSize:12,textDecoration:"none",display:"flex",alignItems:"center",gap:4}}> {selectedMember.telefono}</a>}
-              {selectedMember.instagram&&<a href={"https://instagram.com/"+selectedMember.instagram.replace("@","")} target="_blank" rel="noreferrer" style={{color:"#c084fc",fontSize:12,textDecoration:"none",display:"flex",alignItems:"center",gap:4}}> {selectedMember.instagram.startsWith("@")?selectedMember.instagram:"@"+selectedMember.instagram}</a>}
+              <a href={"mailto:"+selectedMember.email} style={{color:"var(--a2)",fontSize:12,textDecoration:"none"}}>{selectedMember.email}</a>
+              {selectedMember.telefono&&<a href={"tel:"+selectedMember.telefono} style={{color:"var(--a2)",fontSize:12,textDecoration:"none"}}>{selectedMember.telefono}</a>}
             </div>
           </div>
+          {canToggleAttivo && (
+            <label style={{display:"inline-flex",alignItems:"center",gap:6,cursor:"pointer",marginLeft:"auto",background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:9,padding:"8px 14px"}}>
+              <input type="checkbox" checked={selectedMember.attivo!==false} onChange={e=>{onSetAttivo(selectedMember.id,e.target.checked);setSelectedMember(m=>({...m,attivo:e.target.checked}));}} style={{width:16,height:16,cursor:"pointer"}} />
+              <span style={{fontSize:12,fontWeight:700,color:selectedMember.attivo===false?"#ef4444":"var(--muted)"}}>{selectedMember.attivo===false?"Inattivo":"Attivo"}</span>
+            </label>
+          )}
+          {isRoot && (
+            <label style={{display:"inline-flex",alignItems:"center",gap:6,cursor:"pointer",background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:9,padding:"8px 14px"}}>
+              <input type="checkbox" checked={!!selectedMember.is_leader} onChange={e=>{onSetLeader(selectedMember.id,e.target.checked);setSelectedMember(m=>({...m,is_leader:e.target.checked}));}} style={{width:16,height:16,cursor:"pointer"}} />
+              <span style={{fontSize:12,fontWeight:700,color:"var(--a2)"}}>Leader</span>
+            </label>
+          )}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}}>
-          {[{label:"Prospect",value:ms.total,color:"var(--a1)",icon:""},{label:"Iscritti",value:ms.sub,color:"#10b981",icon:""},{label:"In percorso",value:ms.act,color:"var(--a2)",icon:""},{label:"BV prodotti",value:ms.bv,color:"#f59e0b",icon:""}].map((k,i)=>(
+          {[{label:"Prospect",value:ms.total,color:"var(--a1)"},{label:"Iscritti",value:ms.sub,color:"#10b981"},{label:"In percorso",value:ms.act,color:"var(--a2)"},{label:"BV prodotti",value:ms.bv,color:"#f59e0b"}].map((k,i)=>(
             <div key={i} style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"16px 18px",position:"relative",overflow:"hidden"}}>
               <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"linear-gradient(90deg,"+k.color+","+k.color+"44)",borderRadius:"14px 14px 0 0"}}/>
               <div style={{fontSize:10,color:"var(--muted)",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>{k.label}</div>
@@ -453,30 +109,25 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddMa
           ))}
         </div>
         <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden"}}>
-          <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a",fontSize:13,fontWeight:800,color:"var(--text)"}}>Prospect di {selectedMember.nome||selectedMember.email}</div>
+          <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a",fontSize:13,fontWeight:800,color:"var(--text)"}}>Lista nomi di {selectedMember.nome||selectedMember.email}</div>
           {mP.length===0
             ?<div style={{padding:"3rem",textAlign:"center",color:"var(--border2)"}}>Nessun prospect ancora</div>
-            :<table style={{width:"100%",borderCollapse:"collapse"}}>
-              <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Nome","Conosciuto","Fonte","Fase","Checklist"].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>{h}</th>))}</tr></thead>
-              <tbody>{mP.map(p=>(
-                <tr key={p.id} onClick={()=>onOpenProspect&&onOpenProspect({...p,_ownerName:(selectedMember.nome||selectedMember.email)+" "+(selectedMember.cognome||"")})} style={{borderBottom:"1px solid #0d1b3355",cursor:onOpenProspect?"pointer":"default"}} className="hrow">
+            :<div style={{overflowX:"auto"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",minWidth:680}}>
+              <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Nome","Conosciuto","A che punto è","Note","Stato"].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
+              <tbody>{mP.map(p=>{
+                const stato=STATO_COLORE_MAP[p.statoColore];
+                return (
+                <tr key={p.id} onClick={()=>onOpenProspect&&onOpenProspect({...p,_ownerName:(selectedMember.nome||selectedMember.email)+" "+(selectedMember.cognome||"")})} style={{borderBottom:"1px solid #0d1b3355",cursor:onOpenProspect?"pointer":"default",background:stato?stato+"12":"transparent",borderLeft:stato?"3px solid "+stato:"3px solid transparent"}} className="hrow">
                   <td style={{padding:"11px 16px"}}><div style={{display:"flex",alignItems:"center",gap:9}}><Av n={p.nome} c={p.cognome} color={FASE_CLR[p.fase]}/><span style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{p.nome} {p.cognome}</span></div></td>
-                  <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12}}>{fmt(p.conosciutoAt)}</td>
-                  <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12}}>{p.fonte}</td>
-                  <td style={{padding:"11px 16px"}}><span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:700,color:"#fff",background:FASE_CLR[p.fase]}}>{FASE_LABEL[p.fase]}</span></td>
-                  <td style={{padding:"11px 16px"}}>
-                    <div style={{display:"flex",gap:5}}>
-                      {["kyc","pandadoc","click"].map(k=>{
-                        const done=p.checklist?.[k];
-                        const label=k==="pandadoc"?"PD":k.toUpperCase();
-                        return <span key={k} style={{fontSize:10,fontWeight:800,padding:"2px 7px",borderRadius:5,background:done?"#10b98120":"#1e3a5f20",color:done?"#10b981":"var(--muted)",border:"1px solid "+(done?"#10b98140":"var(--border2)")}}>{label}</span>;
-                      })}
-                    </div>
-                  </td>
-                  <td style={{padding:"11px 16px",color:"var(--border2)",fontSize:16}}>{"\u203a"}</td>
+                  <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12,whiteSpace:"nowrap"}}>{fmt(p.conosciutoAt)}</td>
+                  <td style={{padding:"11px 16px"}}><span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:700,color:"#fff",background:FASE_CLR[p.fase],whiteSpace:"nowrap"}}>{FASE_LABEL[p.fase]}</span></td>
+                  <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12,maxWidth:260,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.note||"\u2014"}</td>
+                  <td style={{padding:"11px 16px"}}>{stato?<span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:800,color:stato,background:stato+"18",border:"1px solid "+stato+"35",whiteSpace:"nowrap"}}>{STATO_COLORE_LABEL[p.statoColore]}</span>:<span style={{color:"var(--border2)",fontSize:11}}>\u2014</span>}</td>
                 </tr>
-              ))}</tbody>
+              );})}</tbody>
             </table>
+          </div>
           }
         </div>
       </div>
@@ -487,27 +138,13 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddMa
     <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
       <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:"1.5rem",gap:12,flexWrap:"wrap"}}>
         <div>
-          <div style={{fontSize:11,fontWeight:700,color:"var(--a1)",textTransform:"uppercase",letterSpacing:1.4,marginBottom:4}}>
-            {teamCiclo==="ALL"?"Tutti i cicli":"Ciclo "+teamCiclo+(teamCiclo===CICLO_CORRENTE?" \u00b7 in corso":"")}
-          </div>
           <h1 style={{fontWeight:900,fontSize:26,color:"var(--text)",letterSpacing:-0.8,lineHeight:1}}>Team</h1>
           <p style={{color:"var(--muted)",fontSize:12,marginTop:4}}>{downline.length} membri nella tua downline</p>
-        </div>
-        <div style={{display:"flex",alignItems:"center",gap:6,background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:11,padding:"5px 10px"}}>
-          <button onClick={()=>setTeamCiclo(c=>c==="ALL"?CICLO_NUMS[CICLO_NUMS.length-1]:Math.max(CICLO_NUMS[CICLO_NUMS.length-1],Number(c)-1))} style={{background:"none",border:"none",color:"var(--muted)",fontSize:18,cursor:"pointer",padding:"2px 8px",fontWeight:700}}>{"\u2039"}</button>
-          <select value={teamCiclo} onChange={e=>setTeamCiclo(e.target.value==="ALL"?"ALL":Number(e.target.value))} style={{background:"none",border:"none",color:"var(--text)",fontWeight:800,fontSize:12,padding:"2px 4px",width:"auto",cursor:"pointer"}}>
-            <option value="ALL">Tutti i cicli</option>
-            {CICLO_NUMS.map(c=><option key={c} value={c}>Ciclo {c}</option>)}
-          </select>
-          <button onClick={()=>setTeamCiclo(c=>c==="ALL"?CICLO_NUMS[0]:Math.min(CICLO_NUMS[0],Number(c)+1))} style={{background:"none",border:"none",color:"var(--muted)",fontSize:18,cursor:"pointer",padding:"2px 8px",fontWeight:700}}>{"\u203a"}</button>
         </div>
       </div>
 
       <div style={{background:"var(--bg2)",border:"1px solid #2563eb30",borderRadius:14,padding:"1.2rem 1.4rem",marginBottom:16}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8,flexWrap:"wrap",gap:8}}>
-          <div style={{fontSize:11,fontWeight:700,color:"var(--a1)",textTransform:"uppercase",letterSpacing:1}}>Il tuo link referral</div>
-          {auth?.profile?.referral_code&&<div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:10,color:"var(--muted)"}}>Il tuo ID:</span><span style={{background:"var(--a1-12)",color:"var(--a2)",borderRadius:6,padding:"2px 10px",fontSize:12,fontWeight:800,fontFamily:"monospace"}}>{auth.profile.referral_code}</span></div>}
-        </div>
+        <div style={{fontSize:11,fontWeight:700,color:"var(--a1)",textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Il tuo link referral</div>
         {referralLink
           ?<div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
             <div style={{flex:1,background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:9,padding:"9px 13px",fontSize:12,color:"var(--text)",fontFamily:"monospace",minWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{referralLink}</div>
@@ -515,286 +152,142 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,onAddMa
           </div>
           :<div style={{fontSize:12,color:"var(--muted)"}}>Caricamento...</div>
         }
-        <div style={{fontSize:11,color:"var(--border2)",marginTop:8}}>Chi si registra tramite il tuo link appare automaticamente nel tuo team.</div>
+        <div style={{fontSize:11,color:"var(--border2)",marginTop:8}}>Chi si registra tramite il tuo link appare automaticamente nel tuo team — oppure usa "Aggiungi membro" qui sotto per crearlo tu direttamente.</div>
       </div>
 
-      {showAddModal&&(
-        <div onClick={()=>setShowAddModal(false)} style={{position:"fixed",inset:0,background:"#00000090",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:16}}>
-          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:420,background:"var(--bg2)",border:"1px solid var(--border2)",borderRadius:16,padding:"1.6rem",boxShadow:"0 20px 70px #000000aa"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-              <h2 style={{fontWeight:900,fontSize:17,color:"var(--text)"}}>+ Aggiungi membro</h2>
-              <button onClick={()=>{setShowAddModal(false);setAddCode("");}} style={{background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:8,cursor:"pointer",padding:"4px 10px",fontSize:14}}>X</button>
-            </div>
-            <p style={{fontSize:12,color:"var(--muted)",marginBottom:16,lineHeight:1.6}}>Inserisci l ID della persona, scegli sotto chi posizionarla e in che squadra.</p>
-            <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:16}}>
-              <div><label style={{fontSize:11,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"}}>ID membro</label><input value={addCode} onChange={e=>setAddCode(e.target.value)} placeholder="es. mario_abc123"/></div>
-              <div><label style={{fontSize:11,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"}}>Posiziona sotto</label>
-                <select value={addPositionedUnder} onChange={e=>setAddPositionedUnder(e.target.value)}>
-                  <option value="">Te stesso</option>
-                  {downline.map(m=><option key={m.id} value={m.id}>{m.nome||m.email} {m.cognome||""}</option>)}
-                </select>
-              </div>
-              <div><label style={{fontSize:11,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"}}>Squadra</label>
-                <select value={addTeam} onChange={e=>setAddTeam(e.target.value)}>
-                  <option value="">Non assegnata</option>
-                  <option value="sinistra">Sinistra</option>
-                  <option value="destra">Destra</option>
-                </select>
-              </div>
-            </div>
-            <div style={{display:"flex",gap:9,justifyContent:"flex-end"}}>
-              <button onClick={()=>{setShowAddModal(false);setAddCode("");}} style={{padding:"9px 15px",background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:9,cursor:"pointer",fontWeight:600,fontSize:13}}>Annulla</button>
-              <button onClick={handleAddManual} disabled={addLoading} style={{padding:"9px 20px",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:9,cursor:addLoading?"not-allowed":"pointer",fontWeight:800,fontSize:13,display:"flex",alignItems:"center",gap:7,opacity:addLoading?0.7:1}}>
-                {addLoading&&<span className="spinner"/>}Aggiungi
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap",marginBottom:18}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+          <input value={memberSearch} onChange={e=>setMemberSearch(e.target.value)} placeholder="Cerca membro..." style={{width:190,fontSize:12,padding:"7px 11px",background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:8,color:"var(--text)"}} />
+          <div style={{display:"flex",gap:6}}>
+            {["all","sinistra","destra","nessuna"].map(f=>(
+              <button key={f} onClick={()=>setTeamFilter(f)}
+                style={{padding:"6px 13px",borderRadius:8,border:teamFilter===f?"1px solid #2563eb40":"1px solid transparent",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"inherit",transition:"all .2s",background:teamFilter===f?"var(--bg4)":"var(--bg3)",color:teamFilter===f?"var(--a2)":"var(--muted)"}}>
+                {f==="all"?"Tutti":f==="nessuna"?"Non assegnati":f.charAt(0).toUpperCase()+f.slice(1)}
               </button>
-            </div>
+            ))}
+            {inattiviDownline.length>0 && (
+              <button onClick={()=>setTeamFilter("inattivi")}
+                style={{padding:"6px 13px",borderRadius:8,border:teamFilter==="inattivi"?"1px solid #ef444440":"1px solid transparent",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"inherit",transition:"all .2s",background:teamFilter==="inattivi"?"#ef444418":"var(--bg3)",color:teamFilter==="inattivi"?"#ef4444":"var(--muted)"}}>
+                Inattivi ({inattiviDownline.length})
+              </button>
+            )}
           </div>
         </div>
-      )}
-
-      <div style={{display:"flex",background:"var(--bg3)",borderRadius:10,padding:4,marginBottom:16,border:"1px solid var(--border)"}}>
-        {[{id:"dashboard",label:"Dashboard"},{id:"albero",label:"Albero"},{id:"membri",label:"Membri"}].map(t=>(
-          <button key={t.id} onClick={()=>setActiveTeamTab(t.id)}
-            style={{flex:1,padding:"8px 16px",borderRadius:8,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"inherit",transition:"all .2s",background:activeTeamTab===t.id?"var(--bg4)":"transparent",color:activeTeamTab===t.id?"var(--a2)":"var(--muted)",boxShadow:activeTeamTab===t.id?"inset 0 0 0 1px var(--sidebar-border)":"none"}}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {(onAddCliente || onAddMembro) && (
-        <div style={{display:"flex",justifyContent:"flex-end",gap:10,marginBottom:16}}>
+        <div style={{display:"flex",gap:10}}>
           {onAddMembro && (
-            <button onClick={onAddMembro} style={{padding:"9px 18px",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:13,display:"flex",alignItems:"center",gap:6}}>
+            <button onClick={onAddMembro} style={{padding:"9px 18px",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:13}}>
               + Aggiungi membro
             </button>
           )}
           {onAddCliente && (
-            <button onClick={onAddCliente} style={{padding:"9px 18px",background:"linear-gradient(135deg,#10b981,#10b98199)",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:13,display:"flex",alignItems:"center",gap:6}}>
+            <button onClick={onAddCliente} style={{padding:"9px 18px",background:"linear-gradient(135deg,#10b981,#10b98199)",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:13}}>
               + Aggiungi cliente
             </button>
           )}
         </div>
-      )}
+      </div>
 
-      {activeTeamTab==="albero"&&(
-        <div style={{marginBottom:16}}>
-          {/* Zona in attesa */}
-          {inAttesa.length>0&&(
-            <div style={{background:"var(--bg2)",border:"1px solid #f59e0b30",borderRadius:14,padding:"1.2rem",marginBottom:12}}>
-              <div style={{fontSize:12,fontWeight:800,color:"#f59e0b",marginBottom:10}}>
-                In attesa di posizionamento — seleziona una persona poi clicca lo slot nell albero
-              </div>
-              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                {inAttesa.map(m=>{
-                  const team=getTeamForMe(m);
-                  const color=team==="sinistra"?"var(--a1)":"#10b981";
-                  const isSelected=selectedForPlacement?.id===m.id;
-                  return(
-                    <button key={m.id} onClick={()=>setSelectedForPlacement(isSelected?null:m)}
-                      style={{padding:"8px 14px",background:isSelected?color+"30":"var(--bg3)",border:"2px solid "+(isSelected?color:"var(--border2)"),borderRadius:9,cursor:"pointer",color:isSelected?color:"var(--text)",fontWeight:700,fontSize:12,transition:"all .2s"}}>
-                      {m.nome||m.email} {m.cognome||""} <span style={{fontSize:10,color:color,marginLeft:4}}>{team}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              {selectedForPlacement&&<div style={{fontSize:11,color:"#f59e0b",marginTop:8}}>Ora clicca su uno slot vuoto nell albero per posizionare {selectedForPlacement.nome||selectedForPlacement.email}</div>}
-            </div>
-          )}
-
-          {/* Albero */}
-          <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"1.4rem"}}>
-            <div style={{fontSize:13,fontWeight:800,color:"var(--text)",marginBottom:20}}>Albero genealogico</div>
-            {posizionati.length===0&&inAttesa.length===0
-              ?<div style={{textAlign:"center",padding:"3rem",color:"var(--border2)"}}>Nessun membro ancora</div>
-              :<PanZoomTree>
-                <TreeCanvas
-                  memberId={auth.userId}
-                  memberNome={auth.profile?.nome||""}
-                  memberCognome={auth.profile?.cognome||""}
-                  memberEmail={auth.email}
-                  allMembers={posizionati}
-                  dlProspects={dlProspects}
-                  positions={positions}
-                  onSelect={setSelectedMember}
-                  selectedForPlacement={selectedForPlacement}
-                  onPlaceHere={async(nodeId,team)=>{
-                    if(!selectedForPlacement)return;
-                    await onPositionInTree(selectedForPlacement.id,nodeId,team);
-                    setSelectedForPlacement(null);
-                  }}
-                />
-              </PanZoomTree>
-            }
-          </div>
-        </div>
-      )}
-
-      {activeTeamTab!=="albero"&&(
-        <>
-          {activeTeamTab==="dashboard"&&(
-            <>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12,marginBottom:16}}>
-                {[{label:"Membri",value:downline.length,color:"#8b5cf6",icon:""},{label:"In percorso",value:statsTot.act,color:"var(--a1)",icon:""},{label:"Iscritti",value:statsTot.sub,color:"#10b981",icon:""},{label:"Conv. team",value:statsTot.conv+"%",color:convColor(statsTot.conv),icon:""},{label:"BV team",value:statsTot.bv,color:"#f59e0b",icon:""}].map((k,i)=>(
-                  <div key={i} style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"16px 18px",position:"relative",overflow:"hidden"}}>
-                    <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"linear-gradient(90deg,"+k.color+","+k.color+"44)",borderRadius:"14px 14px 0 0"}}/>
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                      <span style={{fontSize:10,color:"var(--muted)",fontWeight:700,textTransform:"uppercase",letterSpacing:.8}}>{k.label}</span>
-                      <span style={{fontSize:14,padding:6,borderRadius:8,background:k.color+"18"}}>{k.icon}</span>
-                    </div>
-                    <div style={{fontSize:30,fontWeight:900,color:k.color,lineHeight:1}}>{k.value}</div>
+      {downline.length===0
+        ?<div style={{padding:"3rem",textAlign:"center",color:"var(--border2)"}}><p style={{fontSize:14,marginBottom:8}}>Nessun membro ancora</p><p style={{fontSize:12,color:"var(--border2)"}}>Condividi il tuo link referral o usa "Aggiungi membro"</p></div>
+        :filteredMembers.length===0
+        ?<div style={{padding:"3rem",textAlign:"center",color:"var(--border2)"}}><p style={{fontSize:14}}>Nessun membro trovato per "{memberSearch}"</p></div>
+        :<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:14}}>
+          {filteredMembers.map(m=>{
+            const mP=getMemberProspects(m.id);
+            const ms=teamStats(mP);
+            const myTeam=getTeamForMe(m);
+            const teamColor=myTeam==="sinistra"?"var(--a1)":myTeam==="destra"?"#10b981":"#6b7280";
+            const isMyDirect=m.positioned_under===auth.userId;
+            const inBallo=mP.filter(p=>["FUP1","FUP2","PACK","CLOSING"].includes(p.fase)).length;
+            return (
+              <div key={m.id} onClick={()=>setSelectedMember(m)}
+                style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"1.1rem",cursor:"pointer",transition:"all .15s",opacity:m.attivo===false?0.55:1}}
+                onMouseEnter={e=>e.currentTarget.style.borderColor="var(--a1)"} onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border)"}>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+                  <Av n={m.nome||m.email} c={m.cognome} color={teamColor} size={38}/>
+                  <div style={{minWidth:0,flex:1}}>
+                    <div style={{color:"var(--text)",fontWeight:800,fontSize:13,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{m.nome||m.email} {m.cognome||""}</div>
+                    {m.citta&&<div style={{color:"var(--muted)",fontSize:11}}>{m.citta}</div>}
                   </div>
-                ))}
-              </div>
-
-              {(sinistra.length>0||destra.length>0)&&(
-                <>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
-                    {[{team:"sinistra",stats:statsS,color:"var(--a1)",members:sinistra.length},{team:"destra",stats:statsD,color:"#10b981",members:destra.length}].map(({team,stats,color,members})=>(
-                      <div key={team} style={{background:"var(--bg2)",border:"1px solid "+color+"28",borderRadius:14,padding:"1.2rem"}}>
-                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-                          <span style={{fontSize:13,fontWeight:900,color,textTransform:"capitalize"}}>Squadra {team}</span>
-                          <span style={{fontSize:11,color:"var(--muted)"}}>{members} membri</span>
-                        </div>
-                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8}}>
-                          {[{l:"In percorso",v:stats.act},{l:"Iscritti",v:stats.sub},{l:"Conv%",v:stats.conv+"%"},{l:"BV",v:stats.bv}].map(({l,v})=>(
-                            <div key={l} style={{background:"var(--bg3)",borderRadius:9,padding:"10px"}}>
-                              <div style={{fontSize:10,color:"var(--muted)",marginBottom:4}}>{l}</div>
-                              <div style={{fontSize:20,fontWeight:900,color}}>{v}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+                  {m.is_leader&&<span title="Leader" style={{fontSize:9,fontWeight:900,color:"var(--a2)",background:"var(--a1-13)",borderRadius:5,padding:"2px 6px",flexShrink:0}}>LDR</span>}
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                  {isMyDirect
+                    ? <select onClick={e=>e.stopPropagation()} value={getTeam(m.id,auth.userId)||""} onChange={e=>onAssignTeam(m.id,e.target.value||null)} style={{width:"auto",minWidth:100,fontSize:10,padding:"4px 8px",color:teamColor,border:"1px solid "+teamColor+"40",background:"var(--bg3)"}}>
+                        <option value="">Non assegnato</option>
+                        <option value="sinistra">Sinistra</option>
+                        <option value="destra">Destra</option>
+                      </select>
+                    : <span style={{fontSize:10,color:teamColor,fontWeight:700,background:teamColor+"15",borderRadius:5,padding:"3px 8px"}}>{myTeam||"Non assegnato"}</span>
+                  }
+                  {m.attivo===false && <span style={{fontSize:9,fontWeight:800,color:"#ef4444",background:"#ef444415",borderRadius:5,padding:"3px 7px"}}>Inattivo</span>}
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,borderTop:"1px solid var(--border2)",paddingTop:10}}>
+                  <div style={{textAlign:"center"}}>
+                    <div style={{fontSize:16,fontWeight:900,color:"var(--a2)"}}>{inBallo}</div>
+                    <div style={{fontSize:9,color:"var(--muted)",fontWeight:700,textTransform:"uppercase"}}>In ballo</div>
                   </div>
-                </>
-              )}
-            </>
-          )}
-
-          {activeTeamTab==="membri"&&
-          <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden"}}>
-            <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
-              <div style={{display:"flex",alignItems:"center",gap:10}}>
-                <div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}>Membri</div>
-                <button onClick={()=>setShowAddModal(true)} style={{width:26,height:26,borderRadius:"50%",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",cursor:"pointer",fontWeight:900,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 0 10px #2563eb50"}}>+</button>
-              </div>
-              <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
-                <input value={memberSearch} onChange={e=>setMemberSearch(e.target.value)} placeholder="Cerca membro..." style={{width:170,fontSize:12,padding:"6px 10px",background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:8,color:"var(--text)"}} />
-                <div style={{display:"flex",gap:6}}>
-                  {["all","sinistra","destra","nessuna"].map(f=>(
-                    <button key={f} onClick={()=>setTeamFilter(f)}
-                      style={{padding:"5px 12px",borderRadius:8,border:teamFilter===f?"1px solid #2563eb40":"1px solid transparent",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"inherit",transition:"all .2s",background:teamFilter===f?"var(--bg4)":"transparent",color:teamFilter===f?"var(--a2)":"var(--muted)"}}>
-                      {f==="all"?"Tutti":f==="nessuna"?"Non assegnati":f.charAt(0).toUpperCase()+f.slice(1)}
-                    </button>
-                  ))}
+                  <div style={{textAlign:"center"}}>
+                    <div style={{fontSize:16,fontWeight:900,color:"#10b981"}}>{ms.sub}</div>
+                    <div style={{fontSize:9,color:"var(--muted)",fontWeight:700,textTransform:"uppercase"}}>Iscritti</div>
+                  </div>
+                  <div style={{textAlign:"center"}}>
+                    <div style={{fontSize:16,fontWeight:900,color:convColor(ms.conv)}}>{ms.conv}%</div>
+                    <div style={{fontSize:9,color:"var(--muted)",fontWeight:700,textTransform:"uppercase"}}>Conv.</div>
+                  </div>
                 </div>
               </div>
+            );
+          })}
+        </div>
+      }
+
+      {(clienti||[]).length>0 && (()=>{
+        const byTeam = teamFilter==="all" ? (clienti||[])
+          : teamFilter==="nessuna" ? (clienti||[]).filter(c=>!c.team)
+          : (clienti||[]).filter(c=>c.team===teamFilter);
+        const filteredClienti = !memberSearch.trim() ? byTeam : byTeam.filter(c=>{
+          const q=memberSearch.trim().toLowerCase();
+          return (c.nome||"").toLowerCase().includes(q) || (c.cognome||"").toLowerCase().includes(q) || (c.citta||"").toLowerCase().includes(q);
+        });
+        return (
+          <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden",marginTop:24}}>
+            <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a"}}>
+              <div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}>Clienti</div>
+              <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>Aggiunti senza account — non toccano prospect e statistiche</div>
             </div>
-            {downline.length===0
-              ?<div style={{padding:"3rem",textAlign:"center",color:"var(--border2)"}}><div style={{fontSize:36,marginBottom:12}}>{"\u25c8"}</div><p style={{fontSize:14,marginBottom:8}}>Nessun membro ancora</p><p style={{fontSize:12,color:"var(--border2)"}}>Condividi il tuo link referral</p></div>
-              :filteredMembers.length===0
-              ?<div style={{padding:"3rem",textAlign:"center",color:"var(--border2)"}}><p style={{fontSize:14}}>Nessun membro trovato per "{memberSearch}"</p></div>
-              :<table style={{width:"100%",borderCollapse:"collapse"}}>
-                <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Membro","Squadra",...(isRoot?["Leader"]:[]),...(canToggleAttivo?["Attivo"]:[]),"Prospect","Iscritti","Conv%","BV","Azione",""].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
-                <tbody>{filteredMembers.map(m=>{
-                  const mP=getMemberProspects(m.id);
-                  const ms=teamStats(mP);
-                  const myTeam=getTeamForMe(m);
-                  const teamColor=myTeam==="sinistra"?"var(--a1)":myTeam==="destra"?"#10b981":"#6b7280";
-                  const isMyDirect=m.positioned_under===auth.userId;
-                  return(
-                    <tr key={m.id} style={{borderBottom:"1px solid #0d1b3355"}}>
-                      <td style={{padding:"12px 16px"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Av n={m.nome||m.email} c={m.cognome} color={teamColor}/><div>
-                        <div style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{m.nome||m.email} {m.cognome||""}</div>
-                        {m.citta&&<div style={{color:"var(--muted)",fontSize:11}}>{m.citta}</div>}
-                      </div></div></td>
+            {filteredClienti.length===0
+              ? <div style={{padding:"2rem",textAlign:"center",color:"var(--border2)",fontSize:13}}>Nessun cliente in questa vista</div>
+              : <div style={{overflowX:"auto"}}>
+                <table style={{width:"100%",borderCollapse:"collapse",minWidth:560}}>
+                <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Cliente","Di chi è","Gamba","Attivo",""].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
+                <tbody>{filteredClienti.map(c=>{
+                  const owner=c.positionedUnder===auth.userId?null:downline.find(d=>d.id===c.positionedUnder);
+                  const teamColor=c.team==="sinistra"?"var(--a1)":c.team==="destra"?"#10b981":"#6b7280";
+                  return (
+                    <tr key={c.id} style={{borderBottom:"1px solid #0d1b3355"}}>
+                      <td style={{padding:"12px 16px"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Av n={c.nome} c={c.cognome} color="#f59e0b"/><div><div style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{c.nome} {c.cognome||""}</div>{c.citta&&<div style={{color:"var(--muted)",fontSize:11}}>{c.citta}</div>}</div></div></td>
+                      <td style={{padding:"12px 16px",fontSize:12,color:"var(--muted)"}}>{owner?(owner.nome||owner.email)+" "+(owner.cognome||""):"Tu"}</td>
                       <td style={{padding:"12px 16px"}}>
-                        {isMyDirect
-                          ?<select value={getTeam(m.id,auth.userId)||""} onChange={e=>onAssignTeam(m.id,e.target.value||null)} style={{width:"auto",minWidth:110,fontSize:11,padding:"5px 9px",color:teamColor,border:"1px solid "+teamColor+"40",background:"var(--bg3)"}}>
-                            <option value="">Non assegnato</option>
-                            <option value="sinistra">Sinistra</option>
-                            <option value="destra">Destra</option>
-                          </select>
-                          :<span style={{fontSize:11,color:teamColor,fontWeight:700}}>{myTeam||"\u2014"}</span>
-                        }
+                        <select value={c.team||""} onChange={e=>onUpdateCliente(c.id,{team:e.target.value})} style={{width:"auto",minWidth:100,fontSize:11,padding:"5px 9px",color:teamColor,border:"1px solid "+teamColor+"40",background:"var(--bg3)"}}>
+                          <option value="">Non assegnata</option>
+                          <option value="sinistra">Sinistra</option>
+                          <option value="destra">Destra</option>
+                        </select>
                       </td>
-                      {isRoot && (
-                        <td style={{padding:"12px 16px"}}>
-                          <label style={{display:"inline-flex",alignItems:"center",gap:6,cursor:"pointer"}} title="Può gestire i prospect di tutta la sua downline">
-                            <input type="checkbox" checked={!!m.is_leader} onChange={e=>onSetLeader(m.id,e.target.checked)} style={{width:16,height:16,cursor:"pointer"}} />
-                            {m.is_leader && <span style={{fontSize:10,fontWeight:800,color:"var(--a2)"}}>Leader</span>}
-                          </label>
-                        </td>
-                      )}
-                      {canToggleAttivo && (
-                        <td style={{padding:"12px 16px"}}>
-                          <label style={{display:"inline-flex",alignItems:"center",gap:6,cursor:"pointer"}} title="Se disattivato, il membro resta nell'albero ma viene escluso dai conteggi attivi">
-                            <input type="checkbox" checked={m.attivo!==false} onChange={e=>onSetAttivo(m.id,e.target.checked)} style={{width:16,height:16,cursor:"pointer"}} />
-                            {m.attivo===false && <span style={{fontSize:10,fontWeight:800,color:"#ef4444"}}>Inattivo</span>}
-                          </label>
-                        </td>
-                      )}
-                      <td style={{padding:"12px 16px",fontWeight:700,color:"var(--text)",fontSize:13}}>{ms.total}</td>
-                      <td style={{padding:"12px 16px",fontWeight:700,color:"#10b981",fontSize:13}}>{ms.sub}</td>
-                      <td style={{padding:"12px 16px",fontWeight:800,fontSize:13,color:convColor(ms.conv)}}>{ms.conv}%</td>
-                      <td style={{padding:"12px 16px",fontWeight:800,fontSize:13,color:"#f59e0b"}}>{ms.bv}</td>
-                      <td style={{padding:"12px 16px"}}><button onClick={()=>setSelectedMember(m)} style={{padding:"6px 12px",background:"var(--bg4)",color:"var(--a2)",border:"1px solid var(--border2)",borderRadius:7,cursor:"pointer",fontWeight:700,fontSize:11}}>Dettaglio</button></td>
-                      <td style={{padding:"12px 16px",color:"var(--border2)",fontSize:16}}>{"\u203a"}</td>
+                      <td style={{padding:"12px 16px"}}>
+                        <input type="checkbox" checked={c.attivo!==false} onChange={e=>onUpdateCliente(c.id,{attivo:e.target.checked})} style={{width:16,height:16,cursor:"pointer"}} />
+                      </td>
+                      <td style={{padding:"12px 16px"}}><button onClick={()=>{if(window.confirm("Rimuovere "+c.nome+"?"))onDeleteCliente(c.id);}} style={{background:"#ef444415",border:"1px solid #ef444430",borderRadius:6,color:"#f87171",cursor:"pointer",fontSize:11,fontWeight:800,padding:"4px 9px"}}>Rimuovi</button></td>
                     </tr>
                   );
                 })}</tbody>
               </table>
+              </div>
             }
           </div>
-          }
-
-          {activeTeamTab==="membri" && (clienti||[]).length>0 && (()=>{
-            const byTeam = teamFilter==="all" ? (clienti||[])
-              : teamFilter==="nessuna" ? (clienti||[]).filter(c=>!c.team)
-              : (clienti||[]).filter(c=>c.team===teamFilter);
-            const filteredClienti = !memberSearch.trim() ? byTeam : byTeam.filter(c=>{
-              const q=memberSearch.trim().toLowerCase();
-              return (c.nome||"").toLowerCase().includes(q) || (c.cognome||"").toLowerCase().includes(q) || (c.citta||"").toLowerCase().includes(q);
-            });
-            return (
-              <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden",marginTop:16}}>
-                <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a"}}>
-                  <div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}>Clienti</div>
-                  <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>Aggiunti senza account — non toccano prospect e statistiche, contano nei rinnovi</div>
-                </div>
-                {filteredClienti.length===0
-                  ? <div style={{padding:"2rem",textAlign:"center",color:"var(--border2)",fontSize:13}}>Nessun cliente in questa vista</div>
-                  : <table style={{width:"100%",borderCollapse:"collapse"}}>
-                    <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Cliente","Di chi è","Gamba","Attivo",""].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
-                    <tbody>{filteredClienti.map(c=>{
-                      const owner=c.positionedUnder===auth.userId?null:downline.find(d=>d.id===c.positionedUnder);
-                      const teamColor=c.team==="sinistra"?"var(--a1)":c.team==="destra"?"#10b981":"#6b7280";
-                      return (
-                        <tr key={c.id} style={{borderBottom:"1px solid #0d1b3355"}}>
-                          <td style={{padding:"12px 16px"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Av n={c.nome} c={c.cognome} color="#f59e0b"/><div><div style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{c.nome} {c.cognome||""}</div>{c.citta&&<div style={{color:"var(--muted)",fontSize:11}}>{c.citta}</div>}</div></div></td>
-                          <td style={{padding:"12px 16px",fontSize:12,color:"var(--muted)"}}>{owner?(owner.nome||owner.email)+" "+(owner.cognome||""):"Tu"}</td>
-                          <td style={{padding:"12px 16px"}}>
-                            <select value={c.team||""} onChange={e=>onUpdateCliente(c.id,{team:e.target.value})} style={{width:"auto",minWidth:100,fontSize:11,padding:"5px 9px",color:teamColor,border:"1px solid "+teamColor+"40",background:"var(--bg3)"}}>
-                              <option value="">Non assegnata</option>
-                              <option value="sinistra">Sinistra</option>
-                              <option value="destra">Destra</option>
-                            </select>
-                          </td>
-                          <td style={{padding:"12px 16px"}}>
-                            <input type="checkbox" checked={c.attivo!==false} onChange={e=>onUpdateCliente(c.id,{attivo:e.target.checked})} style={{width:16,height:16,cursor:"pointer"}} />
-                          </td>
-                          <td style={{padding:"12px 16px"}}><button onClick={()=>{if(window.confirm("Rimuovere "+c.nome+"?"))onDeleteCliente(c.id);}} style={{background:"#ef444415",border:"1px solid #ef444430",borderRadius:6,color:"#f87171",cursor:"pointer",fontSize:11,fontWeight:800,padding:"4px 9px"}}>Rimuovi</button></td>
-                        </tr>
-                      );
-                    })}</tbody>
-                  </table>
-                }
-              </div>
-            );
-          })()}
-
-        </>
-      )}
+        );
+      })()}
     </div>
   );
 }
