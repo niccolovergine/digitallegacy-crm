@@ -130,6 +130,17 @@ export function EventiView({ auth, allProfiles, downline, positions, showToast, 
     [membriEvento, fLegEvento]
   );
 
+  const evCorrente = eventi.find(e => e.id === eventoAttivo);
+
+  // ---- Biglietti venduti (dettaglio) — prospect con ticket_evento_id = evento attivo ----
+  const [ticketSearch, setTicketSearch] = useState("");
+  const [ticketMarketer, setTicketMarketer] = useState("");
+
+  const bigliettiDettaglio = useMemo(() => {
+    const all = [...(data||[]).map(p=>({...p,_userId:auth.userId})), ...(dlProspects||[])];
+    return all.filter(p => p.ticketEventoId === eventoAttivo);
+  }, [data, dlProspects, eventoAttivo, auth.userId]);
+
   function statsOf(list) {
     return list.reduce((acc, m) => ({
       conTicket: acc.conTicket + (m.ha_ticket ? 1 : 0),
@@ -141,25 +152,27 @@ export function EventiView({ auth, allProfiles, downline, positions, showToast, 
       sedute: acc.sedute + (m.ha_ticket ? 1 : 0) + (Number(m.ticket_extra_venduti) || 0),
     }), { conTicket: 0, hotelOk: 0, viaggioOk: 0, extraTot: 0, extraVenduti: 0, sedute: 0 });
   }
-  const logisticaStats = useMemo(() => statsOf(membriFiltrati), [membriFiltrati]);
-  const statsSinistra = useMemo(() => statsOf(membriEvento.filter(m => m.leg === "sinistra")), [membriEvento]);
-  const statsDestra = useMemo(() => statsOf(membriEvento.filter(m => m.leg === "destra")), [membriEvento]);
+  function prospectTicketCountForLeg(leg) {
+    return bigliettiDettaglio.filter(p => (leg==null || getLegForMe(p._userId)===leg)).length;
+  }
+  const logisticaStats = useMemo(() => {
+    const base = statsOf(membriFiltrati);
+    const extra = prospectTicketCountForLeg(fLegEvento||null);
+    return { ...base, sedute: base.sedute + extra };
+  }, [membriFiltrati, bigliettiDettaglio, fLegEvento]);
+  const statsSinistra = useMemo(() => {
+    const base = statsOf(membriEvento.filter(m => m.leg === "sinistra"));
+    return { ...base, sedute: base.sedute + prospectTicketCountForLeg("sinistra") };
+  }, [membriEvento, bigliettiDettaglio]);
+  const statsDestra = useMemo(() => {
+    const base = statsOf(membriEvento.filter(m => m.leg === "destra"));
+    return { ...base, sedute: base.sedute + prospectTicketCountForLeg("destra") };
+  }, [membriEvento, bigliettiDettaglio]);
 
   // notifica App.jsx col totale sedute dell'evento attivo, cosi la Dashboard resta in tempo reale
   useEffect(() => {
     if (onTicketCountChange) onTicketCountChange(logisticaStats.sedute);
   }, [logisticaStats.sedute]);
-
-  const evCorrente = eventi.find(e => e.id === eventoAttivo);
-
-  // ---- Biglietti venduti (dettaglio) — prospect con ticket_evento_id = evento attivo ----
-  const [ticketSearch, setTicketSearch] = useState("");
-  const [ticketMarketer, setTicketMarketer] = useState("");
-
-  const bigliettiDettaglio = useMemo(() => {
-    const all = [...(data||[]).map(p=>({...p,_userId:auth.userId})), ...(dlProspects||[])];
-    return all.filter(p => p.ticketEventoId === eventoAttivo);
-  }, [data, dlProspects, eventoAttivo, auth.userId]);
 
   const marketerOptions = useMemo(() => {
     const ids = [...new Set(bigliettiDettaglio.map(p=>p._userId))];
