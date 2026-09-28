@@ -111,6 +111,7 @@ function toApp(r) {
     checklist:r.checklist||{kyc:false,pandadoc:false,click:false},
     interesse:r.interesse||"", statoColore:r.stato_colore||"",
     attivo:r.attivo!==false,
+    chatAperta:r.chat_aperta===true,
     ticketEventoId:r.ticket_evento_id||"",
   };
 }
@@ -124,6 +125,7 @@ function toDB(p, uid) {
     checklist:p.checklist||{kyc:false,pandadoc:false,click:false},
     interesse:p.interesse||null, stato_colore:p.statoColore||null,
     attivo:p.attivo!==false,
+    chat_aperta:!!p.chatAperta,
     ticket_evento_id:p.ticketEventoId||null,
   };
 }
@@ -142,7 +144,8 @@ function bvOfPacchetto(key, bvCustom) {
 }
 
 const FASI_FUNNEL   = ["INVITO","CONOSCITIVA","FUP1","FUP2","PACK","CLOSING","SUB"];
-const FASI_DASH     = ["CONOSCITIVA","FUP1","FUP2","PACK","CLOSING","SUB"];
+const FASI_DASH     = ["CONOSCITIVA","FUP1","PACK","CLOSING","SUB"]; // FUP2 unito a FUP1 (è un'unica call)
+const FASI_STATS    = ["INVITO","CONOSCITIVA","FUP1","PACK","CLOSING","SUB"];
 const FASI_SPECIALI = ["FOLLOW_UP","NON_INT","NON_PIACE"];
 const FASI          = [...FASI_FUNNEL, ...FASI_SPECIALI];
 const FONTI         = ["Instagram","TikTok","Offline","Referenza","Lista Nomi","Modulo"];
@@ -1050,6 +1053,18 @@ export default function App() {
     } catch(e) { showToast("Errore salvataggio","#ef4444"); }
   }
 
+  async function setChatAperta(id, value) {
+    const p=data.find(x=>x.id===id)||dlProspects.find(x=>x.id===id); if (!p) return;
+    const ownerId=p._userId||auth.userId;
+    const upd={...p,chatAperta:!!value};
+    try {
+      await sbUpdate(auth.token,id,toDB(upd,ownerId));
+      if (data.find(x=>x.id===id)) setData(d=>d.map(x=>x.id===id?upd:x));
+      else setDlProspects(d=>d.map(x=>x.id===id?{...upd,_userId:ownerId,_ownerName:x._ownerName}:x));
+      if (sel && sel.id===id) setSel(upd);
+    } catch(e) { showToast("Errore salvataggio","#ef4444"); }
+  }
+
   async function setTicketEvento(id, eventoId) {
     const p=data.find(x=>x.id===id)||dlProspects.find(x=>x.id===id); if (!p) return;
     const ownerId=p._userId||auth.userId;
@@ -1251,7 +1266,7 @@ export default function App() {
   const totSub  = dashData.filter(p=>p.fase==="SUB").length;
   const totConv = dashData.length?Math.round(totSub/dashData.length*100):0;
   const urgenti = data.filter(p=>(isOver(p.followUp)||isToday(p.followUp))&&p.fase!=="NON_INT"&&p.fase!=="NON_PIACE");
-  const funnelCounts=FASI_DASH.map(f=>({f,n:cd.filter(p=>p.fase===f).length}));
+  const funnelCounts=FASI_DASH.map(f=>({f,n:cd.filter(p=>f==="FUP1"?(p.fase==="FUP1"||p.fase==="FUP2"):p.fase===f).length}));
   const funnelMax=Math.max(cd.length,1);
 
   // Prospect del team con owner name
@@ -1317,9 +1332,9 @@ export default function App() {
 
       <main className="mc" style={{flex:1,overflowY:"auto",height:"100vh",paddingBottom:0}}>
         {view==="dash"  && <Dash cd={cd} cdSub={cdSub} cdAct={cdAct} cdFU={cdFU} cdNI={cdNI} cdConv={cdConv} totSub={totSub} totConv={totConv} totAll={dashData.length} funnelCounts={funnelCounts} funnelMax={funnelMax} urgenti={urgenti} dashCiclo={dashCiclo} setDashCiclo={setDashCiclo} onOpen={openDetail} dashMode={dashMode} setDashMode={setDashMode} hasTeam={dlProspects.length>0} ticketVenduti={ticketVendutiCount} />}
-        {view==="lista" && <Lista prospects={listaData} total={listaMode==="team"?teamProspects.length:data.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} fCitta={fCitta} setFCitta={setFCitta} fInteresse={fInteresse} setFInteresse={setFInteresse} fPercorso={fPercorso} setFPercorso={setFPercorso} fLeg={fLeg} setFLeg={setFLeg} fMembroTeam={fMembroTeam} setFMembroTeam={setFMembroTeam} downline={downline} onOpen={openDetail} onAdd={openAdd} listaMode={listaMode} setListaMode={setListaMode} hasTeam={dlProspects.length>0} />}
-        {view==="stats"   && <Statistiche data={data} dlProspects={teamProspects} downline={downline} />}
-        {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} clienti={clienti} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onSetLeader={setLeader} onSetAttivo={setAttivo} onAddCliente={openAddCliente} onAddMembro={openAddMembro} onAddProspectForMember={openAddForMember} onUpdateCliente={updateClienteQuick} onDeleteCliente={deleteClienteQuick} sbGetListaNomiTeam={sbGetListaNomiTeam} LUDOVICO_ID={LUDOVICO_ID} />}
+        {view==="lista" && <Lista onToggleChat={setChatAperta} prospects={listaData} total={listaMode==="team"?teamProspects.length:data.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} fCitta={fCitta} setFCitta={setFCitta} fInteresse={fInteresse} setFInteresse={setFInteresse} fPercorso={fPercorso} setFPercorso={setFPercorso} fLeg={fLeg} setFLeg={setFLeg} fMembroTeam={fMembroTeam} setFMembroTeam={setFMembroTeam} downline={downline} onOpen={openDetail} onAdd={openAdd} listaMode={listaMode} setListaMode={setListaMode} hasTeam={dlProspects.length>0} />}
+        {view==="stats"   && <Statistiche data={data} dlProspects={teamProspects} downline={downline} positions={positions} />}
+        {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} clienti={clienti} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onSetLeader={setLeader} onSetAttivo={setAttivo} onAddCliente={openAddCliente} onAddMembro={openAddMembro} onAddProspectForMember={openAddForMember} onSetChatAperta={setChatAperta} showToast={showToast} onUpdateCliente={updateClienteQuick} onDeleteCliente={deleteClienteQuick} sbGetListaNomiTeam={sbGetListaNomiTeam} LUDOVICO_ID={LUDOVICO_ID} />}
         {view==="nomi"    && <ListaNomiView auth={auth} onInvitaProspect={invitaProspect} />}
         {view==="eventi"  && <EventiView auth={auth} allProfiles={allProfiles} downline={downline} positions={positions} showToast={showToast} data={data} dlProspects={dlProspects} onSetTicketEvento={setTicketEvento}
           sbListEventi={sbListEventi}
@@ -1362,7 +1377,7 @@ export default function App() {
         <div onClick={closeModal} style={{position:"fixed",inset:0,background:"#00000090",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:16,animation:"fadeIn .2s"}}>
           <div className={"pop"} onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:520,maxHeight:"90vh",overflowY:"auto",borderRadius:"16px"}}>
             {modal==="detail"
-              ? <DetailModal p={sel} onEdit={()=>{setForm({...sel});setModal("edit");}} onAdvance={()=>advanceFase(sel)} onFollowUp={()=>moveFase(sel,"FOLLOW_UP")} onNonInt={()=>moveFase(sel,"NON_INT")} onNonPiace={()=>moveFase(sel,"NON_PIACE")} onRiattiva={()=>moveFase(sel,"RIATTIVA")} onClose={closeModal} onUpdateChecklist={cl=>updateChecklist(sel.id,cl)} onDeleteStorico={fase=>deleteStorico(sel.id,fase)} onUpdateStoricoData={(fase,data,newFase,newStorico)=>updateStoricoData(sel.id,fase,data,newFase,newStorico)} onSetStatoColore={v=>setStatoColore(sel.id,v)} eventi={eventi} onSetTicketEvento={eid=>setTicketEvento(sel.id,eid)} />
+              ? <DetailModal p={sel} onEdit={()=>{setForm({...sel});setModal("edit");}} onAdvance={()=>advanceFase(sel)} onFollowUp={()=>moveFase(sel,"FOLLOW_UP")} onNonInt={()=>moveFase(sel,"NON_INT")} onNonPiace={()=>moveFase(sel,"NON_PIACE")} onRiattiva={()=>moveFase(sel,"RIATTIVA")} onClose={closeModal} onUpdateChecklist={cl=>updateChecklist(sel.id,cl)} onDeleteStorico={fase=>deleteStorico(sel.id,fase)} onUpdateStoricoData={(fase,data,newFase,newStorico)=>updateStoricoData(sel.id,fase,data,newFase,newStorico)} onSetStatoColore={v=>setStatoColore(sel.id,v)} eventi={eventi} onSetTicketEvento={eid=>setTicketEvento(sel.id,eid)} onSetChatAperta={v=>setChatAperta(sel.id,v)} />
               : modal==="cliente"
               ? <ClienteQuickModal form={form} setForm={setForm} onSave={saveClienteQuick} onClose={closeModal} isLeader={!!auth.profile?.is_leader || auth.userId===LUDOVICO_ID} downline={downline} saving={saving} />
               : modal==="membro"
@@ -1591,28 +1606,59 @@ function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, f
 
 //  STATISTICHE 
 const STATS_START_CICLO = 79; // prima di questo ciclo non si tracciavano ancora le statistiche
-function Statistiche({ data, dlProspects, downline }) {
+function Statistiche({ data, dlProspects, downline, positions }) {
   const hasTeam = (dlProspects||[]).length > 0;
   const [statsMode, setStatsMode] = useState(data.length > 0 ? "personale" : (hasTeam ? "team" : "personale"));
   const [fMembro, setFMembro] = useState(""); // "" tutti | "self" solo tu | id membro specifico
   const [legFilter, setLegFilter] = useState("all"); // all | sinistra | destra
   const [barCiclo,  setBarCiclo]  = useState("ALL");
 
+  const [soloLui, setSoloLui] = useState(false); // con un membro scelto: solo lui, senza il suo team
+  const memberRoot = statsMode==="team" && fMembro!=="" && fMembro!=="self" ? fMembro : null;
+
+  // tutti i discendenti di un membro (lui incluso)
+  const subtreeIds = rootId => {
+    const ids = new Set([rootId]); let frontier=[rootId];
+    while (frontier.length) {
+      const next=[];
+      (downline||[]).forEach(m=>{ if(!ids.has(m.id) && frontier.includes(m.positioned_under)){ ids.add(m.id); next.push(m.id); } });
+      frontier=next;
+    }
+    return ids;
+  };
+  // gamba (sinistra/destra) di un utente rispetto a un membro specifico
+  const legRel = (rootId, uid) => {
+    if (uid===rootId) return null;
+    const byId = Object.fromEntries((downline||[]).map(m=>[m.id,m]));
+    let cur=uid, guard=0;
+    while (cur && guard++<60) {
+      const m=byId[cur]; if(!m) return null;
+      if (m.positioned_under===rootId) { const pos=(positions||[]).find(x=>x.upline_id===rootId&&x.member_id===cur); return pos?pos.team:null; }
+      cur=m.positioned_under;
+    }
+    return null;
+  };
+
   const baseData = statsMode !== "team" ? data
     : fMembro === "" ? [...data, ...(dlProspects||[])]
     : fMembro === "self" ? data
-    : (dlProspects||[]).filter(p => p._userId === fMembro);
+    : (() => {
+        const ids = soloLui ? new Set([fMembro]) : subtreeIds(fMembro);
+        return (dlProspects||[]).filter(p => ids.has(p._userId)).map(p => ({...p, _legRel: legRel(fMembro,p._userId)}));
+      })();
 
   const activeData = (statsMode==="team" && fMembro==="" && legFilter!=="all")
     ? baseData.filter(p => p._leg === legFilter)
+    : (memberRoot && !soloLui && legFilter!=="all")
+    ? baseData.filter(p => p._legRel === legFilter)
     : baseData;
 
   const cicliPresenti=[...new Set(activeData.flatMap(p=>(p.storico||[]).map(s=>cicloOfDate(s.data)).filter(Boolean)))].filter(c=>c>=STATS_START_CICLO).sort((a,b)=>a-b);
   const cicli=cicliPresenti.length?cicliPresenti:[CICLO_CORRENTE];
-  const barData=FASI_FUNNEL.map(f=>{const count=barCiclo==="ALL"?activeData.filter(p=>reachedEver(p,f)).length:activeData.filter(p=>reachedInCiclo(p,f,Number(barCiclo))).length;return{fase:FASE_LABEL[f],key:f,count,fill:FASE_CLR[f]};});
+  const barData=FASI_STATS.map(f=>{const count=barCiclo==="ALL"?activeData.filter(p=>reachedEver(p,f)).length:activeData.filter(p=>reachedInCiclo(p,f,Number(barCiclo))).length;return{fase:FASE_LABEL[f],key:f,count,fill:FASE_CLR[f]};});
   const dropOffs = barData.slice(0,-1).map((b,i)=>{const next=barData[i+1];const rate=b.count>0?Math.round(next.count/b.count*100):0;return{da:b.fase,a:next.fase,rate,fromCount:b.count,color:next.fill};});
   const bottleneck = dropOffs.filter(d=>d.fromCount>=3).sort((a,b)=>a.rate-b.rate)[0]; // solo se c'è un minimo di dati
-  const tableRowsAsc=[...cicli].sort((a,b)=>a-b).map(c=>{const r={c};FASI_FUNNEL.forEach(f=>{r[f]=activeData.filter(p=>reachedInCiclo(p,f,c)).length;});r.conv=r.INVITO>0?Math.round(r.SUB/r.INVITO*100):r.FUP1>0?Math.round(r.SUB/r.FUP1*100):0;return r;});
+  const tableRowsAsc=[...cicli].sort((a,b)=>a-b).map(c=>{const r={c};FASI_STATS.forEach(f=>{r[f]=activeData.filter(p=>reachedInCiclo(p,f,c)).length;});r.conv=r.INVITO>0?Math.round(r.SUB/r.INVITO*100):r.FUP1>0?Math.round(r.SUB/r.FUP1*100):0;return r;});
   const tableRows=[...tableRowsAsc].reverse().map((r,i)=>{const prev=tableRowsAsc[tableRowsAsc.length-2-i];return{...r,delta:prev?r.conv-prev.conv:null};});
 
   // Tempo medio di conversione (Invito → Iscritto)
@@ -1654,6 +1700,16 @@ function Statistiche({ data, dlProspects, downline }) {
     return rows.filter(r=>r.invito>=2).sort((a,b)=>b.rate-a.rate||b.invito-a.invito).slice(0,6);
   })();
 
+  // Report per fonte: da dove arrivano i prospect
+  const fontiReport = fontiSet.map(f=>{
+    const arr=activeData.filter(p=>(p.fonte||"Altro")===f && (barCiclo==="ALL"?true:cicloOfDate(p.conosciutoAt)===Number(barCiclo)));
+    const tot=arr.length;
+    const conosc=arr.filter(p=>reachedEver(p,"CONOSCITIVA")).length;
+    const sub=arr.filter(p=>reachedEver(p,"SUB")).length;
+    return {fonte:f,tot,conosc,sub,rate:tot>0?Math.round(sub/tot*100):0};
+  }).filter(r=>r.tot>0).sort((a,b)=>b.tot-a.tot);
+  const fontiMax = Math.max(1,...fontiReport.map(r=>r.tot));
+
   const ts={background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:8,color:"var(--text)",fontSize:12};
   const tProps={contentStyle:ts,itemStyle:{color:"var(--text)"},labelStyle:{color:"var(--text)",fontWeight:700}};
   if (!activeData.length) return <div style={{padding:"2rem 2.2rem"}}><h1 style={{fontWeight:900,fontSize:26,color:"var(--text)",marginBottom:8}}>Statistiche</h1><div style={{textAlign:"center",padding:"5rem",color:"var(--border2)"}}><div style={{fontSize:44,marginBottom:12}}></div><p>{hasTeam ? "Nessun dato in questa modalita — prova a switchare su Team" : "Aggiungi prospect per vedere le statistiche"}</p></div></div>;
@@ -1678,10 +1734,15 @@ function Statistiche({ data, dlProspects, downline }) {
               <select value={fMembro} onChange={e=>setFMembro(e.target.value)} style={{width:"auto",minWidth:170}}>
                 <option value="">Tutto il team</option>
                 <option value="self">Solo tu</option>
-                {(downline||[]).map(m=><option key={m.id} value={m.id}>{m.nome||m.email} {m.cognome||""}</option>)}
+                {(downline||[]).map(m=><option key={m.id} value={m.id}>{m.nome||m.email} {m.cognome||""} — da lui in giù</option>)}
               </select>
             )}
-            {statsMode==="team" && fMembro==="" && (
+            {memberRoot && (
+              <label style={{display:"inline-flex",alignItems:"center",gap:6,cursor:"pointer",fontSize:11,fontWeight:700,color:"var(--muted)"}}>
+                <input type="checkbox" checked={soloLui} onChange={e=>setSoloLui(e.target.checked)} style={{width:15,height:15,cursor:"pointer"}} /> Solo lui (senza il suo team)
+              </label>
+            )}
+            {statsMode==="team" && fMembro!=="self" && !(memberRoot&&soloLui) && (
               <div style={{display:"flex",background:"var(--bg3)",borderRadius:10,padding:4,border:"1px solid var(--border)"}}>
                 {[["all","Tutti"],["sinistra","Sinistra"],["destra","Destra"]].map(([k,l])=>(
                   <button key={k} onClick={()=>setLegFilter(k)} className="tabbtn"
@@ -1735,6 +1796,34 @@ function Statistiche({ data, dlProspects, downline }) {
         </div>
       </div>
 
+      {fontiReport.length>0 && (
+        <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden",marginBottom:16}}>
+          <div style={{padding:"1.1rem 1.4rem",borderBottom:"1px solid #11203a"}}>
+            <div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}>Da dove arrivano i prospect</div>
+            <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{barCiclo==="ALL"?"Su tutti i cicli":"Nel ciclo "+barCiclo} — Lista Nomi, Instagram e le altre fonti</div>
+          </div>
+          <div style={{overflowX:"auto"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",minWidth:560}}>
+              <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Fonte","Prospect","Arrivati a Conoscitiva","Iscritti","Conv%"].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
+              <tbody>{fontiReport.map(r=>(
+                <tr key={r.fonte} style={{borderBottom:"1px solid #0d1b3355"}}>
+                  <td style={{padding:"11px 16px",fontWeight:700,fontSize:13,color:"var(--text)",whiteSpace:"nowrap"}}>{FONTE_ICO[r.fonte]||""} {r.fonte}</td>
+                  <td style={{padding:"11px 16px",minWidth:180}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <div style={{flex:1,height:8,background:"var(--bg4)",borderRadius:99,overflow:"hidden"}}><div style={{width:Math.round(r.tot/fontiMax*100)+"%",height:"100%",background:"linear-gradient(90deg,var(--a1),var(--a2))",borderRadius:99}}/></div>
+                      <span style={{fontWeight:800,fontSize:13,color:"var(--text)",minWidth:24,textAlign:"right"}}>{r.tot}</span>
+                    </div>
+                  </td>
+                  <td style={{padding:"11px 16px",fontWeight:700,fontSize:13,color:"var(--muted)"}}>{r.conosc}</td>
+                  <td style={{padding:"11px 16px",fontWeight:800,fontSize:13,color:r.sub>0?"#10b981":"var(--border2)"}}>{r.sub}</td>
+                  <td style={{padding:"11px 16px",fontWeight:800,fontSize:13,color:r.rate>=20?"#10b981":r.rate>=10?"var(--a2)":"#f59e0b"}}>{r.rate}%</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {showClassifica && classificaRows.length>0 && (
         <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden",marginBottom:16}}>
           <div style={{padding:"1.1rem 1.4rem",borderBottom:"1px solid #11203a"}}><div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}> Classifica conversione</div><div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{barCiclo==="ALL"?"Su tutti i cicli":"Ciclo "+barCiclo} — chi converte meglio nel team (min. 2 invitati)</div></div>
@@ -1751,14 +1840,14 @@ function Statistiche({ data, dlProspects, downline }) {
 
       <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden"}}>
         <div style={{padding:"1.1rem 1.4rem",borderBottom:"1px solid #11203a"}}><div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}> Cicli a confronto</div><div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>Dal ciclo {STATS_START_CICLO} in poi — prima non si tracciava ancora</div></div>
-        <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",minWidth:640}}><thead><tr style={{borderBottom:"1px solid #11203a"}}><th style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>Ciclo</th>{FASI_FUNNEL.map(f=><th key={f} style={{textAlign:"center",color:FASE_CLR[f],fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 10px"}}>{FASE_LABEL[f]}</th>)}<th style={{textAlign:"center",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>Conv%</th></tr></thead><tbody>{tableRows.map(r=>(<tr key={r.c} className="hrow" style={{borderBottom:"1px solid #0d1b3355"}}><td style={{padding:"11px 16px"}}><span style={{background:r.c===CICLO_CORRENTE?"var(--a1-13)":"var(--border)",color:r.c===CICLO_CORRENTE?"var(--a2)":"var(--muted)",borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:700}}>C{r.c}</span></td>{FASI_FUNNEL.map(f=><td key={f} style={{textAlign:"center",padding:"11px 10px",fontWeight:700,fontSize:13,color:r[f]>0?"var(--text)":"var(--border2)"}}>{r[f]}</td>)}<td style={{textAlign:"center",padding:"11px 16px",fontWeight:800,fontSize:13,color:r.conv>=20?"#10b981":r.conv>=10?"var(--a2)":"#f59e0b"}}>{r.conv}%{r.delta!=null&&r.delta!==0&&<span style={{marginLeft:6,fontSize:11,color:r.delta>0?"#10b981":"#ef4444"}}>{r.delta>0?"▲":"▼"}{Math.abs(r.delta)}</span>}</td></tr>))}</tbody></table></div>
+        <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",minWidth:640}}><thead><tr style={{borderBottom:"1px solid #11203a"}}><th style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>Ciclo</th>{FASI_STATS.map(f=><th key={f} style={{textAlign:"center",color:FASE_CLR[f],fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 10px"}}>{FASE_LABEL[f]}</th>)}<th style={{textAlign:"center",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>Conv%</th></tr></thead><tbody>{tableRows.map(r=>(<tr key={r.c} className="hrow" style={{borderBottom:"1px solid #0d1b3355"}}><td style={{padding:"11px 16px"}}><span style={{background:r.c===CICLO_CORRENTE?"var(--a1-13)":"var(--border)",color:r.c===CICLO_CORRENTE?"var(--a2)":"var(--muted)",borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:700}}>C{r.c}</span></td>{FASI_STATS.map(f=><td key={f} style={{textAlign:"center",padding:"11px 10px",fontWeight:700,fontSize:13,color:r[f]>0?"var(--text)":"var(--border2)"}}>{r[f]}</td>)}<td style={{textAlign:"center",padding:"11px 16px",fontWeight:800,fontSize:13,color:r.conv>=20?"#10b981":r.conv>=10?"var(--a2)":"#f59e0b"}}>{r.conv}%{r.delta!=null&&r.delta!==0&&<span style={{marginLeft:6,fontSize:11,color:r.delta>0?"#10b981":"#ef4444"}}>{r.delta>0?"▲":"▼"}{Math.abs(r.delta)}</span>}</td></tr>))}</tbody></table></div>
       </div>
     </div>
   );
 }
 
 //  LISTA 
-function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, setFFonte, fCiclo, setFCiclo, fCitta, setFCitta, fInteresse, setFInteresse, fPercorso, setFPercorso, fLeg, setFLeg, fMembroTeam, setFMembroTeam, downline, onOpen, onAdd, listaMode, setListaMode, hasTeam }) {
+function Lista({ onToggleChat, prospects, total, search, setSearch, fFase, setFFase, fFonte, setFFonte, fCiclo, setFCiclo, fCitta, setFCitta, fInteresse, setFInteresse, fPercorso, setFPercorso, fLeg, setFLeg, fMembroTeam, setFMembroTeam, downline, onOpen, onAdd, listaMode, setListaMode, hasTeam }) {
   return (
     <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1.4rem",flexWrap:"wrap",gap:12}}>
@@ -1825,7 +1914,7 @@ function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, s
         ?<div style={{textAlign:"center",padding:"4rem",color:"var(--border2)"}}><div style={{fontSize:44,marginBottom:12}}></div><p style={{fontSize:14,marginBottom:14}}>Nessun prospect trovato</p><button onClick={onAdd} style={{padding:"9px 20px",fontSize:13,fontWeight:800,background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:10,cursor:"pointer"}}>Aggiungi il primo</button></div>
         :<div className="tbl-wrap" style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden"}}>
           <table style={{width:"100%",borderCollapse:"collapse",minWidth:700}}>
-            <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Prospect",...(listaMode==="team"?["Di"]:[]),"Ciclo","Conosciuto","Fonte","Fase","Interesse","Checklist",""].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",letterSpacing:.8,padding:"12px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
+            <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Prospect",...(listaMode==="team"?["Di"]:[]),"Ciclo","Conosciuto","Fonte","Fase","Interesse","Chat","Checklist",""].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",letterSpacing:.8,padding:"12px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
             <tbody>{prospects.map(p=>{
               const c=cicloOfDate(p.conosciutoAt);
               const tint = STATO_COLORE_MAP[p.statoColore];
@@ -1842,6 +1931,9 @@ function Lista({ prospects, total, search, setSearch, fFase, setFFase, fFonte, s
                       ? <span style={{fontSize:11,fontWeight:800,padding:"2px 8px",borderRadius:6,color:INTERESSE_CLR[p.interesse],background:INTERESSE_CLR[p.interesse]+"20"}}>{p.interesse}</span>
                       : <span style={{color:"var(--border2)",fontSize:11}}>\u2014</span>
                     }
+                  </td>
+                  <td style={{padding:"12px 16px"}} onClick={e=>e.stopPropagation()}>
+                    <input type="checkbox" checked={!!p.chatAperta} onChange={e=>onToggleChat&&onToggleChat(p.id,e.target.checked)} title="Chat aperta" style={{width:17,height:17,cursor:"pointer"}} />
                   </td>
                   <td style={{padding:"12px 16px"}}>
                     {p.fase==="SUB"
@@ -2074,7 +2166,7 @@ function FormModal({ form, setForm, onSave, onClose, onDelete, isEdit, isLeader,
 }
 
 //  DETAIL MODAL 
-function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onNonPiace, onRiattiva, onClose, onUpdateChecklist, onDeleteStorico, onUpdateStoricoData, onSetStatoColore, eventi, onSetTicketEvento }) {
+function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onNonPiace, onRiattiva, onClose, onUpdateChecklist, onDeleteStorico, onUpdateStoricoData, onSetStatoColore, eventi, onSetTicketEvento, onSetChatAperta }) {
   const [activeTab,setActiveTab]=useState("dettagli");
   const [stepPopup, setStepPopup]=useState(null); // {fase, date}
   const [stepDate, setStepDate]=useState("");
@@ -2188,6 +2280,10 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onNonPiace, o
                 </div>
               </div>
             )}
+            <div style={{...box,gridColumn:"1/-1",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+              <div style={lbl}>Chat aperta</div>
+              <input type="checkbox" checked={!!p.chatAperta} onChange={e=>onSetChatAperta&&onSetChatAperta(e.target.checked)} style={{width:18,height:18,cursor:"pointer"}} />
+            </div>
             {eventi&&eventi.length>0&&(
               <div style={{...box,gridColumn:"1/-1",background:p.ticketEventoId?"#f59e0b12":"var(--bg3)",border:p.ticketEventoId?"1px solid #f59e0b30":"1px solid var(--border2)"}}>
                 <div style={lbl}> Ticket evento</div>

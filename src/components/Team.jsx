@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PersonaModal, sbInsertNome, sbUpdateNome, sbDeleteNome, genId } from "./ListaNomi";
 
 const FASE_CLR = {INVITO:"#8b5cf6",FUP1:"var(--a1)",FUP2:"#3b82f6",PACK:"var(--a2)",CLOSING:"#22d3ee",SUB:"#10b981",FOLLOW_UP:"#f59e0b",NON_INT:"#6b7280"};
 const FASE_LABEL = {INVITO:"Invito",FUP1:"FUP 1",FUP2:"FUP 2",PACK:"Pack",CLOSING:"Closing",SUB:"Iscritto",FOLLOW_UP:"Follow Up",NON_INT:"Non Int."};
@@ -31,7 +32,7 @@ function Av({n,c,color,size=34}){
   );
 }
 
-export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positions,onOpenProspect,onSetLeader,onSetAttivo,onAddCliente,onAddMembro,onAddProspectForMember,onUpdateCliente,onDeleteCliente,sbGetListaNomiTeam,LUDOVICO_ID}){
+export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positions,onOpenProspect,onSetLeader,onSetAttivo,onAddCliente,onAddMembro,onAddProspectForMember,onSetChatAperta,showToast,onUpdateCliente,onDeleteCliente,sbGetListaNomiTeam,LUDOVICO_ID}){
   const isRoot = auth.userId === LUDOVICO_ID;
   const canToggleAttivo = isRoot || !!auth.profile?.is_leader;
   const[selectedMember,setSelectedMember]=useState(null);
@@ -40,6 +41,27 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positio
   const[memberSearch,setMemberSearch]=useState("");
   const[listaNomiMembro,setListaNomiMembro]=useState([]);
   const[loadingListaNomi,setLoadingListaNomi]=useState(false);
+  const[nomeModal,setNomeModal]=useState(null); // null | {persona|null}
+
+  function ricaricaListaNomi(){
+    if(!selectedMember||!sbGetListaNomiTeam) return;
+    sbGetListaNomiTeam(auth.token,selectedMember.id).then(rows=>setListaNomiMembro(rows||[])).catch(()=>{});
+  }
+  async function salvaNome(form){
+    if(!form.nome?.trim()) return;
+    try{
+      const base={nome:form.nome,cognome:form.cognome||null,citta:form.citta||null,telefono:form.telefono||null,instagram:form.instagram||null,note:form.note||null,temperatura:form.temperatura||null,chat_aperta:!!form.chat_aperta};
+      if(form.id) await sbUpdateNome(auth.token,form.id,base);
+      else await sbInsertNome(auth.token,{id:genId(),user_id:selectedMember.id,invitato:false,...base});
+      setNomeModal(null); ricaricaListaNomi();
+      showToast&&showToast(form.id?"Aggiornato ✓":"Nome aggiunto ✓");
+    }catch(e){ showToast&&showToast("Errore: "+e.message,"#ef4444"); }
+  }
+  async function eliminaNome(id){
+    if(!window.confirm("Eliminare questo nome dalla lista?")) return;
+    try{ await sbDeleteNome(auth.token,id); setNomeModal(null); ricaricaListaNomi(); showToast&&showToast("Eliminato"); }
+    catch(e){ showToast&&showToast("Errore: "+e.message,"#ef4444"); }
+  }
 
   useEffect(()=>{
     if(!selectedMember||!sbGetListaNomiTeam){setListaNomiMembro([]);return;}
@@ -132,7 +154,7 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positio
             ?<div style={{padding:"3rem",textAlign:"center",color:"var(--border2)"}}>Nessun prospect ancora</div>
             :<div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",minWidth:680}}>
-              <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Nome","Conosciuto","A che punto è","Note","Stato"].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
+              <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Nome","Conosciuto","A che punto è","Chat","Note","Stato"].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
               <tbody>{mP.map(p=>{
                 const stato=STATO_COLORE_MAP[p.statoColore];
                 return (
@@ -140,6 +162,7 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positio
                   <td style={{padding:"11px 16px"}}><div style={{display:"flex",alignItems:"center",gap:9}}><Av n={p.nome} c={p.cognome} color={FASE_CLR[p.fase]}/><span style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{p.nome} {p.cognome}</span></div></td>
                   <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12,whiteSpace:"nowrap"}}>{fmt(p.conosciutoAt)}</td>
                   <td style={{padding:"11px 16px"}}><span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:700,color:"#fff",background:FASE_CLR[p.fase],whiteSpace:"nowrap"}}>{FASE_LABEL[p.fase]}</span></td>
+                  <td style={{padding:"11px 16px"}} onClick={e=>e.stopPropagation()}><input type="checkbox" checked={!!p.chatAperta} onChange={e=>onSetChatAperta&&onSetChatAperta(p.id,e.target.checked)} title="Chat aperta" style={{width:17,height:17,cursor:"pointer"}} /></td>
                   <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12,maxWidth:260,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.note||"\u2014"}</td>
                   <td style={{padding:"11px 16px"}}>{stato?<span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:800,color:stato,background:stato+"18",border:"1px solid "+stato+"35",whiteSpace:"nowrap"}}>{STATO_COLORE_LABEL[p.statoColore]}</span>:<span style={{color:"var(--border2)",fontSize:11}}>\u2014</span>}</td>
                 </tr>
@@ -151,8 +174,13 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positio
 
         <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden",marginTop:20}}>
           <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a"}}>
-            <div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}>Lista nomi di {selectedMember.nome||selectedMember.email}</div>
-            <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>Nomi ancora da invitare, non ancora diventati prospect</div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
+              <div>
+                <div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}>Lista nomi di {selectedMember.nome||selectedMember.email}</div>
+                <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>Nomi ancora da invitare — clicca una riga per modificarla</div>
+              </div>
+              <button onClick={()=>setNomeModal({persona:null})} style={{padding:"7px 14px",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontWeight:800,fontSize:12}}>+ Aggiungi nome</button>
+            </div>
           </div>
           {loadingListaNomi
             ? <div style={{padding:"2rem",textAlign:"center",color:"var(--border2)",fontSize:13}}>Carico...</div>
@@ -160,16 +188,17 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positio
             ? <div style={{padding:"2rem",textAlign:"center",color:"var(--border2)",fontSize:13}}>Nessun nome ancora in lista</div>
             : <div style={{overflowX:"auto"}}>
               <table style={{width:"100%",borderCollapse:"collapse",minWidth:680}}>
-                <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Nome","Città","Telefono","Instagram","Temp.","Note"].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
+                <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Nome","Città","Telefono","Instagram","Temp.","Chat","Note"].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
                 <tbody>{listaNomiMembro.map(n=>{
                   const tempColor = n.temperatura==="Caldo"?"#ef4444":n.temperatura==="Tiepido"?"#f59e0b":n.temperatura==="Freddo"?"#3b82f6":null;
                   return (
-                  <tr key={n.id} style={{borderBottom:"1px solid #0d1b3355"}}>
+                  <tr key={n.id} onClick={()=>setNomeModal({persona:n})} style={{borderBottom:"1px solid #0d1b3355",cursor:"pointer"}} className="hrow">
                     <td style={{padding:"11px 16px"}}><div style={{display:"flex",alignItems:"center",gap:9}}><Av n={n.nome} c={n.cognome} color="#8b5cf6"/><span style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{n.nome} {n.cognome||""}</span></div></td>
                     <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12}}>{n.citta||"\u2014"}</td>
                     <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12}}>{n.telefono||"\u2014"}</td>
                     <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12}}>{n.instagram||"\u2014"}</td>
                     <td style={{padding:"11px 16px"}}>{tempColor?<span style={{fontSize:11,fontWeight:800,padding:"2px 8px",borderRadius:6,color:tempColor,background:tempColor+"20"}}>{n.temperatura}</span>:<span style={{color:"var(--border2)",fontSize:11}}>\u2014</span>}</td>
+                    <td style={{padding:"11px 16px"}}>{n.chat_aperta?<span style={{fontSize:11,fontWeight:800,color:"#10b981"}}>✓ Aperta</span>:<span style={{color:"var(--border2)",fontSize:11}}>{"\u2014"}</span>}</td>
                     <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12,maxWidth:220,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n.note||"\u2014"}</td>
                   </tr>
                 );})}</tbody>
@@ -177,6 +206,14 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positio
             </div>
           }
         </div>
+
+        {nomeModal && (
+          <div style={{position:"fixed",inset:0,background:"#000000cc",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:20}} onClick={()=>setNomeModal(null)}>
+            <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:460}}>
+              <PersonaModal persona={nomeModal.persona} isEdit={!!nomeModal.persona} onSave={salvaNome} onClose={()=>setNomeModal(null)} onDelete={nomeModal.persona?()=>eliminaNome(nomeModal.persona.id):null} />
+            </div>
+          </div>
+        )}
       </div>
     );
   }

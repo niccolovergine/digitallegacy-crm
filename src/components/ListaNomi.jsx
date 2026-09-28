@@ -20,14 +20,14 @@ async function sbFetch(path, opts = {}) {
 }
 
 const sbListaNomi = (tok, uid) => sbFetch("/rest/v1/lista_nomi?select=*&user_id=eq."+uid+"&order=created_at.desc", { _token:tok });
-const sbInsertNome = (tok, row) => sbFetch("/rest/v1/lista_nomi", { method:"POST", _token:tok, body:JSON.stringify(row) });
-const sbUpdateNome = (tok, id, row) => sbFetch("/rest/v1/lista_nomi?id=eq."+id, { method:"PATCH", _token:tok, body:JSON.stringify(row) });
-const sbDeleteNome = (tok, id) => sbFetch("/rest/v1/lista_nomi?id=eq."+id, { method:"DELETE", _token:tok });
+export const sbInsertNome = (tok, row) => sbFetch("/rest/v1/lista_nomi", { method:"POST", _token:tok, body:JSON.stringify(row) });
+export const sbUpdateNome = (tok, id, row) => sbFetch("/rest/v1/lista_nomi?id=eq."+id, { method:"PATCH", _token:tok, body:JSON.stringify(row) });
+export const sbDeleteNome = (tok, id) => sbFetch("/rest/v1/lista_nomi?id=eq."+id, { method:"DELETE", _token:tok });
 
 const TEMPERATURE = ["Caldo", "Tiepido", "Freddo"];
 const TEMP_CLR = { Caldo:"#ef4444", Tiepido:"#f59e0b", Freddo:"#3b82f6" };
 
-const genId = () => crypto.randomUUID();
+export const genId = () => crypto.randomUUID();
 const today = () => new Date().toISOString().split("T")[0];
 
 function Av({ n, c, size=34 }) {
@@ -38,7 +38,7 @@ function Av({ n, c, size=34 }) {
   );
 }
 
-function PersonaModal({ persona, onSave, onClose, onDelete, onInvita, isEdit }) {
+export function PersonaModal({ persona, onSave, onClose, onDelete, onInvita, isEdit }) {
   const [form, setForm] = useState(persona || { nome:"", cognome:"", citta:"", telefono:"", instagram:"", note:"", invitato:false });
   const lbl = { fontSize:11, fontWeight:700, color:"var(--muted)", textTransform:"uppercase", letterSpacing:.8, marginBottom:5, display:"block" };
   const isFreddo = form.temperatura === "Freddo";
@@ -73,13 +73,18 @@ function PersonaModal({ persona, onSave, onClose, onDelete, onInvita, isEdit }) 
         {isFreddo && (
           <div style={{gridColumn:"1/-1"}}><label style={lbl}>Instagram</label><input value={form.instagram||""} onChange={e=>setForm(f=>({...f,instagram:e.target.value}))} placeholder="@username" /></div>
         )}
+        <div style={{gridColumn:"1/-1"}}>
+          <label style={{display:"inline-flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:13,fontWeight:700,color:"var(--text)"}}>
+            <input type="checkbox" checked={!!form.chat_aperta} onChange={e=>setForm(f=>({...f,chat_aperta:e.target.checked}))} style={{width:17,height:17,cursor:"pointer"}} /> Chat aperta
+          </label>
+        </div>
         <div style={{gridColumn:"1/-1"}}><label style={lbl}>Note</label><textarea value={form.note||""} onChange={e=>setForm(f=>({...f,note:e.target.value}))} style={{height:70,resize:"vertical"}} placeholder="Note personali..." /></div>
       </div>
 
       <div style={{display:"flex",gap:9,justifyContent:"flex-end",flexWrap:"wrap",marginTop:8}}>
         {onDelete && <button onClick={onDelete} style={{padding:"9px 14px",background:"#ef444415",color:"#f87171",border:"1px solid #ef444438",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:13}}>Elimina</button>}
-        {isEdit && !form.invitato && <button onClick={()=>onInvita(form)} style={{padding:"9px 16px",background:"#10b98120",color:"#10b981",border:"1px solid #10b98140",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:13}}>Invito fatto</button>}
-        {isEdit && form.invitato && <span style={{padding:"9px 14px",fontSize:12,color:"#10b981",fontWeight:700}}>Gia invitato</span>}
+        {isEdit && !form.invitato && onInvita && <button onClick={()=>onInvita(form)} style={{padding:"9px 16px",background:"#10b98120",color:"#10b981",border:"1px solid #10b98140",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:13}}>Invito fatto</button>}
+        {isEdit && form.invitato && onInvita && <span style={{padding:"9px 14px",fontSize:12,color:"#10b981",fontWeight:700}}>Gia invitato</span>}
         <button onClick={onClose} style={{padding:"9px 14px",background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:9,cursor:"pointer",fontWeight:600,fontSize:13}}>Annulla</button>
         <button onClick={()=>onSave(form)} style={{padding:"9px 20px",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:13}}>
           {isEdit?"Aggiorna":"Aggiungi"}
@@ -112,12 +117,12 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
     if (!form.nome?.trim()) return;
     try {
       if (modal === "add") {
-        const row = { id:genId(), user_id:auth.userId, nome:form.nome, cognome:form.cognome||null, citta:form.citta||null, telefono:form.telefono||null, instagram:form.instagram||null, note:form.note||null, invitato:false, temperatura:form.temperatura||null };
+        const row = { id:genId(), user_id:auth.userId, nome:form.nome, cognome:form.cognome||null, citta:form.citta||null, telefono:form.telefono||null, instagram:form.instagram||null, note:form.note||null, invitato:false, temperatura:form.temperatura||null, chat_aperta:!!form.chat_aperta };
         await sbInsertNome(auth.token, row);
         setLista(l=>[row,...l]);
         showToast("Aggiunto");
       } else {
-        const row = { nome:form.nome, cognome:form.cognome||null, citta:form.citta||null, telefono:form.telefono||null, instagram:form.instagram||null, note:form.note||null, temperatura:form.temperatura||null };
+        const row = { nome:form.nome, cognome:form.cognome||null, citta:form.citta||null, telefono:form.telefono||null, instagram:form.instagram||null, note:form.note||null, temperatura:form.temperatura||null, chat_aperta:!!form.chat_aperta };
         await sbUpdateNome(auth.token, sel.id, row);
         setLista(l=>l.map(x=>x.id===sel.id?{...x,...row}:x));
         showToast("Aggiornato");
@@ -219,7 +224,7 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
                   </div>
                   <table style={{width:"100%",borderCollapse:"collapse"}}>
                     <thead><tr style={{borderBottom:"1px solid #11203a"}}>
-                      {["Nome","Citta","Telefono","Instagram","Temp.","Note",""].map(h=>(
+                      {["Nome","Citta","Telefono","Instagram","Temp.","Chat","Note",""].map(h=>(
                         <th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>{h}</th>
                       ))}
                     </tr></thead>
@@ -231,6 +236,7 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
                           <td style={{padding:"11px 16px",fontSize:12}}>{p.telefono?<a href={"tel:"+p.telefono} onClick={e=>e.stopPropagation()} style={{color:"var(--a2)",textDecoration:"none"}}>{p.telefono}</a>:"\u2014"}</td>
                           <td style={{padding:"11px 16px",fontSize:12}}>{p.instagram?<a href={"https://instagram.com/"+p.instagram.replace("@","")} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()} style={{color:"#c084fc",textDecoration:"none"}}>{p.instagram.startsWith("@")?p.instagram:"@"+p.instagram}</a>:"\u2014"}</td>
                           <td style={{padding:"11px 16px"}}>{p.temperatura?<span style={{fontSize:11,fontWeight:800,padding:"2px 8px",borderRadius:6,color:TEMP_CLR[p.temperatura],background:TEMP_CLR[p.temperatura]+"20"}}>{p.temperatura}</span>:"\u2014"}</td>
+                          <td style={{padding:"11px 16px"}}>{p.chat_aperta?<span style={{fontSize:11,fontWeight:800,color:"#10b981"}}>✓ Aperta</span>:<span style={{color:"var(--border2)",fontSize:11}}>{"\u2014"}</span>}</td>
                           <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12,maxWidth:200}}><div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.note||"\u2014"}</div></td>
                           <td style={{padding:"11px 16px",color:"var(--border2)",fontSize:16}}>{"\u203a"}</td>
                         </tr>
