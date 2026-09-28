@@ -28,7 +28,7 @@ export function parseNote(text) {
       else { m = line.match(/^(\d{2,5})(?!\s*tick)\b/i); if (m) punti = parseInt(m[1], 10); }
     }
     const forse = /\?/.test(line) || /\bforse\b/.test(low);
-    const attesa = /waiting|attesa/.test(low);
+    const attesa = /caricat|waiting|attesa/.test(low); // "caricati" (le vecchie note con "waiting" continuano a funzionare)
     const ok = CHECK_RE.test(line);
     const no = NO_RE.test(line);
     if (punti == null && !(forse || attesa || ok || no)) { altre.push(line); return; } // titoli e righe libere
@@ -47,7 +47,7 @@ export function parseNote(text) {
 
 const GRUPPI_UI = [
   { key: "passato",    label: "Passati",      sub: "con ✅",         color: "#10b981" },
-  { key: "attesa",     label: "In attesa",    sub: "waiting",        color: "#3b82f6" },
+  { key: "attesa",     label: "Caricati",     sub: "con “caricati”", color: "#3b82f6" },
   { key: "forse",      label: "In forse",     sub: "con ???",        color: "#f59e0b" },
   { key: "daChiudere", label: "Da chiudere",  sub: "senza spunta",   color: "#8b5cf6" },
   { key: "saltato",    label: "Saltati",      sub: "con ❌",         color: "#ef4444" },
@@ -219,7 +219,7 @@ export function NoteView({ auth, downline, isLeader, showToast }) {
                   <input value={nota.titolo || ""} onChange={e => modifica({ titolo: e.target.value })} placeholder="Titolo (es. Situa punti settembre)" style={{ fontSize: 16, fontWeight: 800, marginBottom: 10 }} />
                   <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap", alignItems: "center" }}>
                     <span style={{ fontSize: 10, color: "var(--muted)", fontWeight: 700, textTransform: "uppercase" }}>Segna la riga:</span>
-                    {[["✅", "✅ passato"], ["???", "❓ in forse"], ["(waiting)", "⏳ waiting"]].map(([mk, lb]) => (
+                    {[["✅", "✅ passato"], ["???", "❓ in forse"], ["(caricati)", "📥 caricati"]].map(([mk, lb]) => (
                       <button key={mk} onClick={() => segnaRiga(mk)} style={{ padding: "5px 11px", background: "var(--bg3)", border: "1px solid var(--border2)", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 700, color: "var(--text)", fontFamily: "inherit" }}>{lb}</button>
                     ))}
                     <span style={{ marginLeft: "auto", fontSize: 10, color: salvataggio === "errore" ? "#ef4444" : "var(--border2)" }}>{salvataggio === "salvato" ? "Salvato ✓" : salvataggio}</span>
