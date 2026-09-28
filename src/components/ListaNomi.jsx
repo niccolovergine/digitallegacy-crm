@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 const SB_URL = "https://gyxvhnwzkhjrgpqvakfw.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5eHZobnd6a2hqcmdwcXZha2Z3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NTEzOTQsImV4cCI6MjA5OTUyNzM5NH0.aYAzw7j6YcBIWdBsdHq0ibZrjyyK5CZqNAcchfdQt0o";
 
-async function sbFetch(path, opts = {}) {
+export async function sbFetch(path, opts = {}) {
   const res = await fetch(SB_URL + path, {
     ...opts,
     headers: {

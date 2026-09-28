@@ -3,6 +3,7 @@ import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, Cart
 import { TeamView } from "./components/Team";
 import { ProfiloView } from "./components/Profilo";
 import { ListaNomiView } from "./components/ListaNomi";
+import { NoteView } from "./components/Note";
 import { EventiView } from "./components/Eventi";
 import { MappaSezione } from "./components/Mappa";
 import { PlanView } from "./components/Plan";
@@ -1336,6 +1337,7 @@ export default function App() {
         {view==="stats"   && <Statistiche data={data} dlProspects={teamProspects} downline={downline} positions={positions} />}
         {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} clienti={clienti} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onSetLeader={setLeader} onSetAttivo={setAttivo} onAddCliente={openAddCliente} onAddMembro={openAddMembro} onAddProspectForMember={openAddForMember} onSetChatAperta={setChatAperta} showToast={showToast} onUpdateCliente={updateClienteQuick} onDeleteCliente={deleteClienteQuick} sbGetListaNomiTeam={sbGetListaNomiTeam} LUDOVICO_ID={LUDOVICO_ID} />}
         {view==="nomi"    && <ListaNomiView auth={auth} onInvitaProspect={invitaProspect} />}
+        {view==="note"    && <NoteView auth={auth} downline={downline} isLeader={!!auth.profile?.is_leader || auth.userId===LUDOVICO_ID} showToast={showToast} />}
         {view==="eventi"  && <EventiView auth={auth} allProfiles={allProfiles} downline={downline} positions={positions} showToast={showToast} data={data} dlProspects={dlProspects} onSetTicketEvento={setTicketEvento}
           sbListEventi={sbListEventi}
           sbListEventoStatus={sbListEventoStatus} sbUpsertEventoStatus={sbUpsertEventoStatus}
@@ -1355,6 +1357,7 @@ export default function App() {
           {id:"lista",label:"Prospect",badge:data.length},
           {id:"team",label:"Team",badge:downline.length||0},
           {id:"nomi",label:"Lista"},
+          {id:"note",label:"Note"},
           {id:"eventi",label:"Eventi"},
           {id:"profilo",label:"Profilo"},
         ].map(item=>{
@@ -1399,6 +1402,7 @@ function Sidebar({ view, setView, data, urgenti, onAdd, onExport, auth, onLogout
     { id:"stats",   icon:"", label:"Statistiche" },
     { id:"team",    icon:"", label:"Team", badge:downlineCount||0 },
     { id:"nomi",    icon:"", label:"Lista Nomi" },
+    { id:"note",    icon:"", label:"Note" },
     { id:"eventi",  icon:"", label:"Eventi" },
     { id:"mappa",   icon:"", label:"Mappa" },
     { id:"plan",    icon:"", label:"Plan" },
