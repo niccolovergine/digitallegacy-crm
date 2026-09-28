@@ -1673,12 +1673,15 @@ function Statistiche({ data, dlProspects, downline, positions }) {
   }).filter(g=>g!=null);
   const tempoMedioConversione = durate.length ? Math.round(durate.reduce((a,b)=>a+b,0)/durate.length) : null;
 
+  // stesso criterio del grafico: "ha raggiunto la fase" (tutti i cicli, oppure nel ciclo scelto)
+  const reached = (p,f) => barCiclo==="ALL" ? reachedEver(p,f) : reachedInCiclo(p,f,Number(barCiclo));
+
   // Fonte migliore
   const fontiSet=[...new Set(activeData.map(p=>p.fonte||"Altro"))];
   const fontiStats = fontiSet.map(f=>{
-    const arr=activeData.filter(p=>(p.fonte||"Altro")===f && (barCiclo==="ALL"?true:cicloOfDate(p.conosciutoAt)===Number(barCiclo)));
-    const tot=arr.length;
-    const sub=arr.filter(p=>reachedEver(p,"SUB")).length;
+    const arr=activeData.filter(p=>(p.fonte||"Altro")===f);
+    const tot=arr.filter(p=>reached(p,"INVITO")).length;
+    const sub=arr.filter(p=>reached(p,"SUB")).length;
     return {fonte:f,tot,sub,rate:tot>0?Math.round(sub/tot*100):0};
   }).filter(f=>f.tot>=3).sort((a,b)=>b.rate-a.rate);
   const fonteMigliore=fontiStats[0]||null;
@@ -1702,10 +1705,10 @@ function Statistiche({ data, dlProspects, downline, positions }) {
 
   // Report per fonte: da dove arrivano i prospect
   const fontiReport = fontiSet.map(f=>{
-    const arr=activeData.filter(p=>(p.fonte||"Altro")===f && (barCiclo==="ALL"?true:cicloOfDate(p.conosciutoAt)===Number(barCiclo)));
-    const tot=arr.length;
-    const conosc=arr.filter(p=>reachedEver(p,"CONOSCITIVA")).length;
-    const sub=arr.filter(p=>reachedEver(p,"SUB")).length;
+    const arr=activeData.filter(p=>(p.fonte||"Altro")===f);
+    const tot=arr.filter(p=>reached(p,"INVITO")).length;
+    const conosc=arr.filter(p=>reached(p,"CONOSCITIVA")).length;
+    const sub=arr.filter(p=>reached(p,"SUB")).length;
     return {fonte:f,tot,conosc,sub,rate:tot>0?Math.round(sub/tot*100):0};
   }).filter(r=>r.tot>0).sort((a,b)=>b.tot-a.tot);
   const fontiMax = Math.max(1,...fontiReport.map(r=>r.tot));
@@ -1800,7 +1803,7 @@ function Statistiche({ data, dlProspects, downline, positions }) {
         <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden",marginBottom:16}}>
           <div style={{padding:"1.1rem 1.4rem",borderBottom:"1px solid #11203a"}}>
             <div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}>Da dove arrivano i prospect</div>
-            <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{barCiclo==="ALL"?"Su tutti i cicli":"Nel ciclo "+barCiclo} — Lista Nomi, Instagram e le altre fonti</div>
+            <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{barCiclo==="ALL"?"Su tutti i cicli":"Nel ciclo "+barCiclo} — Lista Nomi, Instagram e le altre fonti — stessi conteggi del grafico ({fontiReport.reduce((a,r)=>a+r.tot,0)} inviti in totale)</div>
           </div>
           <div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",minWidth:560}}>
