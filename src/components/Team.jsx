@@ -142,7 +142,7 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positio
           ))}
         </div>
         <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden"}}>
-          <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
+          <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
             <div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}>Prospect di {selectedMember.nome||selectedMember.email}</div>
             {onAddProspectForMember && (
               <button onClick={()=>onAddProspectForMember(selectedMember.id)} style={{padding:"7px 14px",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontWeight:800,fontSize:12}}>
@@ -151,20 +151,20 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positio
             )}
           </div>
           {mP.length===0
-            ?<div style={{padding:"3rem",textAlign:"center",color:"var(--border2)"}}>Nessun prospect ancora</div>
+            ?<div style={{padding:"3rem",textAlign:"center",color:"var(--muted)"}}>Nessun prospect ancora</div>
             :<div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",minWidth:680}}>
-              <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Nome","Conosciuto","A che punto è","Chat","Note","Stato"].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
+              <thead><tr style={{borderBottom:"1px solid var(--border)"}}>{["Nome","Conosciuto","A che punto è","Chat","Note","Stato"].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
               <tbody>{mP.map(p=>{
                 const stato=STATO_COLORE_MAP[p.statoColore];
                 return (
-                <tr key={p.id} onClick={()=>onOpenProspect&&onOpenProspect({...p,_ownerName:(selectedMember.nome||selectedMember.email)+" "+(selectedMember.cognome||"")})} style={{borderBottom:"1px solid #0d1b3355",cursor:onOpenProspect?"pointer":"default",background:stato?stato+"12":"transparent",borderLeft:stato?"3px solid "+stato:"3px solid transparent"}} className="hrow">
+                <tr key={p.id} onClick={()=>onOpenProspect&&onOpenProspect({...p,_ownerName:(selectedMember.nome||selectedMember.email)+" "+(selectedMember.cognome||"")})} style={{borderBottom:"1px solid var(--border)",cursor:onOpenProspect?"pointer":"default",background:stato?stato+"12":"transparent",borderLeft:stato?"3px solid "+stato:"3px solid transparent"}} className="hrow">
                   <td style={{padding:"11px 16px"}}><div style={{display:"flex",alignItems:"center",gap:9}}><Av n={p.nome} c={p.cognome} color={FASE_CLR[p.fase]}/><span style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{p.nome} {p.cognome}</span></div></td>
                   <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12,whiteSpace:"nowrap"}}>{fmt(p.conosciutoAt)}</td>
                   <td style={{padding:"11px 16px"}}><span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:700,color:"#fff",background:FASE_CLR[p.fase],whiteSpace:"nowrap"}}>{FASE_LABEL[p.fase]}</span></td>
                   <td style={{padding:"11px 16px"}} onClick={e=>e.stopPropagation()}><input type="checkbox" checked={!!p.chatAperta} onChange={e=>onSetChatAperta&&onSetChatAperta(p.id,e.target.checked)} title="Chat aperta" style={{width:17,height:17,cursor:"pointer"}} /></td>
                   <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12,maxWidth:260,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.note||"\u2014"}</td>
-                  <td style={{padding:"11px 16px"}}>{stato?<span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:800,color:stato,background:stato+"18",border:"1px solid "+stato+"35",whiteSpace:"nowrap"}}>{STATO_COLORE_LABEL[p.statoColore]}</span>:<span style={{color:"var(--border2)",fontSize:11}}>\u2014</span>}</td>
+                  <td style={{padding:"11px 16px"}}>{stato?<span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:800,color:stato,background:stato+"18",border:"1px solid "+stato+"35",whiteSpace:"nowrap"}}>{STATO_COLORE_LABEL[p.statoColore]}</span>:<span style={{color:"var(--muted)",fontSize:11}}>\u2014</span>}</td>
                 </tr>
               );})}</tbody>
             </table>
@@ -173,7 +173,7 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positio
         </div>
 
         <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden",marginTop:20}}>
-          <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a"}}>
+          <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid var(--border)"}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
               <div>
                 <div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}>Lista nomi di {selectedMember.nome||selectedMember.email}</div>
@@ -183,22 +183,22 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positio
             </div>
           </div>
           {loadingListaNomi
-            ? <div style={{padding:"2rem",textAlign:"center",color:"var(--border2)",fontSize:13}}>Carico...</div>
+            ? <div style={{padding:"2rem",textAlign:"center",color:"var(--muted)",fontSize:13}}>Carico...</div>
             : listaNomiMembro.length===0
-            ? <div style={{padding:"2rem",textAlign:"center",color:"var(--border2)",fontSize:13}}>Nessun nome ancora in lista</div>
+            ? <div style={{padding:"2rem",textAlign:"center",color:"var(--muted)",fontSize:13}}>Nessun nome ancora in lista</div>
             : <div style={{overflowX:"auto"}}>
               <table style={{width:"100%",borderCollapse:"collapse",minWidth:680}}>
-                <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Nome","Città","Telefono","Instagram","Temp.","Chat","Note"].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
+                <thead><tr style={{borderBottom:"1px solid var(--border)"}}>{["Nome","Città","Telefono","Instagram","Temp.","Chat","Note"].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
                 <tbody>{listaNomiMembro.map(n=>{
                   const tempColor = n.temperatura==="Caldo"?"#ef4444":n.temperatura==="Tiepido"?"#f59e0b":n.temperatura==="Freddo"?"#3b82f6":null;
                   return (
-                  <tr key={n.id} onClick={()=>setNomeModal({persona:n})} style={{borderBottom:"1px solid #0d1b3355",cursor:"pointer"}} className="hrow">
+                  <tr key={n.id} onClick={()=>setNomeModal({persona:n})} style={{borderBottom:"1px solid var(--border)",cursor:"pointer"}} className="hrow">
                     <td style={{padding:"11px 16px"}}><div style={{display:"flex",alignItems:"center",gap:9}}><Av n={n.nome} c={n.cognome} color="#8b5cf6"/><span style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{n.nome} {n.cognome||""}</span></div></td>
                     <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12}}>{n.citta||"\u2014"}</td>
                     <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12}}>{n.telefono||"\u2014"}</td>
                     <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12}}>{n.instagram||"\u2014"}</td>
-                    <td style={{padding:"11px 16px"}}>{tempColor?<span style={{fontSize:11,fontWeight:800,padding:"2px 8px",borderRadius:6,color:tempColor,background:tempColor+"20"}}>{n.temperatura}</span>:<span style={{color:"var(--border2)",fontSize:11}}>\u2014</span>}</td>
-                    <td style={{padding:"11px 16px"}}>{n.chat_aperta?<span style={{fontSize:11,fontWeight:800,color:"#10b981"}}>✓ Aperta</span>:<span style={{color:"var(--border2)",fontSize:11}}>{"\u2014"}</span>}</td>
+                    <td style={{padding:"11px 16px"}}>{tempColor?<span style={{fontSize:11,fontWeight:800,padding:"2px 8px",borderRadius:6,color:tempColor,background:tempColor+"20"}}>{n.temperatura}</span>:<span style={{color:"var(--muted)",fontSize:11}}>\u2014</span>}</td>
+                    <td style={{padding:"11px 16px"}}>{n.chat_aperta?<span style={{fontSize:11,fontWeight:800,color:"#10b981"}}>✓ Aperta</span>:<span style={{color:"var(--muted)",fontSize:11}}>{"\u2014"}</span>}</td>
                     <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12,maxWidth:220,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n.note||"\u2014"}</td>
                   </tr>
                 );})}</tbody>
@@ -208,7 +208,7 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positio
         </div>
 
         {nomeModal && (
-          <div style={{position:"fixed",inset:0,background:"#000000cc",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:20}} onClick={()=>setNomeModal(null)}>
+          <div style={{position:"fixed",inset:0,background:"#0f172a99",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:20}} onClick={()=>setNomeModal(null)}>
             <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:460}}>
               <PersonaModal persona={nomeModal.persona} isEdit={!!nomeModal.persona} onSave={salvaNome} onClose={()=>setNomeModal(null)} onDelete={nomeModal.persona?()=>eliminaNome(nomeModal.persona.id):null} />
             </div>
@@ -236,7 +236,7 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positio
           </div>
           :<div style={{fontSize:12,color:"var(--muted)"}}>Caricamento...</div>
         }
-        <div style={{fontSize:11,color:"var(--border2)",marginTop:8}}>Chi si registra tramite il tuo link appare automaticamente nel tuo team — oppure usa "Aggiungi membro" qui sotto per crearlo tu direttamente.</div>
+        <div style={{fontSize:11,color:"var(--muted)",marginTop:8}}>Chi si registra tramite il tuo link appare automaticamente nel tuo team — oppure usa "Aggiungi membro" qui sotto per crearlo tu direttamente.</div>
       </div>
 
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap",marginBottom:18}}>
@@ -272,9 +272,9 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positio
       </div>
 
       {downline.length===0
-        ?<div style={{padding:"3rem",textAlign:"center",color:"var(--border2)"}}><p style={{fontSize:14,marginBottom:8}}>Nessun membro ancora</p><p style={{fontSize:12,color:"var(--border2)"}}>Condividi il tuo link referral o usa "Aggiungi membro"</p></div>
+        ?<div style={{padding:"3rem",textAlign:"center",color:"var(--muted)"}}><p style={{fontSize:14,marginBottom:8}}>Nessun membro ancora</p><p style={{fontSize:12,color:"var(--muted)"}}>Condividi il tuo link referral o usa "Aggiungi membro"</p></div>
         :filteredMembers.length===0
-        ?<div style={{padding:"3rem",textAlign:"center",color:"var(--border2)"}}><p style={{fontSize:14}}>Nessun membro trovato per "{memberSearch}"</p></div>
+        ?<div style={{padding:"3rem",textAlign:"center",color:"var(--muted)"}}><p style={{fontSize:14}}>Nessun membro trovato per "{memberSearch}"</p></div>
         :<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:14}}>
           {filteredMembers.map(m=>{
             const mP=getMemberProspects(m.id);
@@ -336,20 +336,20 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positio
         });
         return (
           <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden",marginTop:24}}>
-            <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a"}}>
+            <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid var(--border)"}}>
               <div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}>Clienti</div>
               <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>Aggiunti senza account — non toccano prospect e statistiche</div>
             </div>
             {filteredClienti.length===0
-              ? <div style={{padding:"2rem",textAlign:"center",color:"var(--border2)",fontSize:13}}>Nessun cliente in questa vista</div>
+              ? <div style={{padding:"2rem",textAlign:"center",color:"var(--muted)",fontSize:13}}>Nessun cliente in questa vista</div>
               : <div style={{overflowX:"auto"}}>
                 <table style={{width:"100%",borderCollapse:"collapse",minWidth:560}}>
-                <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Cliente","Di chi è","Gamba","Attivo",""].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
+                <thead><tr style={{borderBottom:"1px solid var(--border)"}}>{["Cliente","Di chi è","Gamba","Attivo",""].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
                 <tbody>{filteredClienti.map(c=>{
                   const owner=c.positionedUnder===auth.userId?null:downline.find(d=>d.id===c.positionedUnder);
                   const teamColor=c.team==="sinistra"?"var(--a1)":c.team==="destra"?"#10b981":"#6b7280";
                   return (
-                    <tr key={c.id} style={{borderBottom:"1px solid #0d1b3355"}}>
+                    <tr key={c.id} style={{borderBottom:"1px solid var(--border)"}}>
                       <td style={{padding:"12px 16px"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Av n={c.nome} c={c.cognome} color="#f59e0b"/><div><div style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{c.nome} {c.cognome||""}</div>{c.citta&&<div style={{color:"var(--muted)",fontSize:11}}>{c.citta}</div>}</div></div></td>
                       <td style={{padding:"12px 16px",fontSize:12,color:"var(--muted)"}}>{owner?(owner.nome||owner.email)+" "+(owner.cognome||""):"Tu"}</td>
                       <td style={{padding:"12px 16px"}}>
@@ -362,7 +362,7 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positio
                       <td style={{padding:"12px 16px"}}>
                         <input type="checkbox" checked={c.attivo!==false} onChange={e=>onUpdateCliente(c.id,{attivo:e.target.checked})} style={{width:16,height:16,cursor:"pointer"}} />
                       </td>
-                      <td style={{padding:"12px 16px"}}><button onClick={()=>{if(window.confirm("Rimuovere "+c.nome+"?"))onDeleteCliente(c.id);}} style={{background:"#ef444415",border:"1px solid #ef444430",borderRadius:6,color:"#f87171",cursor:"pointer",fontSize:11,fontWeight:800,padding:"4px 9px"}}>Rimuovi</button></td>
+                      <td style={{padding:"12px 16px"}}><button onClick={()=>{if(window.confirm("Rimuovere "+c.nome+"?"))onDeleteCliente(c.id);}} style={{background:"#ef444415",border:"1px solid #ef444430",borderRadius:6,color:"#dc2626",cursor:"pointer",fontSize:11,fontWeight:800,padding:"4px 9px"}}>Rimuovi</button></td>
                     </tr>
                   );
                 })}</tbody>

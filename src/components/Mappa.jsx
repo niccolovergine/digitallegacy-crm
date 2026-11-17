@@ -147,7 +147,7 @@ function coordOf(rawCitta) {
 
 const LAYERS = {
   attivi:     { label:"Attivi del team",       color:"#3b82f6" },
-  ticket:     { label:"Ticket Mastery",        color:"#10b981" },
+  ticket:     { label:"Ticket Convention",        color:"#10b981" },
   iscrizioni: { label:"Iscrizioni ciclo corr.",color:"#ef4444" },
 };
 
@@ -180,7 +180,7 @@ function ClassificaBox({ titolo, colore, righe, unita }) {
       <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
         {righe.map((r,i)=>(
           <div key={i} style={{ display:"flex", alignItems:"center", gap:8, fontSize:12 }}>
-            <span style={{ width:16, color:"var(--border2)", fontWeight:700 }}>{i+1}</span>
+            <span style={{ width:16, color:"var(--muted)", fontWeight:700 }}>{i+1}</span>
             <span style={{ flex:1, color:"var(--text)", fontWeight:600, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{r.citta}</span>
             <span style={{ fontWeight:800, color:colore }}>{r.cnt} <span style={{fontWeight:600,color:"var(--muted)",fontSize:10}}>{unita}</span></span>
           </div>
@@ -201,7 +201,7 @@ export function MappaSezione({ auth, eventi, sbGetMappaAttivi, sbGetMappaTicket,
 
   useEffect(() => {
     if (!eventi || eventi.length===0 || ticketEventoId) return;
-    const mastery = eventi.find(e => (e.nome||"").toLowerCase().includes("mastery"));
+    const mastery = eventi.find(e => /salisburgo|mastery/i.test(e.nome||""));
     setTicketEventoId(mastery ? mastery.id : eventi[0].id);
   }, [eventi]);
 
@@ -264,14 +264,14 @@ export function MappaSezione({ auth, eventi, sbGetMappaAttivi, sbGetMappaTicket,
       </div>
 
       {loading ? (
-        <div style={{ padding:"3rem", textAlign:"center", color:"var(--border2)", fontSize:13 }}>Carico la mappa...</div>
+        <div style={{ padding:"3rem", textAlign:"center", color:"var(--muted)", fontSize:13 }}>Carico la mappa...</div>
       ) : (
         <div style={{ display:"flex", gap:24, flexWrap:"wrap", justifyContent:"center", alignItems:"flex-start" }}>
           <div style={{ position:"relative", flex:"0 0 auto" }}>
-            <svg viewBox={"0 0 "+MAPW+" "+MAPH} width={MAPW} height={MAPH} style={{ background:"#050912", borderRadius:12, border:"1px solid var(--border2)", maxWidth:"100%" }}>
-              <path d={pathOf(CONTINENTE)} fill="#101a2e" stroke="#22314f" strokeWidth="1.4" />
-              <path d={pathOf(SICILIA)} fill="#101a2e" stroke="#22314f" strokeWidth="1.4" />
-              <path d={pathOf(SARDEGNA)} fill="#101a2e" stroke="#22314f" strokeWidth="1.4" />
+            <svg viewBox={"0 0 "+MAPW+" "+MAPH} width={MAPW} height={MAPH} style={{ background:"#f6f7fb", borderRadius:12, border:"1px solid var(--border2)", maxWidth:"100%" }}>
+              <path d={pathOf(CONTINENTE)} fill="#eef0fb" stroke="#c7cde3" strokeWidth="1.4" />
+              <path d={pathOf(SICILIA)} fill="#eef0fb" stroke="#c7cde3" strokeWidth="1.4" />
+              <path d={pathOf(SARDEGNA)} fill="#eef0fb" stroke="#c7cde3" strokeWidth="1.4" />
               {attivo.attivi && datiAttivi.punti.map((p,i)=>{
                 const [x,y]=project(p.coord);
                 const grande = p.cnt >= (soglieEtichetta.attivi||0);
@@ -305,7 +305,7 @@ export function MappaSezione({ auth, eventi, sbGetMappaAttivi, sbGetMappaTicket,
                 </g>
               )}
             </svg>
-            <div style={{ fontSize:10, color:"var(--border2)", marginTop:6, textAlign:"center" }}>Mappa semplificata, non in scala geografica esatta — passa il mouse sui pallini per i dettagli</div>
+            <div style={{ fontSize:10, color:"var(--muted)", marginTop:6, textAlign:"center" }}>Mappa semplificata, non in scala geografica esatta — passa il mouse sui pallini per i dettagli</div>
           </div>
 
           <div style={{ flex:"1 1 260px", minWidth:240, display:"flex", flexDirection:"column", gap:14 }}>
@@ -321,7 +321,7 @@ export function MappaSezione({ auth, eventi, sbGetMappaAttivi, sbGetMappaTicket,
             {nonRiconosciuteTot.length>0 && (
               <div style={{ background:"var(--bg3)", border:"1px solid var(--border2)", borderRadius:12, padding:"1rem", fontSize:11 }}>
                 <div style={{ fontWeight:800, color:"var(--muted)", marginBottom:8, textTransform:"uppercase", letterSpacing:.5 }}>Città non riconosciute ({nonRiconosciuteTot.length})</div>
-                <div style={{ color:"var(--border2)", lineHeight:1.7, maxHeight:180, overflowY:"auto" }}>
+                <div style={{ color:"var(--muted)", lineHeight:1.7, maxHeight:180, overflowY:"auto" }}>
                   {nonRiconosciuteTot.map((c,i)=><div key={i}>{c}</div>)}
                 </div>
                 <div style={{ marginTop:8, color:"var(--muted)" }}>Scritte in modo diverso dal solito (refusi, comuni piccoli) — non compaiono sulla mappa.</div>

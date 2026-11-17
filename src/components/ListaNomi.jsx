@@ -25,7 +25,7 @@ export const sbUpdateNome = (tok, id, row) => sbFetch("/rest/v1/lista_nomi?id=eq
 export const sbDeleteNome = (tok, id) => sbFetch("/rest/v1/lista_nomi?id=eq."+id, { method:"DELETE", _token:tok });
 
 const TEMPERATURE = ["Caldo", "Tiepido", "Freddo"];
-const TEMP_CLR = { Caldo:"#ef4444", Tiepido:"#f59e0b", Freddo:"#3b82f6" };
+const TEMP_CLR = { Caldo:"#ef4444", Tiepido:"#eab308", Freddo:"#0ea5e9" };
 
 export const genId = () => crypto.randomUUID();
 const today = () => new Date().toISOString().split("T")[0];
@@ -39,54 +39,43 @@ function Av({ n, c, size=34 }) {
 }
 
 export function PersonaModal({ persona, onSave, onClose, onDelete, onInvita, isEdit }) {
-  const [form, setForm] = useState(persona || { nome:"", cognome:"", citta:"", telefono:"", instagram:"", note:"", invitato:false });
+  const [form, setForm] = useState(persona || { nome:"", cognome:"", note:"", invitato:false });
   const lbl = { fontSize:11, fontWeight:700, color:"var(--muted)", textTransform:"uppercase", letterSpacing:.8, marginBottom:5, display:"block" };
-  const isFreddo = form.temperatura === "Freddo";
 
   return (
-    <div style={{background:"var(--bg2)",border:"1px solid var(--border2)",borderRadius:16,padding:"1.6rem",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 20px 70px #000000aa"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-        <h2 style={{fontWeight:900,fontSize:17,color:"var(--text)"}}>{isEdit?"Modifica":"+ Aggiungi"}</h2>
-        <button onClick={onClose} style={{background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:8,cursor:"pointer",padding:"4px 10px",fontSize:14}}>X</button>
+    <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:20,padding:"1.7rem",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 30px 80px -20px #0f172a55"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+        <h2 style={{fontWeight:800,fontSize:18,color:"var(--text)"}}>{isEdit?"Modifica":"Aggiungi alla lista"}</h2>
+        <button onClick={onClose} style={{background:"var(--bg3)",color:"var(--muted)",border:"1px solid var(--border)",borderRadius:9,cursor:"pointer",padding:"4px 11px",fontSize:14}}>{"✕"}</button>
       </div>
 
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
         <div><label style={lbl}>Nome</label><input value={form.nome||""} onChange={e=>setForm(f=>({...f,nome:e.target.value}))} placeholder="Mario" /></div>
         <div><label style={lbl}>Cognome</label><input value={form.cognome||""} onChange={e=>setForm(f=>({...f,cognome:e.target.value}))} placeholder="Rossi" /></div>
-        <div style={{gridColumn:"1/-1"}}><label style={lbl}>Citta</label><input value={form.citta||""} onChange={e=>setForm(f=>({...f,citta:e.target.value}))} placeholder="Milano" /></div>
-        <div><label style={lbl}>Telefono</label><input value={form.telefono||""} onChange={e=>setForm(f=>({...f,telefono:e.target.value}))} placeholder="+39 333 000 0000" /></div>
         <div style={{gridColumn:"1/-1"}}>
-          <label style={lbl}>Temperatura contatto</label>
+          <label style={lbl}>Temperatura</label>
           <div style={{display:"flex",gap:8}}>
             {TEMPERATURE.map(t=>{
               const active=form.temperatura===t;
               const color=TEMP_CLR[t];
               return(
                 <button key={t} onClick={()=>setForm(f=>({...f,temperatura:active?null:t}))}
-                  style={{flex:1,padding:"9px",background:active?color+"25":"var(--bg3)",border:"2px solid "+(active?color:"var(--border2)"),borderRadius:9,cursor:"pointer",color:active?color:"var(--muted)",fontWeight:700,fontSize:13,fontFamily:"inherit",transition:"all .2s"}}>
+                  style={{flex:1,padding:"10px",background:active?color+"22":"var(--bg3)",border:"2px solid "+(active?color:"var(--border)"),borderRadius:11,cursor:"pointer",color:active?color:"var(--muted)",fontWeight:700,fontSize:13,fontFamily:"inherit",transition:"all .2s"}}>
                   {t}
                 </button>
               );
             })}
           </div>
         </div>
-        {isFreddo && (
-          <div style={{gridColumn:"1/-1"}}><label style={lbl}>Instagram</label><input value={form.instagram||""} onChange={e=>setForm(f=>({...f,instagram:e.target.value}))} placeholder="@username" /></div>
-        )}
-        <div style={{gridColumn:"1/-1"}}>
-          <label style={{display:"inline-flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:13,fontWeight:700,color:"var(--text)"}}>
-            <input type="checkbox" checked={!!form.chat_aperta} onChange={e=>setForm(f=>({...f,chat_aperta:e.target.checked}))} style={{width:17,height:17,cursor:"pointer"}} /> Chat aperta
-          </label>
-        </div>
-        <div style={{gridColumn:"1/-1"}}><label style={lbl}>Note</label><textarea value={form.note||""} onChange={e=>setForm(f=>({...f,note:e.target.value}))} style={{height:70,resize:"vertical"}} placeholder="Note personali..." /></div>
+        <div style={{gridColumn:"1/-1"}}><label style={lbl}>Note</label><textarea value={form.note||""} onChange={e=>setForm(f=>({...f,note:e.target.value}))} style={{height:80,resize:"vertical"}} placeholder="Scrivi quello che vuoi..." /></div>
       </div>
 
       <div style={{display:"flex",gap:9,justifyContent:"flex-end",flexWrap:"wrap",marginTop:8}}>
-        {onDelete && <button onClick={onDelete} style={{padding:"9px 14px",background:"#ef444415",color:"#f87171",border:"1px solid #ef444438",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:13}}>Elimina</button>}
-        {isEdit && !form.invitato && onInvita && <button onClick={()=>onInvita(form)} style={{padding:"9px 16px",background:"#10b98120",color:"#10b981",border:"1px solid #10b98140",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:13}}>Invito fatto</button>}
-        {isEdit && form.invitato && onInvita && <span style={{padding:"9px 14px",fontSize:12,color:"#10b981",fontWeight:700}}>Gia invitato</span>}
-        <button onClick={onClose} style={{padding:"9px 14px",background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:9,cursor:"pointer",fontWeight:600,fontSize:13}}>Annulla</button>
-        <button onClick={()=>onSave(form)} style={{padding:"9px 20px",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:13}}>
+        {onDelete && <button onClick={onDelete} style={{padding:"10px 15px",background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",borderRadius:11,cursor:"pointer",fontWeight:700,fontSize:13}}>Elimina</button>}
+        {isEdit && !form.invitato && onInvita && <button onClick={()=>onInvita(form)} style={{padding:"10px 16px",background:"#ecfdf5",color:"#059669",border:"1px solid #a7f3d0",borderRadius:11,cursor:"pointer",fontWeight:700,fontSize:13}}>Aggiungi a prospect</button>}
+        {isEdit && form.invitato && onInvita && <span style={{padding:"10px 14px",fontSize:12,color:"#059669",fontWeight:700}}>Aggiunto a prospect</span>}
+        <button onClick={onClose} style={{padding:"10px 15px",background:"var(--bg3)",color:"var(--muted)",border:"1px solid var(--border)",borderRadius:11,cursor:"pointer",fontWeight:600,fontSize:13}}>Annulla</button>
+        <button onClick={()=>onSave(form)} style={{padding:"10px 22px",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:11,cursor:"pointer",fontWeight:700,fontSize:13,boxShadow:"0 8px 18px -8px #6d5efcaa"}}>
           {isEdit?"Aggiorna":"Aggiungi"}
         </button>
       </div>
@@ -101,7 +90,6 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
   const [sel, setSel] = useState(null);
   const [search, setSearch] = useState("");
   const [filterTemp, setFilterTemp] = useState("");
-  const [filterInvitato, setFilterInvitato] = useState("tutti");
   const [toast, setToast] = useState(null);
 
   function showToast(msg, color="#22d3ee") { setToast({msg,color}); setTimeout(()=>setToast(null),2800); }
@@ -117,12 +105,12 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
     if (!form.nome?.trim()) return;
     try {
       if (modal === "add") {
-        const row = { id:genId(), user_id:auth.userId, nome:form.nome, cognome:form.cognome||null, citta:form.citta||null, telefono:form.telefono||null, instagram:form.instagram||null, note:form.note||null, invitato:false, temperatura:form.temperatura||null, chat_aperta:!!form.chat_aperta };
+        const row = { id:genId(), user_id:auth.userId, nome:form.nome, cognome:form.cognome||null, note:form.note||null, invitato:false, temperatura:form.temperatura||null };
         await sbInsertNome(auth.token, row);
         setLista(l=>[row,...l]);
         showToast("Aggiunto");
       } else {
-        const row = { nome:form.nome, cognome:form.cognome||null, citta:form.citta||null, telefono:form.telefono||null, instagram:form.instagram||null, note:form.note||null, temperatura:form.temperatura||null, chat_aperta:!!form.chat_aperta };
+        const row = { nome:form.nome, cognome:form.cognome||null, note:form.note||null, temperatura:form.temperatura||null };
         await sbUpdateNome(auth.token, sel.id, row);
         setLista(l=>l.map(x=>x.id===sel.id?{...x,...row}:x));
         showToast("Aggiornato");
@@ -140,11 +128,12 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
     setModal(null); setSel(null);
   }
 
-  async function invitaPersona(form) {
+  async function invitaPersona(form, rowId) {
+    const nomeId = rowId || sel?.id;
     try {
-      // Segna come invitato nella lista nomi
-      await sbUpdateNome(auth.token, sel.id, { invitato:true });
-      setLista(l=>l.map(x=>x.id===sel.id?{...x,invitato:true}:x));
+      // Segna come "aggiunto a prospect" nella lista nomi
+      await sbUpdateNome(auth.token, nomeId, { invitato:true });
+      setLista(l=>l.map(x=>x.id===nomeId?{...x,invitato:true}:x));
       // Copia in prospect
       await onInvitaProspect({
         nome: form.nome,
@@ -157,21 +146,19 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
         fase: "INVITO",
         conosciutoAt: today(),
       });
-      showToast((form.nome||"")+" spostato in Prospect");
+      showToast((form.nome||"")+" aggiunto ai Prospect");
       setModal(null); setSel(null);
     } catch(e) { showToast("Errore: "+e.message,"#ef4444"); }
   }
 
   const filtered = lista.filter(p => {
     const q = search.toLowerCase();
-    const matchSearch = !q || (p.nome+" "+p.cognome+" "+(p.citta||"")).toLowerCase().includes(q);
+    const matchSearch = !q || (p.nome+" "+(p.cognome||"")+" "+(p.citta||"")).toLowerCase().includes(q);
     const matchTemp = !filterTemp || p.temperatura === filterTemp;
-    const matchInvitato = filterInvitato==="tutti" || (filterInvitato==="invitati"?p.invitato:!p.invitato);
-    return matchSearch && matchTemp && matchInvitato;
+    return matchSearch && matchTemp;
   });
 
-  const invitati = filtered.filter(p=>p.invitato);
-  const daInvitare = filtered.filter(p=>!p.invitato);
+  const ordinata = [...filtered.filter(p=>!p.invitato), ...filtered.filter(p=>p.invitato)];
 
   return (
     <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
@@ -180,7 +167,7 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1.4rem"}}>
         <div>
           <h1 style={{fontWeight:900,fontSize:26,color:"var(--text)",letterSpacing:-0.8}}>Lista Nomi</h1>
-          <p style={{color:"var(--muted)",fontSize:12,marginTop:3}}>La tua lista personale — privata, visibile solo a te</p>
+          <p style={{color:"var(--muted)",fontSize:12,marginTop:3}}>La tua lista personale. Aggiungi le persone che conosci, poi spostale nei Prospect</p>
         </div>
         <div style={{display:"flex",gap:10}}>
           <a href="/memory-jogger.pdf" target="_blank" rel="noreferrer"
@@ -199,82 +186,45 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
           <option value="">Tutte le temperature</option>
           {TEMPERATURE.map(t=><option key={t} value={t}>{t}</option>)}
         </select>
-        <select value={filterInvitato} onChange={e=>setFilterInvitato(e.target.value)} style={{flex:1,minWidth:130}}>
-          <option value="tutti">Tutti</option>
-          <option value="da_invitare">Da invitare</option>
-          <option value="invitati">Gia invitati</option>
-        </select>
       </div>
 
       {loading
         ? <div style={{textAlign:"center",padding:"4rem",color:"var(--muted)"}}>Caricamento...</div>
         : lista.length===0
-          ? <div style={{textAlign:"center",padding:"4rem",color:"var(--border2)"}}>
-              <div style={{fontSize:13,marginBottom:12,color:"var(--muted)"}}>La tua lista nomi e vuota</div>
-              <button onClick={()=>{setSel(null);setModal("add");}} style={{padding:"9px 20px",fontSize:13,fontWeight:800,background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:10,cursor:"pointer"}}>
+          ? <div style={{textAlign:"center",padding:"4rem",color:"var(--muted)"}}>
+              <div style={{fontSize:13,marginBottom:12}}>La tua lista nomi è vuota</div>
+              <button onClick={()=>{setSel(null);setModal("add");}} style={{padding:"10px 20px",fontSize:13,fontWeight:700,background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:12,cursor:"pointer"}}>
                 Aggiungi il primo
               </button>
             </div>
-          : <>
-              {/* Da invitare */}
-              {daInvitare.length>0&&(
-                <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden",marginBottom:16}}>
-                  <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a",fontSize:13,fontWeight:800,color:"var(--text)"}}>
-                    Da invitare <span style={{fontSize:11,color:"var(--muted)",fontWeight:400,marginLeft:8}}>{daInvitare.length} persone</span>
-                  </div>
-                  <table style={{width:"100%",borderCollapse:"collapse"}}>
-                    <thead><tr style={{borderBottom:"1px solid #11203a"}}>
-                      {["Nome","Citta","Telefono","Instagram","Temp.","Chat","Note",""].map(h=>(
-                        <th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>{h}</th>
-                      ))}
-                    </tr></thead>
-                    <tbody>{daInvitare.map(p=>{
-                      return (
-                        <tr key={p.id} onClick={()=>{setSel(p);setModal("edit");}} style={{borderBottom:"1px solid #0d1b3355",cursor:"pointer"}} className="hrow">
-                          <td style={{padding:"11px 16px"}}><div style={{display:"flex",alignItems:"center",gap:9}}><Av n={p.nome} c={p.cognome}/><span style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{p.nome} {p.cognome}</span></div></td>
-                          <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12}}>{p.citta||"\u2014"}</td>
-                          <td style={{padding:"11px 16px",fontSize:12}}>{p.telefono?<a href={"tel:"+p.telefono} onClick={e=>e.stopPropagation()} style={{color:"var(--a2)",textDecoration:"none"}}>{p.telefono}</a>:"\u2014"}</td>
-                          <td style={{padding:"11px 16px",fontSize:12}}>{p.instagram?<a href={"https://instagram.com/"+p.instagram.replace("@","")} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()} style={{color:"#c084fc",textDecoration:"none"}}>{p.instagram.startsWith("@")?p.instagram:"@"+p.instagram}</a>:"\u2014"}</td>
-                          <td style={{padding:"11px 16px"}}>{p.temperatura?<span style={{fontSize:11,fontWeight:800,padding:"2px 8px",borderRadius:6,color:TEMP_CLR[p.temperatura],background:TEMP_CLR[p.temperatura]+"20"}}>{p.temperatura}</span>:"\u2014"}</td>
-                          <td style={{padding:"11px 16px"}}>{p.chat_aperta?<span style={{fontSize:11,fontWeight:800,color:"#10b981"}}>✓ Aperta</span>:<span style={{color:"var(--border2)",fontSize:11}}>{"\u2014"}</span>}</td>
-                          <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12,maxWidth:200}}><div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.note||"\u2014"}</div></td>
-                          <td style={{padding:"11px 16px",color:"var(--border2)",fontSize:16}}>{"\u203a"}</td>
-                        </tr>
-                      );
-                    })}</tbody>
-                  </table>
-                </div>
-              )}
-
-              {/* Gia invitati */}
-              {invitati.length>0&&(
-                <div style={{background:"var(--bg2)",border:"1px solid #10b98130",borderRadius:14,overflow:"hidden"}}>
-                  <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid #11203a",fontSize:13,fontWeight:800,color:"#10b981"}}>
-                    Gia invitati <span style={{fontSize:11,color:"var(--muted)",fontWeight:400,marginLeft:8}}>{invitati.length} persone</span>
-                  </div>
-                  <table style={{width:"100%",borderCollapse:"collapse"}}>
-                    <thead><tr style={{borderBottom:"1px solid #11203a"}}>
-                      {["Nome","Citta","Instagram","Note",""].map(h=>(
-                        <th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>{h}</th>
-                      ))}
-                    </tr></thead>
-                    <tbody>{invitati.map(p=>(
-                      <tr key={p.id} onClick={()=>{setSel(p);setModal("edit");}} style={{borderBottom:"1px solid #0d1b3355",cursor:"pointer",opacity:0.6}} className="hrow">
-                        <td style={{padding:"11px 16px"}}><div style={{display:"flex",alignItems:"center",gap:9}}><Av n={p.nome} c={p.cognome}/><span style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{p.nome} {p.cognome}</span></div></td>
-                        <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12}}>{p.citta||"\u2014"}</td>
-                        <td style={{padding:"11px 16px",fontSize:12}}>{p.instagram?<a href={"https://instagram.com/"+p.instagram.replace("@","")} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()} style={{color:"#c084fc",textDecoration:"none"}}>{p.instagram.startsWith("@")?p.instagram:"@"+p.instagram}</a>:"\u2014"}</td>
-                        <td style={{padding:"11px 16px",color:"var(--muted)",fontSize:12}}>{p.note||"\u2014"}</td>
-                        <td style={{padding:"11px 16px"}}><span style={{fontSize:10,fontWeight:800,color:"#10b981",background:"#10b98118",borderRadius:6,padding:"2px 8px"}}>Invitato</span></td>
-                      </tr>
-                    ))}</tbody>
-                  </table>
-                </div>
-              )}
-            </>
+          : <div className="card-soft" style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:18,overflow:"hidden"}}>
+              <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid var(--border)",fontSize:13,fontWeight:700,color:"var(--text)"}}>
+                La tua lista <span style={{fontSize:11,color:"var(--muted)",fontWeight:500,marginLeft:8}}>{ordinata.length} persone</span>
+              </div>
+              <table style={{width:"100%",borderCollapse:"collapse"}}>
+                <thead><tr style={{background:"var(--bg3)"}}>
+                  {["Nome","Temperatura","Note",""].map((h,i)=>(
+                    <th key={i} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10.5,textTransform:"uppercase",letterSpacing:.8,padding:"12px 16px"}}>{h}</th>
+                  ))}
+                </tr></thead>
+                <tbody>{ordinata.map(p=>(
+                  <tr key={p.id} onClick={()=>{setSel(p);setModal("edit");}} style={{borderBottom:"1px solid var(--border)",cursor:"pointer",opacity:p.invitato?0.65:1}} className="hrow">
+                    <td style={{padding:"12px 16px"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Av n={p.nome} c={p.cognome}/><span style={{color:"var(--text)",fontWeight:700,fontSize:13.5}}>{p.nome} {p.cognome}</span></div></td>
+                    <td style={{padding:"12px 16px"}}>{p.temperatura?<span style={{fontSize:11.5,fontWeight:700,padding:"3px 11px",borderRadius:99,color:TEMP_CLR[p.temperatura],background:TEMP_CLR[p.temperatura]+"1f"}}>{p.temperatura}</span>:<span style={{color:"var(--muted)"}}>{"—"}</span>}</td>
+                    <td style={{padding:"12px 16px",color:"var(--muted)",fontSize:12.5,maxWidth:320}}><div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.note||"—"}</div></td>
+                    <td style={{padding:"12px 16px",textAlign:"right"}} onClick={e=>e.stopPropagation()}>
+                      {p.invitato
+                        ? <span style={{fontSize:11,fontWeight:700,color:"#059669",background:"#ecfdf5",borderRadius:99,padding:"4px 11px"}}>Aggiunto a prospect</span>
+                        : <button onClick={()=>invitaPersona(p,p.id)} style={{padding:"6px 13px",background:"#ecfdf5",color:"#059669",border:"1px solid #a7f3d0",borderRadius:99,cursor:"pointer",fontWeight:700,fontSize:12}}>Aggiungi a prospect</button>}
+                    </td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
       }
 
       {modal && (
-        <div onClick={()=>{setModal(null);setSel(null);}} style={{position:"fixed",inset:0,background:"#00000090",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:16}}>
+        <div onClick={()=>{setModal(null);setSel(null);}} style={{position:"fixed",inset:0,background:"#0f172a66",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:16}}>
           <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:520}}>
             <PersonaModal
               persona={sel}

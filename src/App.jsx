@@ -3,10 +3,8 @@ import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, Cart
 import { TeamView } from "./components/Team";
 import { ProfiloView } from "./components/Profilo";
 import { ListaNomiView } from "./components/ListaNomi";
-import { NoteView } from "./components/Note";
 import { EventiView } from "./components/Eventi";
 import { MappaSezione } from "./components/Mappa";
-import { PlanView } from "./components/Plan";
 
 const SB_URL = "https://gyxvhnwzkhjrgpqvakfw.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5eHZobnd6a2hqcmdwcXZha2Z3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NTEzOTQsImV4cCI6MjA5OTUyNzM5NH0.aYAzw7j6YcBIWdBsdHq0ibZrjyyK5CZqNAcchfdQt0o";
@@ -263,39 +261,41 @@ function teamStats(prospects) {
 }
 
 const TEMI = {
-  blu:   { label:"Blu",   preview:"linear-gradient(135deg,#1e40af,#0ea5e9)", vars:{"--bg":"#060b18","--bg2":"#080f1f","--bg3":"#0a1426","--bg4":"#0d1b33","--border":"#11203a","--border2":"#1e3a5f","--a1":"#2563eb","--a2":"#0ea5e9","--a1-10":"#2563eb1a","--a1-12":"#2563eb1f","--a1-13":"#2563eb21","--a1-18":"#2563eb2e","--a1-25":"#2563eb40","--a1-31":"#2563eb4f","--text":"#eff6ff","--muted":"#5278a8","--muted2":"#2a4060","--sidebar-active":"#0d1b33","--sidebar-border":"#2563eb40"} },
-  verde: { label:"Verde", preview:"linear-gradient(135deg,#065f46,#10b981)", vars:{"--bg":"#030d08","--bg2":"#041208","--bg3":"#06180d","--bg4":"#082014","--border":"#0a2a14","--border2":"#134d28","--a1":"#059669","--a2":"#10b981","--a1-10":"#0596691a","--a1-12":"#0596691f","--a1-13":"#05966921","--a1-18":"#0596692e","--a1-25":"#05966940","--a1-31":"#0596694f","--text":"#ecfdf5","--muted":"#3d7a5a","--muted2":"#1a3d2a","--sidebar-active":"#082014","--sidebar-border":"#05966940"} },
-  viola: { label:"Viola", preview:"linear-gradient(135deg,#4c1d95,#a78bfa)", vars:{"--bg":"#06030f","--bg2":"#0a0518","--bg3":"#0f0820","--bg4":"#140b2a","--border":"#1a1035","--border2":"#2e1a55","--a1":"#7c3aed","--a2":"#a78bfa","--a1-10":"#7c3aed1a","--a1-12":"#7c3aed1f","--a1-13":"#7c3aed21","--a1-18":"#7c3aed2e","--a1-25":"#7c3aed40","--a1-31":"#7c3aed4f","--text":"#f5f3ff","--muted":"#6b5a9a","--muted2":"#2d1a55","--sidebar-active":"#140b2a","--sidebar-border":"#7c3aed40"} },
-  rosa:  { label:"Rosa",  preview:"linear-gradient(135deg,#9d174d,#f472b6)", vars:{"--bg":"#0f0308","--bg2":"#180510","--bg3":"#200718","--bg4":"#2a0a20","--border":"#380d2a","--border2":"#5a1a42","--a1":"#db2777","--a2":"#f472b6","--a1-10":"#db27771a","--a1-12":"#db27771f","--a1-13":"#db277721","--a1-18":"#db27772e","--a1-25":"#db277740","--a1-31":"#db27774f","--text":"#fdf2f8","--muted":"#8a4a6b","--muted2":"#4a1530","--sidebar-active":"#2a0a20","--sidebar-border":"#db277740"} },
-  nero:  { label:"Digital Legacy", preview:"linear-gradient(135deg,#1a0033,#d4af37)", vars:{"--bg":"#030006","--bg2":"#070009","--bg3":"#0c0010","--bg4":"#12001a","--border":"#1f0a33","--border2":"#3a1560","--a1":"#7c3aed","--a2":"#d4af37","--a1-10":"#7c3aed1a","--a1-12":"#7c3aed1f","--a1-13":"#7c3aed21","--a1-18":"#7c3aed2e","--a1-25":"#7c3aed40","--a1-31":"#7c3aed4f","--text":"#f7f0ff","--muted":"#7a5a9e","--muted2":"#2d1a45","--sidebar-active":"#12001a","--sidebar-border":"#7c3aed40"} },
-  oro:   { label:"Oro",   preview:"linear-gradient(135deg,#78350f,#fbbf24)", vars:{"--bg":"#080600","--bg2":"#0f0c00","--bg3":"#181200","--bg4":"#201800","--border":"#2a2000","--border2":"#3d3000","--a1":"#d97706","--a2":"#fbbf24","--a1-10":"#d977061a","--a1-12":"#d977061f","--a1-13":"#d9770621","--a1-18":"#d977062e","--a1-25":"#d9770640","--a1-31":"#d977064f","--text":"#fffbeb","--muted":"#7a6530","--muted2":"#3d3000","--sidebar-active":"#201800","--sidebar-border":"#d9770640"} },
+  chiaro: { label:"Chiaro", preview:"linear-gradient(135deg,#6d5efc,#4f46e5)", vars:{"--bg":"#ffffff","--bg2":"#ffffff","--bg3":"#f6f7fb","--bg4":"#eef0fb","--border":"#e9ecf4","--border2":"#d7dcea","--a1":"#6d5efc","--a2":"#4f46e5","--a1-10":"#6d5efc1a","--a1-12":"#6d5efc1f","--a1-13":"#6d5efc21","--a1-18":"#6d5efc2e","--a1-25":"#6d5efc40","--a1-31":"#6d5efc4f","--text":"#0f172a","--muted":"#64748b","--muted2":"#cbd5e1","--sidebar-active":"#eef0fb","--sidebar-border":"#6d5efc33"} },
 };
 
 function applyTema(temaKey) {
-  const t = TEMI[temaKey] || TEMI.blu;
+  const t = TEMI[temaKey] || TEMI.chiaro;
   const root = document.documentElement;
   Object.entries(t.vars).forEach(([k,v]) => root.style.setProperty(k, v));
   document.body.style.background = t.vars["--bg"];
 }
 
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 :root{
-  --bg:#060b18; --bg2:#080f1f; --bg3:#0a1426; --bg4:#0d1b33;
-  --border:#11203a; --border2:#1e3a5f;
-  --a1:#2563eb; --a2:#0ea5e9;
-  --text:#dbeafe; --muted:#5278a8; --glow:#2563eb;
+  --bg:#ffffff; --bg2:#ffffff; --bg3:#f6f7fb; --bg4:#eef0fb;
+  --border:#e9ecf4; --border2:#d7dcea;
+  --a1:#6d5efc; --a2:#4f46e5;
+  --a1-10:#6d5efc1a; --a1-12:#6d5efc1f; --a1-13:#6d5efc21; --a1-18:#6d5efc2e; --a1-25:#6d5efc40; --a1-31:#6d5efc4f;
+  --text:#0f172a; --muted:#64748b; --muted2:#cbd5e1; --glow:#6d5efc;
+  --sidebar-active:#eef0fb; --sidebar-border:#6d5efc33;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body,#root{height:100%;font-family:'Inter',sans-serif}
-body{background:var(--bg);color:var(--text);overflow:hidden}
+html,body,#root{height:100%;font-family:'Plus Jakarta Sans',system-ui,sans-serif}
+body{background:var(--bg);color:var(--text);overflow:hidden;-webkit-font-smoothing:antialiased;letter-spacing:-.005em}
+h1{letter-spacing:-.03em}
+button{font-family:inherit}
+.stat-wrap h1{display:none}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
-input,select,textarea{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:9px 13px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;width:100%;transition:border .2s}
+table{border-collapse:collapse}
+input,select,textarea{background:#fff;border:1px solid var(--border2);border-radius:12px;padding:9px 13px;color:var(--text);font-size:13px;font-family:'Plus Jakarta Sans',system-ui,sans-serif;outline:none;width:100%;transition:border .2s}
 input:focus,select:focus,textarea:focus{border-color:var(--a1);box-shadow:0 0 0 3px var(--a1-13)}
 input::placeholder,textarea::placeholder{color:var(--muted)}
 select option{background:var(--bg3)}
-input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.6) sepia(1) hue-rotate(180deg);cursor:pointer}
+input[type=date]::-webkit-calendar-picker-indicator{cursor:pointer}
+.card-soft{box-shadow:0 1px 2px #0f172a0a,0 8px 24px -12px #0f172a1f}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes popIn{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
 @keyframes barIn{from{width:0}to{width:var(--w)}}
@@ -306,8 +306,8 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.6) sepia(1) h
 .pop{animation:popIn .22s cubic-bezier(.34,1.3,.64,1)}
 .pulse{animation:pulse 2.5s ease-in-out infinite}
 .bar{border-radius:99px;animation:barIn .8s cubic-bezier(.4,0,.2,1) forwards}
-.tabbtn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:700;font-family:'Inter',sans-serif;transition:all .2s}
-.togbtn{width:34px;height:28px;border-radius:7px;border:none;cursor:pointer;font-size:13px;font-weight:900;font-family:'Inter',sans-serif;transition:all .18s;display:flex;align-items:center;justify-content:center}
+.tabbtn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:700;font-family:'Plus Jakarta Sans',system-ui,sans-serif;transition:all .2s}
+.togbtn{width:34px;height:28px;border-radius:7px;border:none;cursor:pointer;font-size:13px;font-weight:900;font-family:'Plus Jakarta Sans',system-ui,sans-serif;transition:all .18s;display:flex;align-items:center;justify-content:center}
 .spinner{width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--a1);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
 @media(max-width:768px){
   body{overflow:auto}
@@ -544,7 +544,7 @@ function AuthScreen({ onAuth }) {
 
   return (
     <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",background:"var(--bg)",padding:16}}>
-      <div className="pop" style={{width:"100%",maxWidth:400,background:"var(--bg2)",border:"1px solid var(--border2)",borderRadius:20,padding:"2.2rem",boxShadow:"0 20px 70px #000000aa"}}>
+      <div className="pop" style={{width:"100%",maxWidth:400,background:"var(--bg2)",border:"1px solid var(--border2)",borderRadius:20,padding:"2.2rem",boxShadow:"0 20px 70px #0f172a55"}}>
         <div style={{textAlign:"center",marginBottom:28}}>
           <div style={{fontWeight:900,fontSize:20,color:"var(--text)",letterSpacing:-0.5}}>Digital Legacy CRM</div>
         </div>
@@ -570,7 +570,7 @@ function AuthScreen({ onAuth }) {
               <input value={otpCode} onChange={e=>setOtpCode(e.target.value.replace(/\D/g,"").slice(0,8))} placeholder="12345678" inputMode="numeric" maxLength={8}
                 style={{textAlign:"center",fontSize:20,letterSpacing:6,fontWeight:800}} onKeyDown={e=>e.key==="Enter"&&verifyOtp()} />
             </div>
-            {err && <div style={{background:"#ef444415",border:"1px solid #ef444435",borderRadius:9,padding:"9px 13px",fontSize:12,color:"#f87171",marginBottom:14,lineHeight:1.5}}>{err}</div>}
+            {err && <div style={{background:"#ef444415",border:"1px solid #ef444435",borderRadius:9,padding:"9px 13px",fontSize:12,color:"#dc2626",marginBottom:14,lineHeight:1.5}}>{err}</div>}
             <button onClick={verifyOtp} disabled={loading}
               style={{width:"100%",padding:"11px",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:10,cursor:loading?"not-allowed":"pointer",fontWeight:800,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8,opacity:loading?0.7:1}}>
               {loading && <span className="spinner" />}
@@ -607,7 +607,7 @@ function AuthScreen({ onAuth }) {
                   <input type="password" value={newPass2} onChange={e=>setNewPass2(e.target.value)} placeholder="••••••••" onKeyDown={e=>e.key==="Enter"&&submitNewPassword()} />
                 </div>
               </div>
-              {err && <div style={{background:"#ef444415",border:"1px solid #ef444435",borderRadius:9,padding:"9px 13px",fontSize:12,color:"#f87171",marginBottom:14,lineHeight:1.5}}>{err}</div>}
+              {err && <div style={{background:"#ef444415",border:"1px solid #ef444435",borderRadius:9,padding:"9px 13px",fontSize:12,color:"#dc2626",marginBottom:14,lineHeight:1.5}}>{err}</div>}
               <button onClick={submitNewPassword} disabled={loading}
                 style={{width:"100%",padding:"11px",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:10,cursor:loading?"not-allowed":"pointer",fontWeight:800,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8,opacity:loading?0.7:1}}>
                 {loading && <span className="spinner" />}
@@ -630,7 +630,7 @@ function AuthScreen({ onAuth }) {
                 <label style={{fontSize:11,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"}}>Email</label>
                 <input type="email" value={forgotEmail} onChange={e=>setForgotEmail(e.target.value)} placeholder="tua@email.com" onKeyDown={e=>e.key==="Enter"&&sendForgotEmail()} />
               </div>
-              {err && <div style={{background:"#ef444415",border:"1px solid #ef444435",borderRadius:9,padding:"9px 13px",fontSize:12,color:"#f87171",marginBottom:14,lineHeight:1.5}}>{err}</div>}
+              {err && <div style={{background:"#ef444415",border:"1px solid #ef444435",borderRadius:9,padding:"9px 13px",fontSize:12,color:"#dc2626",marginBottom:14,lineHeight:1.5}}>{err}</div>}
               <button onClick={sendForgotEmail} disabled={loading}
                 style={{width:"100%",padding:"11px",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:10,cursor:loading?"not-allowed":"pointer",fontWeight:800,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8,opacity:loading?0.7:1}}>
                 {loading && <span className="spinner" />}
@@ -665,7 +665,7 @@ function AuthScreen({ onAuth }) {
             <input type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" onKeyDown={e=>e.key==="Enter"&&submit()} />
           </div>
         </div>
-        {err && <div style={{background:"#ef444415",border:"1px solid #ef444435",borderRadius:9,padding:"9px 13px",fontSize:12,color:"#f87171",marginBottom:14,lineHeight:1.5}}>{err}</div>}
+        {err && <div style={{background:"#ef444415",border:"1px solid #ef444435",borderRadius:9,padding:"9px 13px",fontSize:12,color:"#dc2626",marginBottom:14,lineHeight:1.5}}>{err}</div>}
 
         {mode==="login" && (
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
@@ -700,7 +700,7 @@ function AuthScreen({ onAuth }) {
 export default function App() {
   const [auth, setAuth]           = useState(null);
   const [data, setData]           = useState([]);
-  const [view, setView]           = useState("dash");
+  const [view, setView]           = useState("lista");
   const [dashCiclo, setDashCiclo] = useState(CICLO_CORRENTE);
   const [modal, setModal]         = useState(null);
   const [sel, setSel]             = useState(null);
@@ -710,47 +710,32 @@ export default function App() {
   const [fFase, setFFase]         = useState("");
   const [fFonte, setFFonte]       = useState("");
   const [fCiclo, setFCiclo]       = useState("");
-  const [fCitta, setFCitta]       = useState("");
-  const [fInteresse, setFInteresse] = useState("");
-  const [fPercorso, setFPercorso] = useState(""); // "" | "in_percorso" | "non_in_percorso"
+  const [fSituazione, setFSituazione] = useState("processo"); // processo | iscritto | riprendere | balzato | tutti
   const [ready, setReady]         = useState(false);
   const [saving, setSaving]       = useState(false);
   const [downline, setDownline]   = useState([]);
   const [clienti, setClienti]     = useState([]);
   const [eventi, setEventi]       = useState([]);
   const [allProfiles, setAllProfiles] = useState([]);
-  const [showEventoReminder, setShowEventoReminder] = useState(false);
   const [ticketVendutiCount, setTicketVendutiCount] = useState(0);
   const [dlProspects, setDlProspects] = useState([]);
   const [positions, setPositions] = useState([]);
   const [dashMode, setDashMode]   = useState("personale");
+  const [statTab, setStatTab]     = useState("dash");
   const [sidebarMode, setSidebarMode] = useState("tutti");
-  const [listaMode, setListaMode] = useState("personale");
-  const [fLeg, setFLeg] = useState(""); // "" | "sinistra" | "destra" — solo per vista Team
   const [fMembroTeam, setFMembroTeam] = useState(""); // "" | id membro — solo per vista Team
 
   useEffect(()=>{
     const el=document.createElement("style");
     el.textContent=CSS;
     document.head.appendChild(el);
-    applyTema("nero"); // default
+    applyTema("chiaro"); // default
     return ()=>document.head.removeChild(el);
   },[]);
 
   useEffect(()=>{
     // Tema bloccato su "nero" per tutti — il selettore è stato rimosso dal Profilo
   },[auth?.profile?.tema]);
-
-  useEffect(()=>{
-    if (!auth?.token) return;
-    // Mostra il reminder solo se questo token (cioe' questa specifica sessione/login)
-    // non l'ha gia' fatto vedere. Sopravvive ai reload finche' la sessione resta valida.
-    const lastShownFor = localStorage.getItem("evento_reminder_token");
-    if (lastShownFor !== auth.token) {
-      setShowEventoReminder(true);
-      localStorage.setItem("evento_reminder_token", auth.token);
-    }
-  },[auth?.token]);
 
   useEffect(()=>{
     if (!auth) { setData([]); setReady(true); return; }
@@ -856,6 +841,7 @@ export default function App() {
 
   async function saveForm() {
     if (!form.nome?.trim()) return;
+    if (modal==="add" && !(form.telefono||"").trim()) { showToast("Inserisci il numero di telefono","#ef4444"); return; }
     if (form.fase === "SUB" && !form.pacchetto) { showToast("Seleziona il pacchetto per un iscritto ", "#ef4444"); return; }
     if (modal==="add") {
       const nomeNorm=form.nome.trim().toLowerCase();
@@ -1064,6 +1050,46 @@ export default function App() {
       else setDlProspects(d=>d.map(x=>x.id===id?{...upd,_userId:ownerId,_ownerName:x._ownerName}:x));
       if (sel && sel.id===id) setSel(upd);
     } catch(e) { showToast("Errore salvataggio","#ef4444"); }
+  }
+
+  // Aggiorna un prospect (mio o del team) con un patch e rinfresca lo stato locale
+  async function patchProspect(p, patch, okMsg) {
+    const ownerId=p._userId||auth.userId;
+    const upd={...p,...patch};
+    try {
+      await sbUpdate(auth.token,p.id,toDB(upd,ownerId));
+      if (data.find(x=>x.id===p.id)) setData(d=>d.map(x=>x.id===p.id?upd:x));
+      else setDlProspects(d=>d.map(x=>x.id===p.id?{...upd,_userId:ownerId,_ownerName:x._ownerName}:x));
+      if (okMsg) showToast(okMsg);
+    } catch(e) { showToast("Errore salvataggio: "+e.message,"#ef4444"); }
+  }
+
+  // "Prossimo step": porta il prospect alla fase scelta, senza chiedere date (usa oggi)
+  async function setProspectStep(p, fase) {
+    const storico=buildStorico(p,fase,today());
+    await patchProspect(p,{fase,storico},"\u2192 "+FASE_LABEL[fase]);
+  }
+
+  // "Situazione": iscritto / riprendere piu' avanti / balzato / (vuoto = di nuovo in processo)
+  async function setSituazione(p, v) {
+    if (v==="iscritto") {
+      const storico=buildStorico(p,"SUB",today());
+      await patchProspect(p,{fase:"SUB",storico,statoColore:"iscritto"},"Iscritto \u2705 (per i BV apri la matita e scegli il pacchetto)");
+    } else if (v==="riprendere") {
+      await patchProspect(p,{statoColore:"da_risentire"},"Da riprendere pi\u00f9 avanti");
+    } else if (v==="balzato") {
+      await patchProspect(p,{statoColore:"sparito"},"Balzato");
+    } else {
+      // torna in processo: se era SUB / fase speciale, riparte dall'ultima fase del percorso raggiunta
+      let fase=p.fase; let storico=p.storico||[];
+      if (fase==="SUB"||FASI_SPECIALI.includes(fase)) {
+        storico=storico.filter(x=>x.fase!=="SUB");
+        let best="INVITO";
+        storico.forEach(x=>{const i=FASI_FUNNEL.indexOf(x.fase); if(i>=0&&i>FASI_FUNNEL.indexOf(best)) best=x.fase;});
+        fase=best;
+      }
+      await patchProspect(p,{statoColore:"",fase,storico},"Di nuovo in processo");
+    }
   }
 
   async function setTicketEvento(id, eventoId) {
@@ -1284,17 +1310,16 @@ export default function App() {
     return { ...p, _ownerName: owner ? (owner.nome||owner.email)+" "+(owner.cognome||"") : "", _leg: getLegForMe(p._userId) };
   });
 
-  const listaSource = listaMode === "team" ? teamProspects : data;
+  // Prospect unificati: prima i miei (piu' recenti in alto), poi quelli del team
+  const listaSource = [...data].reverse().concat([...teamProspects].reverse());
   const listaData=listaSource.filter(p=>{
     const q=search.toLowerCase();
+    const sit=situazioneOf(p);
     return (!q||(p.nome+" "+p.cognome+" "+(p.citta||"")).toLowerCase().includes(q))
+      &&(fSituazione==="tutti"||sit===(fSituazione==="processo"?"":fSituazione))
       &&(!fFase||p.fase===fFase)&&(!fFonte||p.fonte===fFonte)
       &&(!fCiclo||cicloOfDate(p.conosciutoAt)===Number(fCiclo))
-      &&(!fCitta||( p.citta||"").toLowerCase().includes(fCitta.toLowerCase()))
-      &&(!fInteresse||p.interesse===fInteresse)
-      &&(!fPercorso||(fPercorso==="in_percorso"?FASI_FUNNEL.includes(p.fase):FASI_SPECIALI.includes(p.fase)))
-      &&(listaMode!=="team"||!fLeg||p._leg===fLeg)
-      &&(listaMode!=="team"||!fMembroTeam||p._userId===fMembroTeam);
+      &&(!fMembroTeam||(fMembroTeam==="__miei"?!p._userId:p._userId===fMembroTeam));
   });
 
   if (!auth) return <AuthScreen onAuth={setAuth} />;
@@ -1311,54 +1336,44 @@ export default function App() {
       {toast && <div className="toast-pos" style={{position:"fixed",bottom:24,right:24,zIndex:9999,background:toast.color,color:"#fff",padding:"12px 22px",borderRadius:12,fontWeight:700,fontSize:13,boxShadow:"0 8px 30px #00000060",animation:"fadeIn .25s ease"}}>{toast.msg}</div>}
       {saving && <div style={{position:"fixed",top:14,right:14,zIndex:9998,background:"var(--bg4)",border:"1px solid var(--border2)",borderRadius:9,padding:"7px 14px",fontSize:12,color:"var(--a2)",display:"flex",alignItems:"center",gap:7}}><span className="spinner" />Salvataggio...</div>}
 
-      {showEventoReminder && (
-        <div style={{position:"fixed",inset:0,zIndex:10000,display:"flex",alignItems:"center",justifyContent:"center",background:"#00000080",backdropFilter:"blur(6px)",animation:"fadeIn .2s ease"}}
-          onClick={()=>setShowEventoReminder(false)}>
-          <div onClick={e=>e.stopPropagation()} style={{position:"relative",background:"linear-gradient(160deg,var(--bg2),var(--bg3))",border:"1px solid var(--a1-25)",borderRadius:20,padding:"2.2rem 2rem",maxWidth:380,width:"90%",textAlign:"center",boxShadow:"0 20px 60px #000000a0"}}>
-            <button onClick={()=>setShowEventoReminder(false)}
-              style={{position:"absolute",top:14,right:14,background:"var(--bg4)",border:"1px solid var(--border2)",borderRadius:8,color:"var(--muted)",width:28,height:28,cursor:"pointer",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>
-              X
-            </button>
-            <div style={{fontSize:36,marginBottom:10}}>{"\ud83d\udd25"}</div>
-            <div style={{fontSize:14,color:"var(--text)",fontWeight:600,lineHeight:1.5}}>
-              Hai parlato di<br/>
-              <span style={{display:"inline-block",fontSize:24,fontWeight:900,color:"var(--a2)",letterSpacing:-0.5,margin:"6px 0"}}>THE MASTERY</span><br/>
-              oggi?
-            </div>
-          </div>
-        </div>
-      )}
-
-      <Sidebar view={view} setView={setView} data={data} urgenti={urgenti} onAdd={openAdd} onExport={onExport} auth={auth} onLogout={handleLogout} downlineCount={downline.length} sidebarMode={sidebarMode} setSidebarMode={setSidebarMode} />
+      <Sidebar view={view} setView={setView} data={data} auth={auth} onLogout={handleLogout} downlineCount={downline.length} />
 
       <main className="mc" style={{flex:1,overflowY:"auto",height:"100vh",paddingBottom:0}}>
-        {view==="dash"  && <Dash cd={cd} cdSub={cdSub} cdAct={cdAct} cdFU={cdFU} cdNI={cdNI} cdConv={cdConv} totSub={totSub} totConv={totConv} totAll={dashData.length} funnelCounts={funnelCounts} funnelMax={funnelMax} urgenti={urgenti} dashCiclo={dashCiclo} setDashCiclo={setDashCiclo} onOpen={openDetail} dashMode={dashMode} setDashMode={setDashMode} hasTeam={dlProspects.length>0} ticketVenduti={ticketVendutiCount} />}
-        {view==="lista" && <Lista onToggleChat={setChatAperta} prospects={listaData} total={listaMode==="team"?teamProspects.length:data.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} fCitta={fCitta} setFCitta={setFCitta} fInteresse={fInteresse} setFInteresse={setFInteresse} fPercorso={fPercorso} setFPercorso={setFPercorso} fLeg={fLeg} setFLeg={setFLeg} fMembroTeam={fMembroTeam} setFMembroTeam={setFMembroTeam} downline={downline} onOpen={openDetail} onAdd={openAdd} listaMode={listaMode} setListaMode={setListaMode} hasTeam={dlProspects.length>0} />}
-        {view==="stats"   && <Statistiche data={data} dlProspects={teamProspects} downline={downline} positions={positions} />}
+        {view==="lista" && <Lista onToggleChat={setChatAperta} onSetStep={setProspectStep} onSetSituazione={setSituazione} onEdit={p=>{setForm({...p});setModal("edit");}} prospects={listaData} total={data.length+teamProspects.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} fSituazione={fSituazione} setFSituazione={setFSituazione} fMembroTeam={fMembroTeam} setFMembroTeam={setFMembroTeam} downline={downline} onAdd={openAdd} hasTeam={dlProspects.length>0} />}
+        {view==="stats"   && (
+          <div className="stat-wrap">
+            <div style={{padding:"2rem 2.2rem 0",maxWidth:1280,margin:"0 auto"}}>
+              <div style={{fontWeight:800,fontSize:26,color:"var(--text)",letterSpacing:-.8,marginBottom:14}}>Statistica</div>
+              <div style={{display:"inline-flex",background:"var(--bg3)",borderRadius:12,padding:4,gap:2}}>
+                {[["dash","Panoramica"],["stats","Funnel e fonti"],["mappa","Mappa"]].map(([k,l])=>(
+                  <button key={k} onClick={()=>setStatTab(k)} style={{padding:"8px 18px",borderRadius:9,border:"none",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit",background:statTab===k?"#fff":"transparent",color:statTab===k?"var(--a2)":"var(--muted)",boxShadow:statTab===k?"0 1px 3px #0f172a1a":"none"}}>{l}</button>
+                ))}
+              </div>
+            </div>
+            {statTab==="dash" && <Dash cd={cd} cdSub={cdSub} cdAct={cdAct} cdFU={cdFU} cdNI={cdNI} cdConv={cdConv} totSub={totSub} totConv={totConv} totAll={dashData.length} funnelCounts={funnelCounts} funnelMax={funnelMax} urgenti={urgenti} dashCiclo={dashCiclo} setDashCiclo={setDashCiclo} onOpen={openDetail} dashMode={dashMode} setDashMode={setDashMode} hasTeam={dlProspects.length>0} ticketVenduti={ticketVendutiCount} />}
+            {statTab==="stats" && <Statistiche data={data} dlProspects={teamProspects} downline={downline} positions={positions} />}
+            {statTab==="mappa" && <MappaSezione auth={auth} eventi={eventi} sbGetMappaAttivi={sbGetMappaAttivi} sbGetMappaTicket={sbGetMappaTicket} sbGetMappaIscrizioni={sbGetMappaIscrizioni}
+              sfidaStart={CICLO_CORRENTE_INIZIO} sfidaEnd={CICLO_CORRENTE_FINE} showToast={showToast} />}
+          </div>
+        )}
         {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} clienti={clienti} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onSetLeader={setLeader} onSetAttivo={setAttivo} onAddCliente={openAddCliente} onAddMembro={openAddMembro} onAddProspectForMember={openAddForMember} onSetChatAperta={setChatAperta} showToast={showToast} onUpdateCliente={updateClienteQuick} onDeleteCliente={deleteClienteQuick} sbGetListaNomiTeam={sbGetListaNomiTeam} LUDOVICO_ID={LUDOVICO_ID} />}
         {view==="nomi"    && <ListaNomiView auth={auth} onInvitaProspect={invitaProspect} />}
-        {view==="note"    && <NoteView auth={auth} downline={downline} isLeader={!!auth.profile?.is_leader || auth.userId===LUDOVICO_ID} showToast={showToast} />}
         {view==="eventi"  && <EventiView auth={auth} allProfiles={allProfiles} downline={downline} positions={positions} showToast={showToast} data={data} dlProspects={dlProspects} onSetTicketEvento={setTicketEvento}
           sbListEventi={sbListEventi}
           sbListEventoStatus={sbListEventoStatus} sbUpsertEventoStatus={sbUpsertEventoStatus}
           sbListEventoPersone={sbListEventoPersone} sbInsertEventoPersona={sbInsertEventoPersona} sbUpdateEventoPersona={sbUpdateEventoPersona} sbDeleteEventoPersona={sbDeleteEventoPersona}
           onTicketCountChange={setTicketVendutiCount} />}
-        {view==="mappa"   && <MappaSezione auth={auth} eventi={eventi} sbGetMappaAttivi={sbGetMappaAttivi} sbGetMappaTicket={sbGetMappaTicket} sbGetMappaIscrizioni={sbGetMappaIscrizioni}
-          sfidaStart={CICLO_CORRENTE_INIZIO} sfidaEnd={CICLO_CORRENTE_FINE} showToast={showToast} />}
-        {view==="plan"    && <PlanView auth={auth} downline={downline} positions={positions} dlProspects={dlProspects} isLeader={!!auth.profile?.is_leader}
-          sbListEventi={sbListEventi} sbListEventoStatus={sbListEventoStatus} sbGetPiano={sbGetPiano} sbSetPiano={sbSetPiano} showToast={showToast} />}
         {view==="profilo" && <ProfiloView auth={auth} onUpdateProfile={updateProfile} downlineCount={downline.length} showToast={showToast} />}
       </main>
 
       {/* Mobile bottom nav - shown via CSS on mobile only */}
       <nav className="mobnav" style={{position:"fixed",bottom:0,left:0,right:0,height:60,background:"var(--bg2)",borderTop:"1px solid var(--border)",alignItems:"center",justifyContent:"space-around",zIndex:500,padding:"0 4px"}}>
         {[
-          {id:"dash",label:"Home"},
+          {id:"nomi",label:"Nomi"},
           {id:"lista",label:"Prospect",badge:data.length},
           {id:"team",label:"Team",badge:downline.length||0},
-          {id:"nomi",label:"Lista"},
-          {id:"note",label:"Note"},
           {id:"eventi",label:"Eventi"},
+          {id:"stats",label:"Statistica"},
           {id:"profilo",label:"Profilo"},
         ].map(item=>{
           const active=view===item.id;
@@ -1377,7 +1392,7 @@ export default function App() {
       </nav>
 
       {modal && (
-        <div onClick={closeModal} style={{position:"fixed",inset:0,background:"#00000090",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:16,animation:"fadeIn .2s"}}>
+        <div onClick={closeModal} style={{position:"fixed",inset:0,background:"#0f172a66",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:16,animation:"fadeIn .2s"}}>
           <div className={"pop"} onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:520,maxHeight:"90vh",overflowY:"auto",borderRadius:"16px"}}>
             {modal==="detail"
               ? <DetailModal p={sel} onEdit={()=>{setForm({...sel});setModal("edit");}} onAdvance={()=>advanceFase(sel)} onFollowUp={()=>moveFase(sel,"FOLLOW_UP")} onNonInt={()=>moveFase(sel,"NON_INT")} onNonPiace={()=>moveFase(sel,"NON_PIACE")} onRiattiva={()=>moveFase(sel,"RIATTIVA")} onClose={closeModal} onUpdateChecklist={cl=>updateChecklist(sel.id,cl)} onDeleteStorico={fase=>deleteStorico(sel.id,fase)} onUpdateStoricoData={(fase,data,newFase,newStorico)=>updateStoricoData(sel.id,fase,data,newFase,newStorico)} onSetStatoColore={v=>setStatoColore(sel.id,v)} eventi={eventi} onSetTicketEvento={eid=>setTicketEvento(sel.id,eid)} onSetChatAperta={v=>setChatAperta(sel.id,v)} />
@@ -1395,41 +1410,36 @@ export default function App() {
 }
 
 //  SIDEBAR 
-function Sidebar({ view, setView, data, urgenti, onAdd, onExport, auth, onLogout, downlineCount, sidebarMode, setSidebarMode }) {
+function Sidebar({ view, setView, data, auth, onLogout, downlineCount }) {
   const navs = [
-    { id:"dash",    icon:"", label:"Dashboard" },
-    { id:"lista",   icon:"", label:"Prospect", badge:data.length },
-    { id:"stats",   icon:"", label:"Statistiche" },
-    { id:"team",    icon:"", label:"Team", badge:downlineCount||0 },
-    { id:"nomi",    icon:"", label:"Lista Nomi" },
-    { id:"note",    icon:"", label:"Note" },
-    { id:"eventi",  icon:"", label:"Eventi" },
-    { id:"mappa",   icon:"", label:"Mappa" },
-    { id:"plan",    icon:"", label:"Plan" },
-    { id:"profilo", icon:"", label:"Profilo" },
+    { id:"nomi",    icon:"\ud83d\udcdd", label:"Lista Nomi" },
+    { id:"lista",   icon:"\ud83c\udfaf", label:"Prospect", badge:data.length },
+    { id:"team",    icon:"\ud83d\udc65", label:"Team", badge:downlineCount||0 },
+    { id:"eventi",  icon:"\ud83c\udf9f\ufe0f", label:"Eventi" },
+    { id:"stats",   icon:"\ud83d\udcca", label:"Statistica" },
+    { id:"profilo", icon:"\ud83d\udc64", label:"Profilo" },
   ];
   return (
-    <aside className="sb" style={{width:222,minWidth:222,background:"var(--bg2)",borderRight:"1px solid #11203a",padding:"1.5rem .9rem",display:"flex",flexDirection:"column",gap:4,height:"100vh",overflowY:"auto"}}>
-      <div style={{marginBottom:24,paddingLeft:4}}>
-        <div style={{fontWeight:900,fontSize:15,color:"var(--text)",lineHeight:1.2}}>Digital Legacy CRM</div>
+    <aside className="sb" style={{width:236,minWidth:236,background:"var(--bg)",borderRight:"1px solid var(--border)",padding:"1.6rem 1rem",display:"flex",flexDirection:"column",gap:4,height:"100vh",overflowY:"auto"}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:26,paddingLeft:6}}>
+        <div style={{width:34,height:34,borderRadius:11,background:"linear-gradient(135deg,var(--a1),var(--a2))",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:800,fontSize:15,boxShadow:"0 6px 16px -4px #6d5efc80"}}>DL</div>
+        <div style={{fontWeight:800,fontSize:15,color:"var(--text)",lineHeight:1.15,letterSpacing:-.3}}>Digital Legacy<div style={{fontSize:11,fontWeight:600,color:"var(--muted)"}}>CRM</div></div>
       </div>
 
-      {navs.map(item=>(
+      {navs.map(item=>{
+        const active=view===item.id;
+        return (
         <button key={item.id} onClick={()=>setView(item.id)}
-          style={{display:"flex",alignItems:"center",gap:9,width:"100%",padding:"10px 12px",background:view===item.id?"var(--bg4)":"transparent",boxShadow:view===item.id?"inset 0 0 0 1px var(--sidebar-border)":"none",color:view===item.id?"var(--a2)":"var(--muted)",borderRadius:10,cursor:"pointer",fontSize:13,fontWeight:600,textAlign:"left",border:"none",transition:"all .2s"}}>
-          <span>{item.icon}</span>{item.label}
-          {item.badge>0 && <span style={{marginLeft:"auto",background:"var(--a1-12)",color:"var(--a2)",borderRadius:99,padding:"1px 8px",fontSize:11,fontWeight:700}}>{item.badge}</span>}
+          style={{display:"flex",alignItems:"center",gap:11,width:"100%",padding:"11px 13px",background:active?"var(--bg4)":"transparent",color:active?"var(--a2)":"var(--muted)",borderRadius:12,cursor:"pointer",fontSize:13.5,fontWeight:active?700:600,textAlign:"left",border:"none",transition:"all .2s"}}>
+          <span style={{fontSize:16,width:20,textAlign:"center"}}>{item.icon}</span>{item.label}
+          {item.badge>0 && <span style={{marginLeft:"auto",background:active?"var(--a1)":"var(--bg4)",color:active?"#fff":"var(--a2)",borderRadius:99,padding:"1px 9px",fontSize:11,fontWeight:700}}>{item.badge}</span>}
         </button>
-      ))}
+        );
+      })}
 
-      <div style={{borderTop:"1px solid #11203a",paddingTop:14,marginTop:16,display:"flex",flexDirection:"column",gap:7}}>
-        <div style={{fontSize:10,fontWeight:800,color:"var(--border2)",textTransform:"uppercase",letterSpacing:1.2,marginBottom:2}}>Backup</div>
-        <button onClick={onExport} style={{padding:"8px 10px",background:"var(--bg4)",color:"var(--a2)",border:"1px solid var(--border2)",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:12,textAlign:"left"}}> Esporta in Fogli</button>
-      </div>
-
-      <div style={{marginTop:"auto",paddingTop:14,borderTop:"1px solid #11203a"}}>
-        <div style={{fontSize:10,color:"var(--muted)",marginBottom:6,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{auth?.email}</div>
-        <button onClick={onLogout} style={{width:"100%",padding:"8px 10px",background:"#ef444415",color:"#f87171",border:"1px solid #ef444430",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:12}}>Esci</button>
+      <div style={{marginTop:"auto",paddingTop:14,borderTop:"1px solid var(--border)"}}>
+        <div style={{fontSize:11,color:"var(--muted)",marginBottom:8,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{auth?.email}</div>
+        <button onClick={onLogout} style={{width:"100%",padding:"9px 10px",background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",borderRadius:10,cursor:"pointer",fontWeight:700,fontSize:12}}>Esci</button>
       </div>
     </aside>
   );
@@ -1535,9 +1545,9 @@ function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, f
       <div style={{display:"grid",gridTemplateColumns:(urgenti.length>0||cdFU.length>0)?"1.5fr 1fr":"1fr",gap:14}}>
         <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"1.4rem"}}>
           <div style={{fontSize:10,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:1.2,marginBottom:4}}>Funnel — Ciclo {dashCiclo}</div>
-          <div style={{fontSize:11,color:"var(--border2)",marginBottom:16}}>{cd.length} prospect conosciuti in questo ciclo</div>
+          <div style={{fontSize:11,color:"var(--muted)",marginBottom:16}}>{cd.length} prospect conosciuti in questo ciclo</div>
           {cd.length===0
-            ?<div style={{textAlign:"center",padding:"2rem",color:"var(--border2)",fontSize:13}}>Nessun prospect in questo ciclo</div>
+            ?<div style={{textAlign:"center",padding:"2rem",color:"var(--muted)",fontSize:13}}>Nessun prospect in questo ciclo</div>
             :<div style={{display:"flex",flexDirection:"column",gap:12}}>
               {funnelCounts.map(({f,n})=>{
                 const pct=Math.round(n/(cd.length||1)*100);
@@ -1555,7 +1565,7 @@ function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, f
               })}
             </div>
           }
-          <div style={{display:"flex",gap:10,marginTop:16,paddingTop:14,borderTop:"1px dashed #11203a"}}>
+          <div style={{display:"flex",gap:10,marginTop:16,paddingTop:14,borderTop:"1px dashed var(--border)"}}>
             {[{f:"FOLLOW_UP",n:cdFU.length},{f:"NON_INT",n:cdNI.length},{f:"NON_PIACE",n:cd.filter(p=>p.fase==="NON_PIACE").length}].map(({f,n})=>(
               <div key={f} style={{flex:1,background:FASE_CLR[f]+"12",border:"1px solid "+FASE_CLR[f]+"28",borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",gap:8}}>
                 <div style={{width:8,height:8,borderRadius:99,background:FASE_CLR[f],flexShrink:0}} />
@@ -1568,7 +1578,7 @@ function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, f
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
             {cdFU.length>0&&(
               <div style={{background:"var(--bg2)",border:"1px solid #f59e0b28",borderRadius:14,padding:"1.2rem",flex:1}}>
-                <div style={{fontSize:10,fontWeight:700,color:"#fbbf24",textTransform:"uppercase",letterSpacing:1.2,marginBottom:12}}> Da ricontattare</div>
+                <div style={{fontSize:10,fontWeight:700,color:"#d97706",textTransform:"uppercase",letterSpacing:1.2,marginBottom:12}}> Da ricontattare</div>
                 <div style={{display:"flex",flexDirection:"column",gap:7,maxHeight:170,overflowY:"auto"}}>
                   {cdFU.map(p=>(
                     <div key={p.id} className="hrow" onClick={()=>onOpen(p)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"#f59e0b09",border:"1px solid #f59e0b1e",borderRadius:9,padding:"8px 11px",cursor:"pointer"}}>
@@ -1576,7 +1586,7 @@ function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, f
                         <Av n={p.nome} c={p.cognome} color={FASE_CLR.FOLLOW_UP} />
                         <span style={{fontWeight:700,color:"var(--text)",fontSize:12}}>{p.nome} {p.cognome}</span>
                       </div>
-                      <span style={{fontSize:10,color:"#fbbf24"}}>{fmt(p.followUp)}</span>
+                      <span style={{fontSize:10,color:"#d97706"}}>{fmt(p.followUp)}</span>
                     </div>
                   ))}
                 </div>
@@ -1584,7 +1594,7 @@ function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, f
             )}
             {urgenti.length>0&&(
               <div style={{background:"var(--bg2)",border:"1px solid #ef444422",borderRadius:14,padding:"1.2rem",flex:1}}>
-                <div style={{fontSize:10,fontWeight:700,color:"#f87171",textTransform:"uppercase",letterSpacing:1.2,marginBottom:12}}> Follow-up urgenti</div>
+                <div style={{fontSize:10,fontWeight:700,color:"#dc2626",textTransform:"uppercase",letterSpacing:1.2,marginBottom:12}}> Follow-up urgenti</div>
                 <div style={{display:"flex",flexDirection:"column",gap:7,maxHeight:200,overflowY:"auto"}}>
                   {urgenti.map(p=>(
                     <div key={p.id} className="hrow" onClick={()=>onOpen(p)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"#ef44440b",border:"1px solid #ef44441e",borderRadius:9,padding:"8px 11px",cursor:"pointer"}}>
@@ -1719,7 +1729,7 @@ function Statistiche({ data, dlProspects, downline, positions }) {
 
   const ts={background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:8,color:"var(--text)",fontSize:12};
   const tProps={contentStyle:ts,itemStyle:{color:"var(--text)"},labelStyle:{color:"var(--text)",fontWeight:700}};
-  if (!activeData.length) return <div style={{padding:"2rem 2.2rem"}}><h1 style={{fontWeight:900,fontSize:26,color:"var(--text)",marginBottom:8}}>Statistiche</h1><div style={{textAlign:"center",padding:"5rem",color:"var(--border2)"}}><div style={{fontSize:44,marginBottom:12}}></div><p>{hasTeam ? "Nessun dato in questa modalita — prova a switchare su Team" : "Aggiungi prospect per vedere le statistiche"}</p></div></div>;
+  if (!activeData.length) return <div style={{padding:"2rem 2.2rem"}}><h1 style={{fontWeight:900,fontSize:26,color:"var(--text)",marginBottom:8}}>Statistiche</h1><div style={{textAlign:"center",padding:"5rem",color:"var(--muted)"}}><div style={{fontSize:44,marginBottom:12}}></div><p>{hasTeam ? "Nessun dato in questa modalita — prova a switchare su Team" : "Aggiungi prospect per vedere le statistiche"}</p></div></div>;
   return (
     <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
       <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:24,gap:12,flexWrap:"wrap"}}>
@@ -1778,7 +1788,7 @@ function Statistiche({ data, dlProspects, downline, positions }) {
           <div><div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}> Conversione del percorso</div><div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>Quante persone raggiungono ogni fase</div></div>
           <select value={barCiclo} onChange={e=>setBarCiclo(e.target.value)} style={{width:"auto",minWidth:160}}><option value="ALL">Tutti i cicli</option>{[...cicli].sort((a,b)=>b-a).map(c=><option key={c} value={c}>Ciclo {c}</option>)}</select>
         </div>
-        <div style={{height:300}}><ResponsiveContainer width="100%" height="100%"><BarChart data={barData} margin={{top:5,right:10,left:-15,bottom:5}}><CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false}/><XAxis dataKey="fase" stroke="var(--muted)" fontSize={12}/><YAxis stroke="var(--muted)" fontSize={12} allowDecimals={false}/><Tooltip {...tProps} cursor={{fill:"#0d1b3360"}}/><Bar dataKey="count" name="Raggiunti" radius={[6,6,0,0]}>{barData.map((e,i)=><Cell key={i} fill={e.fill}/>)}</Bar></BarChart></ResponsiveContainer></div>
+        <div style={{height:300}}><ResponsiveContainer width="100%" height="100%"><BarChart data={barData} margin={{top:5,right:10,left:-15,bottom:5}}><CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false}/><XAxis dataKey="fase" stroke="var(--muted)" fontSize={12}/><YAxis stroke="var(--muted)" fontSize={12} allowDecimals={false}/><Tooltip {...tProps} cursor={{fill:"var(--bg4)60"}}/><Bar dataKey="count" name="Raggiunti" radius={[6,6,0,0]}>{barData.map((e,i)=><Cell key={i} fill={e.fill}/>)}</Bar></BarChart></ResponsiveContainer></div>
         <div style={{display:"flex",gap:8,marginTop:14,flexWrap:"wrap"}}>{dropOffs.map((d,i)=>(<div key={i} style={{flex:"1 1 120px",background:bottleneck&&d.da===bottleneck.da&&d.a===bottleneck.a?"#f59e0b12":"var(--bg3)",border:bottleneck&&d.da===bottleneck.da&&d.a===bottleneck.a?"1px solid #f59e0b40":"1px solid var(--border)",borderRadius:9,padding:"9px 11px"}}><div style={{fontSize:10,color:"var(--muted)",fontWeight:600}}>{d.da} → {d.a}</div><div style={{fontSize:18,fontWeight:900,color:d.color,marginTop:2}}>{d.rate}%</div></div>))}</div>
       </div>
 
@@ -1789,7 +1799,7 @@ function Statistiche({ data, dlProspects, downline, positions }) {
           {tempoMedioConversione!=null
             ? <><div style={{fontSize:34,fontWeight:900,color:"#3b82f6",lineHeight:1}}>{tempoMedioConversione} <span style={{fontSize:16,fontWeight:700,color:"var(--muted)"}}>giorni</span></div>
               <div style={{fontSize:12,color:"var(--muted)",marginTop:8}}>Da quando conosci il prospect a quando si iscrive, in media ({durate.length} iscritti analizzati)</div></>
-            : <div style={{fontSize:13,color:"var(--border2)",marginTop:6}}>Non ci sono ancora abbastanza iscritti con date complete per calcolarlo</div>
+            : <div style={{fontSize:13,color:"var(--muted)",marginTop:6}}>Non ci sono ancora abbastanza iscritti con date complete per calcolarlo</div>
           }
         </div>
         <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,padding:"1.4rem",position:"relative",overflow:"hidden"}}>
@@ -1798,22 +1808,22 @@ function Statistiche({ data, dlProspects, downline, positions }) {
           {fonteMigliore
             ? <><div style={{fontSize:34,fontWeight:900,color:"#10b981",lineHeight:1}}>{fonteMigliore.fonte}</div>
               <div style={{fontSize:12,color:"var(--muted)",marginTop:8}}>{fonteMigliore.rate}% di conversione su {fonteMigliore.tot} prospect — la fonte dove vale la pena investire di più</div></>
-            : <div style={{fontSize:13,color:"var(--border2)",marginTop:6}}>Servono almeno 3 prospect per ogni fonte per confrontarle</div>
+            : <div style={{fontSize:13,color:"var(--muted)",marginTop:6}}>Servono almeno 3 prospect per ogni fonte per confrontarle</div>
           }
         </div>
       </div>
 
       {fontiReport.length>0 && (
         <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden",marginBottom:16}}>
-          <div style={{padding:"1.1rem 1.4rem",borderBottom:"1px solid #11203a"}}>
+          <div style={{padding:"1.1rem 1.4rem",borderBottom:"1px solid var(--border)"}}>
             <div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}>Da dove arrivano i prospect</div>
             <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{barCiclo==="ALL"?"Su tutti i cicli":"Nel ciclo "+barCiclo} — Lista Nomi, Instagram e le altre fonti — stessi conteggi del grafico ({fontiReport.reduce((a,r)=>a+r.tot,0)} inviti in totale)</div>
           </div>
           <div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",minWidth:560}}>
-              <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Fonte","Prospect","Arrivati a Conoscitiva","Iscritti","Conv%"].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
+              <thead><tr style={{borderBottom:"1px solid var(--border)"}}>{["Fonte","Prospect","Arrivati a Conoscitiva","Iscritti","Conv%"].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
               <tbody>{fontiReport.map(r=>(
-                <tr key={r.fonte} style={{borderBottom:"1px solid #0d1b3355"}}>
+                <tr key={r.fonte} style={{borderBottom:"1px solid var(--border)"}}>
                   <td style={{padding:"11px 16px",fontWeight:700,fontSize:13,color:"var(--text)",whiteSpace:"nowrap"}}>{FONTE_ICO[r.fonte]||""} {r.fonte}</td>
                   <td style={{padding:"11px 16px",minWidth:180}}>
                     <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -1833,9 +1843,9 @@ function Statistiche({ data, dlProspects, downline, positions }) {
 
       {showClassifica && classificaRows.length>0 && (
         <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden",marginBottom:16}}>
-          <div style={{padding:"1.1rem 1.4rem",borderBottom:"1px solid #11203a"}}><div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}> Classifica conversione</div><div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{barCiclo==="ALL"?"Su tutti i cicli":"Ciclo "+barCiclo} — chi converte meglio nel team (min. 2 invitati)</div></div>
+          <div style={{padding:"1.1rem 1.4rem",borderBottom:"1px solid var(--border)"}}><div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}> Classifica conversione</div><div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{barCiclo==="ALL"?"Su tutti i cicli":"Ciclo "+barCiclo} — chi converte meglio nel team (min. 2 invitati)</div></div>
           <div>{classificaRows.map((r,i)=>(
-            <div key={r.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 20px",borderBottom:i<classificaRows.length-1?"1px solid #0d1b3355":"none"}}>
+            <div key={r.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 20px",borderBottom:i<classificaRows.length-1?"1px solid var(--border)":"none"}}>
               <div style={{width:24,fontSize:14,fontWeight:900,color:i===0?"#f59e0b":i===1?"#c0c0c0":i===2?"#cd7f32":"var(--border2)"}}>{i<3?["🥇","🥈","🥉"][i]:i+1}</div>
               <div style={{flex:1,fontSize:13,fontWeight:700,color:"var(--text)"}}>{r.label}</div>
               <div style={{fontSize:11,color:"var(--muted)"}}>{r.sub}/{r.invito} iscritti</div>
@@ -1846,118 +1856,129 @@ function Statistiche({ data, dlProspects, downline, positions }) {
       )}
 
       <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden"}}>
-        <div style={{padding:"1.1rem 1.4rem",borderBottom:"1px solid #11203a"}}><div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}> Cicli a confronto</div><div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>Dal ciclo {STATS_START_CICLO} in poi — prima non si tracciava ancora</div></div>
-        <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",minWidth:640}}><thead><tr style={{borderBottom:"1px solid #11203a"}}><th style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>Ciclo</th>{FASI_STATS.map(f=><th key={f} style={{textAlign:"center",color:FASE_CLR[f],fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 10px"}}>{FASE_LABEL[f]}</th>)}<th style={{textAlign:"center",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>Conv%</th></tr></thead><tbody>{tableRows.map(r=>(<tr key={r.c} className="hrow" style={{borderBottom:"1px solid #0d1b3355"}}><td style={{padding:"11px 16px"}}><span style={{background:r.c===CICLO_CORRENTE?"var(--a1-13)":"var(--border)",color:r.c===CICLO_CORRENTE?"var(--a2)":"var(--muted)",borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:700}}>C{r.c}</span></td>{FASI_STATS.map(f=><td key={f} style={{textAlign:"center",padding:"11px 10px",fontWeight:700,fontSize:13,color:r[f]>0?"var(--text)":"var(--border2)"}}>{r[f]}</td>)}<td style={{textAlign:"center",padding:"11px 16px",fontWeight:800,fontSize:13,color:r.conv>=20?"#10b981":r.conv>=10?"var(--a2)":"#f59e0b"}}>{r.conv}%{r.delta!=null&&r.delta!==0&&<span style={{marginLeft:6,fontSize:11,color:r.delta>0?"#10b981":"#ef4444"}}>{r.delta>0?"▲":"▼"}{Math.abs(r.delta)}</span>}</td></tr>))}</tbody></table></div>
+        <div style={{padding:"1.1rem 1.4rem",borderBottom:"1px solid var(--border)"}}><div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}> Cicli a confronto</div><div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>Dal ciclo {STATS_START_CICLO} in poi — prima non si tracciava ancora</div></div>
+        <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",minWidth:640}}><thead><tr style={{borderBottom:"1px solid var(--border)"}}><th style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>Ciclo</th>{FASI_STATS.map(f=><th key={f} style={{textAlign:"center",color:FASE_CLR[f],fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 10px"}}>{FASE_LABEL[f]}</th>)}<th style={{textAlign:"center",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",padding:"11px 16px"}}>Conv%</th></tr></thead><tbody>{tableRows.map(r=>(<tr key={r.c} className="hrow" style={{borderBottom:"1px solid var(--border)"}}><td style={{padding:"11px 16px"}}><span style={{background:r.c===CICLO_CORRENTE?"var(--a1-13)":"var(--border)",color:r.c===CICLO_CORRENTE?"var(--a2)":"var(--muted)",borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:700}}>C{r.c}</span></td>{FASI_STATS.map(f=><td key={f} style={{textAlign:"center",padding:"11px 10px",fontWeight:700,fontSize:13,color:r[f]>0?"var(--text)":"var(--border2)"}}>{r[f]}</td>)}<td style={{textAlign:"center",padding:"11px 16px",fontWeight:800,fontSize:13,color:r.conv>=20?"#10b981":r.conv>=10?"var(--a2)":"#f59e0b"}}>{r.conv}%{r.delta!=null&&r.delta!==0&&<span style={{marginLeft:6,fontSize:11,color:r.delta>0?"#10b981":"#ef4444"}}>{r.delta>0?"▲":"▼"}{Math.abs(r.delta)}</span>}</td></tr>))}</tbody></table></div>
       </div>
     </div>
   );
 }
 
 //  LISTA 
-function Lista({ onToggleChat, prospects, total, search, setSearch, fFase, setFFase, fFonte, setFFonte, fCiclo, setFCiclo, fCitta, setFCitta, fInteresse, setFInteresse, fPercorso, setFPercorso, fLeg, setFLeg, fMembroTeam, setFMembroTeam, downline, onOpen, onAdd, listaMode, setListaMode, hasTeam }) {
+// Situazione di un prospect (colonna "Situazione"): "" = ancora in processo
+function situazioneOf(p) {
+  if (p.statoColore==="iscritto" || p.fase==="SUB") return "iscritto";
+  if (p.statoColore==="da_risentire" || p.fase==="FOLLOW_UP") return "riprendere";
+  if (p.statoColore==="sparito" || p.fase==="NON_INT" || p.fase==="NON_PIACE") return "balzato";
+  return "";
+}
+const SITUAZIONE_OPTS = [
+  { v:"iscritto",   label:"Iscritto",             color:"#10b981" },
+  { v:"riprendere", label:"Riprendere più avanti", color:"#f59e0b" },
+  { v:"balzato",    label:"Balzato",              color:"#ef4444" },
+];
+const PROSPECT_STEPS = [
+  { v:"CONOSCITIVA", label:"Fatta conoscitiva" },
+  { v:"FUP1",        label:"Fatto FUP 1" },
+  { v:"FUP2",        label:"Fatto FUP 2" },
+  { v:"PACK",        label:"Fatto Pack" },
+  { v:"CLOSING",     label:"Fatto Closing" },
+];
+const PROSPECT_FASE_LABEL = { ...FASE_LABEL, INVITO:"Da fissare" };
+
+function Lista({ onToggleChat, onSetStep, onSetSituazione, onEdit, prospects, total, search, setSearch, fFase, setFFase, fFonte, setFFonte, fCiclo, setFCiclo, fSituazione, setFSituazione, fMembroTeam, setFMembroTeam, downline, onAdd, hasTeam }) {
+  const mine = prospects.filter(p=>!p._userId);
+  const team = prospects.filter(p=>!!p._userId);
+  const th = {textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10.5,textTransform:"uppercase",letterSpacing:.8,padding:"13px 14px",whiteSpace:"nowrap",background:"var(--bg3)"};
+  const td = {padding:"11px 14px",verticalAlign:"middle"};
+  const heads = ["Prospect","Telefono","Ciclo","Fonte","Fase","Chat aperta","Prossimo step","Situazione",""];
+
+  const renderRow = (p) => {
+    const c=cicloOfDate(p.conosciutoAt);
+    const sit=situazioneOf(p);
+    const sitOpt=SITUAZIONE_OPTS.find(o=>o.v===sit);
+    const tint=sitOpt?sitOpt.color:null;
+    const faseClr=FASE_CLR[p.fase]||"var(--a1)";
+    return (
+      <tr key={p.id} className="hrow" style={{borderBottom:"1px solid var(--border)",background:tint?tint+"12":"transparent",borderLeft:tint?"3px solid "+tint:"3px solid transparent"}}>
+        <td style={td}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <Av n={p.nome} c={p.cognome} color={faseClr}/>
+            <div>
+              <div style={{color:"var(--text)",fontWeight:700,fontSize:13.5,whiteSpace:"nowrap"}}>{p.nome} {p.cognome}</div>
+              {p._userId && <div style={{fontSize:11,color:"var(--a2)",fontWeight:600}}>di {p._ownerName||"—"}</div>}
+              {p.citta && <div style={{fontSize:11,color:"var(--muted)"}}>{p.citta}</div>}
+            </div>
+          </div>
+        </td>
+        <td style={{...td,fontSize:12.5}}>{p.telefono?<a href={"tel:"+p.telefono} style={{color:"var(--a2)",textDecoration:"none",fontWeight:600,whiteSpace:"nowrap"}}>{p.telefono}</a>:<span style={{color:"var(--muted)"}}>{"—"}</span>}</td>
+        <td style={td}>{c?<span style={{background:c===CICLO_CORRENTE?"var(--a1-13)":"var(--bg3)",color:c===CICLO_CORRENTE?"var(--a2)":"var(--muted)",borderRadius:7,padding:"3px 9px",fontSize:11.5,fontWeight:700}}>C{c}</span>:<span style={{color:"var(--muted)"}}>{"—"}</span>}</td>
+        <td style={{...td,color:"var(--muted)",fontSize:12.5,whiteSpace:"nowrap"}}>{p.fonte}</td>
+        <td style={td}><span style={{display:"inline-flex",alignItems:"center",borderRadius:8,padding:"4px 11px",fontSize:11.5,fontWeight:700,color:"#fff",background:faseClr,whiteSpace:"nowrap"}}>{PROSPECT_FASE_LABEL[p.fase]||p.fase}</span></td>
+        <td style={{...td,textAlign:"center"}}>
+          <input type="checkbox" checked={!!p.chatAperta} onChange={e=>onToggleChat(p.id,e.target.checked)} title="Chat aperta" style={{width:18,height:18,cursor:"pointer",accentColor:"#6d5efc"}} />
+        </td>
+        <td style={td}>
+          <select value="" onChange={e=>{ if(e.target.value) onSetStep(p,e.target.value); }} style={{width:"auto",minWidth:150,padding:"7px 10px",fontSize:12.5,fontWeight:600}}>
+            <option value="">Seleziona...</option>
+            {PROSPECT_STEPS.map(st=><option key={st.v} value={st.v}>{st.label}</option>)}
+          </select>
+        </td>
+        <td style={td}>
+          <select value={sit} onChange={e=>onSetSituazione(p,e.target.value)}
+            style={{width:"auto",minWidth:160,padding:"7px 10px",fontSize:12.5,fontWeight:700,color:sitOpt?sitOpt.color:"var(--text)",background:sitOpt?sitOpt.color+"14":"#fff",borderColor:sitOpt?sitOpt.color+"66":"var(--border2)"}}>
+            <option value="">In processo</option>
+            {SITUAZIONE_OPTS.map(o=><option key={o.v} value={o.v}>{o.label}</option>)}
+          </select>
+        </td>
+        <td style={td}><button onClick={()=>onEdit(p)} title="Modifica" style={{background:"var(--bg3)",border:"1px solid var(--border)",borderRadius:9,cursor:"pointer",padding:"6px 9px",fontSize:13}}>{"✏️"}</button></td>
+      </tr>
+    );
+  };
+
   return (
-    <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
+    <div style={{padding:"2rem 2.2rem",maxWidth:1400,margin:"0 auto"}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1.4rem",flexWrap:"wrap",gap:12}}>
         <div>
-          <h1 style={{fontWeight:900,fontSize:26,color:"var(--text)",letterSpacing:-0.8}}>Prospect</h1>
-          <p style={{color:"var(--muted)",fontSize:12,marginTop:3}}>{prospects.length} di {total} visualizzati</p>
+          <h1 style={{fontWeight:800,fontSize:26,color:"var(--text)"}}>Prospect</h1>
+          <p style={{color:"var(--muted)",fontSize:12.5,marginTop:3}}>{prospects.length} di {total} visualizzati</p>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          {hasTeam && (
-            <div style={{display:"flex",background:"var(--bg3)",borderRadius:10,padding:4,border:"1px solid var(--border)"}}>
-              {["personale","team"].map(m=>(
-                <button key={m} onClick={()=>setListaMode(m)}
-                  style={{padding:"6px 14px",borderRadius:8,border:"none",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"inherit",background:listaMode===m?"var(--bg4)":"transparent",color:listaMode===m?"var(--a2)":"var(--muted)",boxShadow:listaMode===m?"inset 0 0 0 1px var(--sidebar-border)":"none"}}>
-                  {m==="personale"?" Personale":" Team"}
-                </button>
-              ))}
-            </div>
-          )}
-          <button onClick={onAdd} style={{padding:"9px 18px",fontSize:13,fontWeight:800,background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:10,cursor:"pointer"}}>+ Aggiungi</button>
-        </div>
+        <button onClick={onAdd} style={{padding:"10px 20px",fontSize:13.5,fontWeight:700,background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:12,cursor:"pointer",boxShadow:"0 8px 18px -8px #6d5efcaa"}}>+ Aggiungi prospect</button>
       </div>
-      <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap"}}>
-        <input placeholder="Cerca..." value={search} onChange={e=>setSearch(e.target.value)} style={{flex:2,minWidth:200}} />
+      <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap"}}>
+        <input placeholder="Cerca per nome, cognome o città..." value={search} onChange={e=>setSearch(e.target.value)} style={{flex:2,minWidth:220}} />
+        <select value={fSituazione} onChange={e=>setFSituazione(e.target.value)} style={{flex:1,minWidth:150}}>
+          <option value="processo">In processo</option>
+          <option value="iscritto">Iscritti</option>
+          <option value="riprendere">Da riprendere più avanti</option>
+          <option value="balzato">Balzati</option>
+          <option value="tutti">Tutti</option>
+        </select>
         <select value={fFase} onChange={e=>setFFase(e.target.value)} style={{flex:1,minWidth:130}}>
           <option value="">Tutte le fasi</option>
-          <optgroup label="Funnel">{FASI_FUNNEL.map(f=><option key={f} value={f}>{FASE_LABEL[f]}</option>)}</optgroup>
-          <optgroup label="Speciali">{FASI_SPECIALI.map(f=><option key={f} value={f}>{FASE_LABEL[f]}</option>)}</optgroup>
+          {FASI_FUNNEL.map(f=><option key={f} value={f}>{PROSPECT_FASE_LABEL[f]}</option>)}
         </select>
         <select value={fFonte} onChange={e=>setFFonte(e.target.value)} style={{flex:1,minWidth:120}}><option value="">Tutte le fonti</option>{FONTI.map(f=><option key={f}>{f}</option>)}</select>
-        <select value={fCiclo} onChange={e=>setFCiclo(e.target.value)} style={{flex:1,minWidth:140}}><option value="">Tutti i cicli</option>{CICLO_NUMS.map(c=><option key={c} value={c}>Ciclo {c}</option>)}</select>
-        <input value={fCitta} onChange={e=>setFCitta(e.target.value)} placeholder="Filtra per citta..." style={{flex:1,minWidth:130}} />
-        <select value={fInteresse} onChange={e=>setFInteresse(e.target.value)} style={{flex:1,minWidth:120}}>
-          <option value="">Tutto l interesse</option>
-          {INTERESSE.map(v=><option key={v} value={v}>{v}</option>)}
-        </select>
-        <select value={fPercorso} onChange={e=>setFPercorso(e.target.value)} style={{flex:1,minWidth:140}}>
-          <option value="">In e non in percorso</option>
-          <option value="in_percorso">In percorso</option>
-          <option value="non_in_percorso">Non in percorso</option>
-        </select>
-        {listaMode==="team" && (
-          <select value={fLeg} onChange={e=>setFLeg(e.target.value)} style={{flex:1,minWidth:130}}>
-            <option value="">Tutta la squadra</option>
-            <option value="sinistra">Solo sinistra</option>
-            <option value="destra">Solo destra</option>
-          </select>
-        )}
-        {listaMode==="team" && (
+        <select value={fCiclo} onChange={e=>setFCiclo(e.target.value)} style={{flex:1,minWidth:130}}><option value="">Tutti i cicli</option>{CICLO_NUMS.map(c=><option key={c} value={c}>Ciclo {c}</option>)}</select>
+        {hasTeam && (
           <select value={fMembroTeam} onChange={e=>setFMembroTeam(e.target.value)} style={{flex:1,minWidth:170}}>
-            <option value="">Tutte le persone del team</option>
+            <option value="">Tutti (miei + team)</option>
+            <option value="__miei">Solo i miei</option>
             {(downline||[]).map(m=><option key={m.id} value={m.id}>{m.nome||m.email} {m.cognome||""}</option>)}
           </select>
         )}
       </div>
-      <div style={{display:"flex",gap:16,flexWrap:"wrap",marginBottom:14,padding:"9px 14px",background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:10}}>
-        {ROW_TINT_LEGENDA.map(l=>(
-          <div key={l.label} style={{display:"flex",alignItems:"center",gap:6}}>
-            <span style={{width:9,height:9,borderRadius:99,background:l.colore,flexShrink:0}} />
-            <span style={{fontSize:11,color:"var(--muted)",fontWeight:600}}>{l.label}</span>
-          </div>
-        ))}
-      </div>
       {prospects.length===0
-        ?<div style={{textAlign:"center",padding:"4rem",color:"var(--border2)"}}><div style={{fontSize:44,marginBottom:12}}></div><p style={{fontSize:14,marginBottom:14}}>Nessun prospect trovato</p><button onClick={onAdd} style={{padding:"9px 20px",fontSize:13,fontWeight:800,background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:10,cursor:"pointer"}}>Aggiungi il primo</button></div>
-        :<div className="tbl-wrap" style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:14,overflow:"hidden"}}>
-          <table style={{width:"100%",borderCollapse:"collapse",minWidth:700}}>
-            <thead><tr style={{borderBottom:"1px solid #11203a"}}>{["Prospect",...(listaMode==="team"?["Di"]:[]),"Ciclo","Conosciuto","Fonte","Fase","Interesse","Chat","Checklist",""].map(h=>(<th key={h} style={{textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10,textTransform:"uppercase",letterSpacing:.8,padding:"12px 16px",whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead>
-            <tbody>{prospects.map(p=>{
-              const c=cicloOfDate(p.conosciutoAt);
-              const tint = STATO_COLORE_MAP[p.statoColore];
-              return (
-                <tr key={p.id} className="hrow" onClick={()=>onOpen(p)} style={{cursor:"pointer",borderBottom:"1px solid #0d1b3355",background:tint?tint+"14":"transparent",borderLeft:tint?"3px solid "+tint:"3px solid transparent"}}>
-                  <td style={{padding:"12px 16px"}}><div style={{display:"flex",alignItems:"center",gap:10}}><Av n={p.nome} c={p.cognome} color={FASE_CLR[p.fase]}/><span style={{color:"var(--text)",fontWeight:700,fontSize:13}}>{p.nome} {p.cognome}</span></div></td>
-                  {listaMode==="team"&&<td style={{padding:"12px 16px"}}><span style={{fontSize:11,color:"#8b5cf6",fontWeight:700,background:"#8b5cf618",borderRadius:6,padding:"2px 8px"}}>{p._ownerName||"\u2014"}</span></td>}
-                  <td style={{padding:"12px 16px"}}>{c?<span style={{background:c===CICLO_CORRENTE?"var(--a1-13)":"var(--border)",color:c===CICLO_CORRENTE?"var(--a2)":"var(--muted)",borderRadius:6,padding:"2px 8px",fontSize:11,fontWeight:700}}>C{c}</span>:<span style={{color:"var(--border2)"}}>\u2014</span>}</td>
-                  <td style={{padding:"12px 16px",color:"var(--muted)",fontSize:12}}>{fmt(p.conosciutoAt)}</td>
-                  <td style={{padding:"12px 16px",color:"var(--muted)",fontSize:12}}>{FONTE_ICO[p.fonte]} {p.fonte}</td>
-                  <td style={{padding:"12px 16px"}}><span style={{display:"inline-flex",alignItems:"center",borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:700,color:"#fff",background:FASE_CLR[p.fase],boxShadow:"0 0 8px "+FASE_CLR[p.fase]+"35"}}>{FASE_LABEL[p.fase]}</span></td>
-                  <td style={{padding:"12px 16px"}}>
-                    {p.interesse
-                      ? <span style={{fontSize:11,fontWeight:800,padding:"2px 8px",borderRadius:6,color:INTERESSE_CLR[p.interesse],background:INTERESSE_CLR[p.interesse]+"20"}}>{p.interesse}</span>
-                      : <span style={{color:"var(--border2)",fontSize:11}}>\u2014</span>
-                    }
-                  </td>
-                  <td style={{padding:"12px 16px"}} onClick={e=>e.stopPropagation()}>
-                    <input type="checkbox" checked={!!p.chatAperta} onChange={e=>onToggleChat&&onToggleChat(p.id,e.target.checked)} title="Chat aperta" style={{width:17,height:17,cursor:"pointer"}} />
-                  </td>
-                  <td style={{padding:"12px 16px"}}>
-                    {p.fase==="SUB"
-                      ? <div style={{display:"flex",gap:6}}>
-                          {["kyc","pandadoc","click"].map(k=>{
-                            const done=p.checklist?.[k];
-                            const label=k==="pandadoc"?"PD":k.toUpperCase();
-                            return <span key={k} style={{fontSize:10,fontWeight:800,padding:"2px 7px",borderRadius:5,background:done?"#10b98120":"#1e3a5f20",color:done?"#10b981":"var(--muted)",border:"1px solid "+(done?"#10b98140":"var(--border2)")}}>{label}</span>;
-                          })}
-                        </div>
-                      : <span style={{color:"var(--border2)",fontSize:11}}>\u2014</span>
-                    }
-                  </td>
-                  <td style={{padding:"12px 16px",color:"var(--border2)",fontSize:16}}>{"\u203a"}</td>
-                </tr>
-              );
-            })}</tbody>
+        ?<div style={{textAlign:"center",padding:"4rem",color:"var(--muted)"}}><p style={{fontSize:14,marginBottom:14}}>Nessun prospect trovato</p><button onClick={onAdd} style={{padding:"10px 20px",fontSize:13,fontWeight:700,background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:12,cursor:"pointer"}}>Aggiungi il primo</button></div>
+        :<div className="tbl-wrap card-soft" style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:18,overflow:"auto"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",minWidth:1000}}>
+            <thead><tr>{heads.map((h,i)=>(<th key={i} style={th}>{h}</th>))}</tr></thead>
+            <tbody>
+              {mine.map(renderRow)}
+              {team.length>0 && mine.length>0 && (
+                <tr><td colSpan={heads.length} style={{padding:"10px 14px",fontSize:11,fontWeight:800,color:"var(--a2)",textTransform:"uppercase",letterSpacing:1,background:"var(--bg4)"}}>Prospect del team</td></tr>
+              )}
+              {team.map(renderRow)}
+            </tbody>
           </table>
         </div>
       }
@@ -1965,15 +1986,15 @@ function Lista({ onToggleChat, prospects, total, search, setSearch, fFase, setFF
   );
 }
 
-//  FORM MODAL 
+//  FORM MODAL
 function ClienteQuickModal({ form, setForm, onSave, onClose, isLeader, downline, saving }) {
   const set=(k,v)=>setForm(f=>({...f,[k]:v}));
   const lbl={fontSize:11,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"};
   return (
-    <div style={{background:"var(--bg2)",border:"1px solid var(--border2)",borderRadius:16,padding:"1.6rem",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 20px 70px #000000aa"}}>
+    <div style={{background:"var(--bg2)",border:"1px solid var(--border2)",borderRadius:16,padding:"1.6rem",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 20px 70px #0f172a55"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
         <h2 style={{fontWeight:900,fontSize:17,color:"var(--text)"}}>+ Aggiungi cliente</h2>
-        <button onClick={onClose} style={{background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:8,cursor:"pointer",padding:"4px 10px",fontSize:14}}></button>
+        <button onClick={onClose} style={{background:"var(--bg4)",color:"var(--muted)",border:"1px solid var(--border2)",borderRadius:8,cursor:"pointer",padding:"4px 10px",fontSize:14}}></button>
       </div>
       <p style={{fontSize:12,color:"var(--muted)",marginBottom:18}}>Per chi è già cliente/iscritto — niente funnel, solo i dati per tenerlo in conto nei rinnovi.</p>
 
@@ -2011,7 +2032,7 @@ function ClienteQuickModal({ form, setForm, onSave, onClose, isLeader, downline,
       </div>
 
       <div style={{display:"flex",gap:9,justifyContent:"flex-end"}}>
-        <button onClick={onClose} style={{padding:"9px 15px",background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:9,cursor:"pointer",fontWeight:600,fontSize:13}}>Annulla</button>
+        <button onClick={onClose} style={{padding:"9px 15px",background:"var(--bg4)",color:"var(--muted)",border:"1px solid var(--border2)",borderRadius:9,cursor:"pointer",fontWeight:600,fontSize:13}}>Annulla</button>
         <button onClick={()=>onSave(form)} disabled={saving} style={{padding:"9px 20px",background:"linear-gradient(135deg,#10b981,#10b981bb)",color:"#fff",border:"none",borderRadius:9,cursor:saving?"not-allowed":"pointer",fontWeight:800,fontSize:13,opacity:saving?0.7:1}}>{saving?"Aggiungo...":"Aggiungi cliente"}</button>
       </div>
     </div>
@@ -2031,7 +2052,7 @@ function MembroQuickModal({ form, setForm, onSave, onClose, isLeader, downline, 
 
   if (risultato) {
     return (
-      <div style={{background:"var(--bg2)",border:"1px solid var(--border2)",borderRadius:16,padding:"1.6rem",maxWidth:440,boxShadow:"0 20px 70px #000000aa"}}>
+      <div style={{background:"var(--bg2)",border:"1px solid var(--border2)",borderRadius:16,padding:"1.6rem",maxWidth:440,boxShadow:"0 20px 70px #0f172a55"}}>
         <h2 style={{fontWeight:900,fontSize:17,color:"var(--text)",marginBottom:10}}> Membro creato</h2>
         <p style={{fontSize:12,color:"var(--muted)",marginBottom:16,lineHeight:1.6}}>Manda a <b style={{color:"var(--text)"}}>{form.email}</b> queste credenziali per il primo accesso — potrà cambiare la password quando vuole da "Password dimenticata".</p>
         <div style={{background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:10,padding:"12px 14px",marginBottom:16}}>
@@ -2052,10 +2073,10 @@ function MembroQuickModal({ form, setForm, onSave, onClose, isLeader, downline, 
   }
 
   return (
-    <div style={{background:"var(--bg2)",border:"1px solid var(--border2)",borderRadius:16,padding:"1.6rem",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 20px 70px #000000aa"}}>
+    <div style={{background:"var(--bg2)",border:"1px solid var(--border2)",borderRadius:16,padding:"1.6rem",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 20px 70px #0f172a55"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
         <h2 style={{fontWeight:900,fontSize:17,color:"var(--text)"}}>+ Aggiungi membro</h2>
-        <button onClick={onClose} style={{background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:8,cursor:"pointer",padding:"4px 10px",fontSize:14}}></button>
+        <button onClick={onClose} style={{background:"var(--bg4)",color:"var(--muted)",border:"1px solid var(--border2)",borderRadius:8,cursor:"pointer",padding:"4px 10px",fontSize:14}}></button>
       </div>
       <p style={{fontSize:12,color:"var(--muted)",marginBottom:18}}>Crea l'account direttamente — niente link né codici, viene posizionato subito nell'albero.</p>
 
@@ -2092,7 +2113,7 @@ function MembroQuickModal({ form, setForm, onSave, onClose, isLeader, downline, 
       </div>
 
       <div style={{display:"flex",gap:9,justifyContent:"flex-end"}}>
-        <button onClick={onClose} style={{padding:"9px 15px",background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:9,cursor:"pointer",fontWeight:600,fontSize:13}}>Annulla</button>
+        <button onClick={onClose} style={{padding:"9px 15px",background:"var(--bg4)",color:"var(--muted)",border:"1px solid var(--border2)",borderRadius:9,cursor:"pointer",fontWeight:600,fontSize:13}}>Annulla</button>
         <button onClick={submit} disabled={saving} style={{padding:"9px 20px",background:"linear-gradient(135deg,#10b981,#10b981bb)",color:"#fff",border:"none",borderRadius:9,cursor:saving?"not-allowed":"pointer",fontWeight:800,fontSize:13,opacity:saving?0.7:1}}>{saving?"Creo...":"Crea membro"}</button>
       </div>
     </div>
@@ -2103,13 +2124,13 @@ function FormModal({ form, setForm, onSave, onClose, onDelete, isEdit, isLeader,
   const set=(k,v)=>setForm(f=>({...f,[k]:v}));
   const lbl={fontSize:11,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"};
   return (
-    <div style={{background:"var(--bg2)",border:"1px solid var(--border2)",borderRadius:16,padding:"1.6rem",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 20px 70px #000000aa"}}>
+    <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:20,padding:"1.7rem",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 30px 80px -20px #0f172a55"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-        <h2 style={{fontWeight:900,fontSize:17,color:"var(--text)"}}>{isEdit?" Modifica":"+ Nuovo Prospect"}</h2>
-        <button onClick={onClose} style={{background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:8,cursor:"pointer",padding:"4px 10px",fontSize:14}}></button>
+        <h2 style={{fontWeight:800,fontSize:18,color:"var(--text)"}}>{isEdit?"Modifica prospect":"Nuovo prospect"}</h2>
+        <button onClick={onClose} style={{background:"var(--bg3)",color:"var(--muted)",border:"1px solid var(--border)",borderRadius:9,cursor:"pointer",padding:"4px 11px",fontSize:14}}>{"✕"}</button>
       </div>
       {isLeader && !isEdit && (
-        <div style={{marginBottom:14,background:"var(--a1-10)",border:"1px solid var(--a1-25)",borderRadius:10,padding:"10px 12px"}}>
+        <div style={{marginBottom:14,background:"var(--a1-10)",border:"1px solid var(--a1-25)",borderRadius:12,padding:"10px 12px"}}>
           <label style={lbl}>Questo prospect è di</label>
           <select value={form._userId||""} onChange={e=>set("_userId",e.target.value||null)}>
             <option value="">Tu</option>
@@ -2120,27 +2141,9 @@ function FormModal({ form, setForm, onSave, onClose, onDelete, isEdit, isLeader,
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
         <div><label style={lbl}>Nome *</label><input value={form.nome||""} onChange={e=>set("nome",e.target.value)} placeholder="Nome" /></div>
         <div><label style={lbl}>Cognome</label><input value={form.cognome||""} onChange={e=>set("cognome",e.target.value)} placeholder="Cognome" /></div>
-        <div style={{gridColumn:"1/-1"}}><label style={lbl}>Citta</label><input value={form.citta||""} onChange={e=>set("citta",e.target.value)} placeholder="es. Milano" /></div>
-        <div><label style={lbl}>Telefono</label><input value={form.telefono||""} onChange={e=>set("telefono",e.target.value)} placeholder="+39 333 000 0000" /></div>
-        <div><label style={lbl}>Instagram</label><input value={form.instagram||""} onChange={e=>set("instagram",e.target.value)} placeholder="@username" /></div>
-        <div><label style={lbl}>Fonte</label><select value={form.fonte||"Instagram"} onChange={e=>set("fonte",e.target.value)}>{FONTI.map(f=><option key={f} value={f}>{FONTE_ICO[f]} {f}</option>)}</select></div>
-        <div><label style={lbl}>Fase</label><select value={form.fase||"INVITO"} onChange={e=>set("fase",e.target.value)}><optgroup label="Funnel">{FASI_FUNNEL.map(f=><option key={f} value={f}>{FASE_LABEL[f]}</option>)}</optgroup><optgroup label="Speciali">{FASI_SPECIALI.map(f=><option key={f} value={f}>{FASE_LABEL[f]}</option>)}</optgroup></select></div>
-        <div style={{gridColumn:"1/-1"}}><label style={lbl}>Prossimo Follow-up</label><input type="date" value={form.followUp||""} onChange={e=>set("followUp",e.target.value)} /></div>
-        <div style={{gridColumn:"1/-1"}}>
-          <label style={lbl}>Grado di interesse</label>
-          <div style={{display:"flex",gap:8}}>
-            {INTERESSE.map(v=>{
-              const active=form.interesse===v;
-              const color=INTERESSE_CLR[v];
-              return(
-                <button key={v} onClick={()=>set("interesse",active?null:v)}
-                  style={{flex:1,padding:"9px",background:active?color+"25":"var(--bg3)",border:"2px solid "+(active?color:"var(--border2)"),borderRadius:9,cursor:"pointer",color:active?color:"var(--muted)",fontWeight:700,fontSize:13,fontFamily:"inherit",transition:"all .2s"}}>
-                  {v}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <div><label style={lbl}>Città</label><input value={form.citta||""} onChange={e=>set("citta",e.target.value)} placeholder="es. Milano" /></div>
+        <div><label style={lbl}>Telefono *</label><input value={form.telefono||""} onChange={e=>set("telefono",e.target.value)} placeholder="+39 333 000 0000" /></div>
+        <div style={{gridColumn:"1/-1"}}><label style={lbl}>Fonte</label><select value={form.fonte||"Instagram"} onChange={e=>set("fonte",e.target.value)}>{FONTI.map(f=><option key={f} value={f}>{f}</option>)}</select></div>
         {form.fase==="SUB" && (
           <div style={{gridColumn:"1/-1"}}>
             <label style={lbl}>Pacchetto</label>
@@ -2155,7 +2158,7 @@ function FormModal({ form, setForm, onSave, onClose, onDelete, isEdit, isLeader,
               </div>
             )}
             {form.pacchetto && (
-              <div style={{marginTop:8,background:"#10b98115",border:"1px solid #10b98130",borderRadius:9,padding:"8px 12px",fontSize:12,color:"#10b981",fontWeight:700}}>
+              <div style={{marginTop:8,background:"#10b98115",border:"1px solid #10b98130",borderRadius:10,padding:"8px 12px",fontSize:12,color:"#059669",fontWeight:700}}>
                 {form.pacchetto==="altro" ? (form.bvCustom||0)+" BV prodotti" : bvOfPacchetto(form.pacchetto)+" BV prodotti"}
               </div>
             )}
@@ -2164,9 +2167,9 @@ function FormModal({ form, setForm, onSave, onClose, onDelete, isEdit, isLeader,
       </div>
       <div style={{marginBottom:18}}><label style={lbl}>Note</label><textarea value={form.note||""} onChange={e=>set("note",e.target.value)} style={{height:76,resize:"vertical"}} placeholder="Dove lo hai conosciuto, contesto..." /></div>
       <div style={{display:"flex",gap:9,justifyContent:"flex-end",flexWrap:"wrap"}}>
-        {onDelete&&<button onClick={onDelete} style={{padding:"9px 15px",background:"#ef444415",color:"#f87171",border:"1px solid #ef444438",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:13}}>Elimina</button>}
-        <button onClick={onClose} style={{padding:"9px 15px",background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:9,cursor:"pointer",fontWeight:600,fontSize:13}}>Annulla</button>
-        <button onClick={onSave} style={{padding:"9px 20px",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:13}}>{isEdit?"Aggiorna":"Aggiungi"}</button>
+        {onDelete&&<button onClick={onDelete} style={{padding:"10px 16px",background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",borderRadius:11,cursor:"pointer",fontWeight:700,fontSize:13}}>Elimina</button>}
+        <button onClick={onClose} style={{padding:"10px 16px",background:"var(--bg3)",color:"var(--muted)",border:"1px solid var(--border)",borderRadius:11,cursor:"pointer",fontWeight:600,fontSize:13}}>Annulla</button>
+        <button onClick={onSave} style={{padding:"10px 22px",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:11,cursor:"pointer",fontWeight:700,fontSize:13,boxShadow:"0 8px 18px -8px #6d5efcaa"}}>{isEdit?"Aggiorna":"Aggiungi"}</button>
       </div>
     </div>
   );
@@ -2183,7 +2186,7 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onNonPiace, o
   const box={background:"var(--bg3)",borderRadius:10,padding:"11px 13px",border:"1px solid var(--border)"};
   const storico=[...(p.storico||[])].sort((a,b)=>FASI_FUNNEL.indexOf(a.fase)-FASI_FUNNEL.indexOf(b.fase));
   return(
-    <div style={{background:"var(--bg2)",border:"1px solid var(--border2)",borderRadius:16,padding:"1.6rem",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 20px 70px #000000aa"}}>
+    <div style={{background:"var(--bg2)",border:"1px solid var(--border2)",borderRadius:16,padding:"1.6rem",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 20px 70px #0f172a55"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
         <div style={{display:"flex",alignItems:"center",gap:13}}>
           <Av n={p.nome} c={p.cognome} color={clr} size={50}/>
@@ -2198,7 +2201,7 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onNonPiace, o
             </div>
           </div>
         </div>
-        <button onClick={onClose} style={{background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:8,cursor:"pointer",padding:"4px 10px",fontSize:14}}></button>
+        <button onClick={onClose} style={{background:"var(--bg4)",color:"var(--muted)",border:"1px solid var(--border2)",borderRadius:8,cursor:"pointer",padding:"4px 10px",fontSize:14}}></button>
       </div>
       <div style={{marginBottom:16}}>
         <div style={{fontSize:10,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Colore riga (a parte dalla fase)</div>
@@ -2243,7 +2246,7 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onNonPiace, o
                 <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
                   <button onClick={()=>setStepPopup(null)} style={{padding:"7px 14px",background:"var(--bg4)",color:"var(--muted)",border:"1px solid var(--border2)",borderRadius:8,cursor:"pointer",fontWeight:600,fontSize:12}}>Annulla</button>
                   {p.storico?.some(s=>s.fase===stepPopup)&&(
-                    <button onClick={()=>{onDeleteStorico(stepPopup);setStepPopup(null);}} style={{padding:"7px 14px",background:"#ef444415",color:"#f87171",border:"1px solid #ef444430",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:12}}>Rimuovi</button>
+                    <button onClick={()=>{onDeleteStorico(stepPopup);setStepPopup(null);}} style={{padding:"7px 14px",background:"#ef444415",color:"#dc2626",border:"1px solid #ef444430",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:12}}>Rimuovi</button>
                   )}
                   <button onClick={()=>{
                     if(!stepDate)return;
@@ -2301,7 +2304,7 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onNonPiace, o
               </div>
             )}
           </div>
-          {storico.length>0&&(<div style={{...box,marginBottom:9}}><div style={lbl}> Storico percorso</div><div style={{display:"flex",flexDirection:"column",gap:6,marginTop:8}}>{storico.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:9}}><span style={{width:8,height:8,borderRadius:99,background:FASE_CLR[s.fase],flexShrink:0,boxShadow:"0 0 6px "+FASE_CLR[s.fase]+"70"}}/><span style={{fontSize:12.5,fontWeight:700,color:"var(--text)",minWidth:64}}>{FASE_LABEL[s.fase]}</span><input type="date" defaultValue={s.data} onBlur={e=>{if(e.target.value&&e.target.value!==s.data)onUpdateStoricoData(s.fase,e.target.value);}} style={{fontSize:11,padding:"2px 6px",width:"auto",minWidth:0,background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:6,color:"var(--muted)",cursor:"pointer"}}/><span style={{fontSize:10,color:"var(--muted)",marginLeft:"auto"}}>Ciclo {cicloOfDate(s.data)||"\u2014"}</span>{storico.length>1&&<button onClick={()=>onDeleteStorico(s.fase)} style={{background:"#ef444415",border:"1px solid #ef444430",borderRadius:6,color:"#f87171",cursor:"pointer",fontSize:11,fontWeight:800,padding:"2px 7px",marginLeft:4,lineHeight:1}}>x</button>}</div>))}</div></div>)}
+          {storico.length>0&&(<div style={{...box,marginBottom:9}}><div style={lbl}> Storico percorso</div><div style={{display:"flex",flexDirection:"column",gap:6,marginTop:8}}>{storico.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:9}}><span style={{width:8,height:8,borderRadius:99,background:FASE_CLR[s.fase],flexShrink:0,boxShadow:"0 0 6px "+FASE_CLR[s.fase]+"70"}}/><span style={{fontSize:12.5,fontWeight:700,color:"var(--text)",minWidth:64}}>{FASE_LABEL[s.fase]}</span><input type="date" defaultValue={s.data} onBlur={e=>{if(e.target.value&&e.target.value!==s.data)onUpdateStoricoData(s.fase,e.target.value);}} style={{fontSize:11,padding:"2px 6px",width:"auto",minWidth:0,background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:6,color:"var(--muted)",cursor:"pointer"}}/><span style={{fontSize:10,color:"var(--muted)",marginLeft:"auto"}}>Ciclo {cicloOfDate(s.data)||"\u2014"}</span>{storico.length>1&&<button onClick={()=>onDeleteStorico(s.fase)} style={{background:"#ef444415",border:"1px solid #ef444430",borderRadius:6,color:"#dc2626",cursor:"pointer",fontSize:11,fontWeight:800,padding:"2px 7px",marginLeft:4,lineHeight:1}}>x</button>}</div>))}</div></div>)}
           {p.note&&<div style={{...box,marginBottom:9}}><div style={lbl}> Note</div><p style={{color:"var(--text)",lineHeight:1.6,fontSize:13,marginTop:4}}>{p.note}</p></div>}
           {p.fase==="SUB"&&(
             <div style={{...box,marginBottom:9}}>
@@ -2325,9 +2328,9 @@ function DetailModal({ p, onEdit, onAdvance, onFollowUp, onNonInt, onNonPiace, o
           <div style={{display:"flex",gap:9,marginTop:16,flexWrap:"wrap"}}>
             {!isSpeciale&&ci<FASI_FUNNEL.length-1&&<button onClick={onAdvance} style={{padding:"9px 16px",background:"linear-gradient(135deg,"+FASE_CLR[FASI_FUNNEL[ci+1]]+","+FASE_CLR[FASI_FUNNEL[ci+1]]+"bb)",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:12}}>Avanza → {FASE_LABEL[FASI_FUNNEL[ci+1]]}</button>}
             {isSpeciale&&<button onClick={onRiattiva} style={{padding:"9px 16px",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:12}}>↩ Riattiva nel Funnel</button>}
-            <button onClick={onEdit} style={{padding:"9px 16px",background:"var(--bg4)",color:"#7da8d8",border:"1px solid var(--border2)",borderRadius:9,cursor:"pointer",fontWeight:600,fontSize:12}}> Modifica</button>
+            <button onClick={onEdit} style={{padding:"9px 16px",background:"var(--bg4)",color:"var(--muted)",border:"1px solid var(--border2)",borderRadius:9,cursor:"pointer",fontWeight:600,fontSize:12}}> Modifica</button>
           </div>
-          {!isSpeciale&&(<div style={{borderTop:"1px solid #0d1b33",marginTop:13,paddingTop:13,display:"flex",gap:9,flexWrap:"wrap"}}><div style={{fontSize:10,color:"var(--border2)",width:"100%",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:2}}>Stato speciale</div>{p.fase!=="FOLLOW_UP"&&<button onClick={onFollowUp} style={{padding:"8px 13px",background:"#f59e0b16",color:"#fbbf24",border:"1px solid #f59e0b38",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:12}}> Follow Up caldo</button>}{p.fase!=="NON_INT"&&<button onClick={onNonInt} style={{padding:"8px 13px",background:"#ef444414",color:"#f87171",border:"1px solid #ef444436",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:12}}> Non interessato</button>}{p.fase!=="NON_PIACE"&&<button onClick={onNonPiace} style={{padding:"8px 13px",background:"#ec489918",color:"#f472b6",border:"1px solid #ec489938",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:12}}> Non mi piace</button>}</div>)}
+          {!isSpeciale&&(<div style={{borderTop:"1px solid var(--bg4)",marginTop:13,paddingTop:13,display:"flex",gap:9,flexWrap:"wrap"}}><div style={{fontSize:10,color:"var(--muted)",width:"100%",fontWeight:700,textTransform:"uppercase",letterSpacing:.8,marginBottom:2}}>Stato speciale</div>{p.fase!=="FOLLOW_UP"&&<button onClick={onFollowUp} style={{padding:"8px 13px",background:"#f59e0b16",color:"#d97706",border:"1px solid #f59e0b38",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:12}}> Follow Up caldo</button>}{p.fase!=="NON_INT"&&<button onClick={onNonInt} style={{padding:"8px 13px",background:"#ef444414",color:"#dc2626",border:"1px solid #ef444436",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:12}}> Non interessato</button>}{p.fase!=="NON_PIACE"&&<button onClick={onNonPiace} style={{padding:"8px 13px",background:"#ec489918",color:"#f472b6",border:"1px solid #ec489938",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:12}}> Non mi piace</button>}</div>)}
         </>
       )}
 
