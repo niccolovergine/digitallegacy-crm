@@ -316,8 +316,7 @@ input[type=date]::-webkit-calendar-picker-indicator{cursor:pointer}
 @media(max-width:768px){
   body{overflow:auto}
   aside.sb{display:none!important}
-  nav.mobnav{display:flex!important}
-  main.mc{height:calc(100vh - 60px)!important}
+  div.mobtop{display:flex!important}
   .kpi-grid{grid-template-columns:repeat(2,1fr)!important;gap:8px!important}
   .page-wrap{padding:1rem!important}
   .tbl-wrap{overflow-x:auto!important;-webkit-overflow-scrolling:touch}
@@ -326,15 +325,15 @@ input[type=date]::-webkit-calendar-picker-indicator{cursor:pointer}
   .filt-row{flex-wrap:wrap!important}
   .filt-row>*{min-width:calc(50% - 4px)!important;flex:1 1 calc(50% - 4px)!important}
   h1.ptitle{font-size:20px!important}
-  button.ass-fab{display:flex!important;bottom:84px!important}
-  .toast-pos{bottom:76px!important;right:12px!important;left:12px!important;text-align:center}
+  button.ass-fab{display:flex!important;bottom:20px!important}
+  .toast-pos{bottom:84px!important;right:12px!important;left:12px!important;text-align:center}
   input,select,textarea{font-size:16px!important}
-  main.mc{height:calc(100dvh - 64px)!important;overflow-x:hidden}
+  main.mc{height:100dvh!important;padding-top:56px;overflow-x:hidden}
   main.mc div[style*="repeat(5"],main.mc div[style*="repeat(6"],main.mc div[style*="repeat(4"]{grid-template-columns:repeat(2,1fr)!important}
   main.mc div[style*="1.5fr 1fr"],main.mc div[style*="2fr 1fr"]{grid-template-columns:1fr!important}
   h1{font-size:22px!important}
 }
-nav.mobnav{display:none}
+div.mobtop{display:none}
 .ass-fab{display:none!important}
 `;
 
@@ -740,6 +739,7 @@ export default function App() {
   const [dashMode, setDashMode]   = useState("personale");
   const [statTab, setStatTab]     = useState("dash");
   const [showAss, setShowAss]     = useState(false);
+  const [menuOpen, setMenuOpen]   = useState(false);
   const [sidebarMode, setSidebarMode] = useState("tutti");
   const [fMembroTeam, setFMembroTeam] = useState(""); // "" | id membro — solo per vista Team
 
@@ -1386,29 +1386,41 @@ export default function App() {
       </main>
 
       {/* Mobile bottom nav - shown via CSS on mobile only */}
-      <nav className="mobnav" style={{position:"fixed",bottom:0,left:0,right:0,height:60,background:"var(--bg2)",borderTop:"1px solid var(--border)",alignItems:"center",justifyContent:"space-around",zIndex:500,padding:"0 4px"}}>
-        {[
-          {id:"nomi",label:"Nomi"},
-          {id:"lista",label:"Prospect",badge:data.length},
-          {id:"team",label:"Team",badge:downline.length||0},
-          {id:"eventi",label:"Eventi"},
-          {id:"stats",label:"Statistica"},
-          {id:"profilo",label:"Profilo"},
-        ].map(item=>{
-          const active=view===item.id;
-          return (
-            <button key={item.id} onClick={()=>setView(item.id)}
-              style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,background:"none",border:"none",cursor:"pointer",padding:"6px 2px",position:"relative"}}>
-              {item.badge>0&&<span style={{position:"absolute",top:2,right:"18%",background:"#10b981",color:"#fff",borderRadius:99,fontSize:9,fontWeight:900,padding:"1px 5px",minWidth:16,textAlign:"center"}}>{item.badge}</span>}
-              <div style={{width:5,height:5,borderRadius:"50%",background:active?"var(--a1)":"transparent",marginBottom:1}}/>
-              <span style={{fontSize:10,fontWeight:active?800:600,color:active?"var(--a1)":"var(--muted)"}}>{item.label}</span>
-            </button>
-          );
-        })}
-        <button onClick={openAdd} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,background:"none",border:"none",cursor:"pointer",padding:"6px 2px"}}>
-          <div style={{width:30,height:30,borderRadius:"50%",background:"linear-gradient(135deg,var(--a1),var(--a2))",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:18,fontWeight:900}}>+</div>
-        </button>
-      </nav>
+      <div className="mobtop" style={{position:"fixed",top:0,left:0,right:0,height:56,background:"#0b1d4a",zIndex:800,alignItems:"center",gap:12,padding:"0 14px",boxShadow:"0 4px 14px -6px #0b1d4a99"}}>
+        <button onClick={()=>setMenuOpen(true)} aria-label="Menu" style={{width:40,height:40,borderRadius:12,border:"none",background:"#ffffff1f",color:"#fff",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{"\u2630"}</button>
+        <div style={{color:"#fff",fontWeight:800,fontSize:16,letterSpacing:-.2}}>{({nomi:"Lista Nomi",lista:"Prospect",team:"Team",eventi:"Eventi",stats:"Statistica",profilo:"Profilo"})[view]||"Digital Legacy"}</div>
+      </div>
+      {menuOpen && (
+        <div onClick={()=>setMenuOpen(false)} style={{position:"fixed",inset:0,background:"#0f172a80",zIndex:1200}}>
+          <div onClick={e=>e.stopPropagation()} style={{width:"80%",maxWidth:300,height:"100%",background:"#0b1d4a",padding:"20px 14px",display:"flex",flexDirection:"column",gap:6,boxShadow:"10px 0 40px -10px #000a"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:18,paddingLeft:4}}>
+              <div style={{width:34,height:34,borderRadius:11,background:"linear-gradient(135deg,var(--a1),var(--a2))",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:800,fontSize:15}}>DL</div>
+              <div style={{color:"#fff",fontWeight:800,fontSize:15,lineHeight:1.15}}>Digital Legacy<div style={{fontSize:11,fontWeight:600,color:"#93a4d6"}}>CRM</div></div>
+            </div>
+            {[
+              {id:"nomi",label:"Lista Nomi",icon:"\ud83d\udcdd"},
+              {id:"lista",label:"Prospect",icon:"\ud83c\udfaf",badge:data.length},
+              {id:"team",label:"Team",icon:"\ud83d\udc65",badge:downline.length||0},
+              {id:"eventi",label:"Eventi",icon:"\ud83c\udf9f\ufe0f"},
+              {id:"stats",label:"Statistica",icon:"\ud83d\udcca"},
+              {id:"profilo",label:"Profilo",icon:"\ud83d\udc64"},
+            ].map(item=>{
+              const active=view===item.id;
+              return (
+                <button key={item.id} onClick={()=>{setView(item.id);setMenuOpen(false);}}
+                  style={{display:"flex",alignItems:"center",gap:12,width:"100%",padding:"14px 14px",background:active?"#ffffff24":"transparent",color:active?"#fff":"#b8c4ea",borderRadius:13,cursor:"pointer",fontSize:16,fontWeight:active?800:600,textAlign:"left",border:"none"}}>
+                  <span style={{fontSize:18,width:22,textAlign:"center"}}>{item.icon}</span>{item.label}
+                  {item.badge>0 && <span style={{marginLeft:"auto",background:"#ffffff26",color:"#fff",borderRadius:99,padding:"1px 9px",fontSize:12,fontWeight:700}}>{item.badge}</span>}
+                </button>
+              );
+            })}
+            <div style={{marginTop:"auto",paddingTop:14,borderTop:"1px solid #ffffff22"}}>
+              <div style={{fontSize:11,color:"#93a4d6",marginBottom:8,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{auth?.email}</div>
+              <button onClick={handleLogout} style={{width:"100%",padding:"12px",background:"#ffffff14",color:"#fecaca",border:"1px solid #ffffff22",borderRadius:11,cursor:"pointer",fontWeight:700,fontSize:14}}>Esci</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {modal && (
         <div onClick={closeModal} style={{position:"fixed",inset:0,background:"#0f172a66",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:16,animation:"fadeIn .2s"}}>
