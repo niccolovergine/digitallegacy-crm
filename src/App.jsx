@@ -34,8 +34,11 @@ async function sbFetch(path, opts = {}) {
     const msg = e.msg || e.message || e.error_description || e.error || res.statusText || ("Errore " + res.status);
     // Se il token è scaduto, forza logout
     if (msg.toLowerCase().includes("jwt expired") || msg.toLowerCase().includes("invalid jwt") || res.status === 401) {
+      // Ricarica SOLO se c'era davvero una sessione salvata da buttare: altrimenti
+      // (es. link email scaduto con #access_token nell'URL) si creava un loop di ricaricamenti infinito
+      const hadSession = !!localStorage.getItem("becrm_session");
       localStorage.removeItem("becrm_session");
-      window.location.reload();
+      if (hadSession) window.location.reload();
     }
     throw new Error(msg);
   }
@@ -394,7 +397,7 @@ function AuthScreen({ onAuth }) {
             localStorage.setItem("becrm_session", JSON.stringify(authData));
             window.history.replaceState(null, "", window.location.pathname);
             onAuth(authData);
-          } catch(e) { /* se fallisce, l'utente vede semplicemente la schermata di login normale */ }
+          } catch(e) { /* link scaduto/non valido: puliamo l'indirizzo e mostriamo il normale login */ window.history.replaceState(null, "", window.location.pathname); }
         })();
         return;
       }
