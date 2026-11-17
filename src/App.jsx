@@ -4,6 +4,7 @@ import { TeamView } from "./components/Team";
 import { ProfiloView } from "./components/Profilo";
 import { ListaNomiView } from "./components/ListaNomi";
 import { EventiView } from "./components/Eventi";
+import { Assistente } from "./components/Assistente";
 import { MappaSezione } from "./components/Mappa";
 
 const SB_URL = "https://gyxvhnwzkhjrgpqvakfw.supabase.co";
@@ -325,15 +326,28 @@ input[type=date]::-webkit-calendar-picker-indicator{cursor:pointer}
   .filt-row{flex-wrap:wrap!important}
   .filt-row>*{min-width:calc(50% - 4px)!important;flex:1 1 calc(50% - 4px)!important}
   h1.ptitle{font-size:20px!important}
-  .toast-pos{bottom:68px!important;right:12px!important;left:12px!important;text-align:center}
+  button.ass-fab{display:flex!important;bottom:84px!important}
+  .toast-pos{bottom:76px!important;right:12px!important;left:12px!important;text-align:center}
+  input,select,textarea{font-size:16px!important}
+  main.mc{height:calc(100dvh - 64px)!important;overflow-x:hidden}
+  main.mc div[style*="repeat(5"],main.mc div[style*="repeat(6"],main.mc div[style*="repeat(4"]{grid-template-columns:repeat(2,1fr)!important}
+  main.mc div[style*="1.5fr 1fr"],main.mc div[style*="2fr 1fr"]{grid-template-columns:1fr!important}
+  h1{font-size:22px!important}
 }
 nav.mobnav{display:none}
+.ass-fab{display:none!important}
 `;
 
 
+function useIsMobile() {
+  const [m,setM]=useState(typeof window!=="undefined" && window.innerWidth<=768);
+  useEffect(()=>{ const f=()=>setM(window.innerWidth<=768); window.addEventListener("resize",f); return ()=>window.removeEventListener("resize",f); },[]);
+  return m;
+}
+
 function Av({ n, c, color, size=34 }) {
   return (
-    <div style={{width:size,height:size,borderRadius:"50%",flexShrink:0,background:"linear-gradient(135deg,"+color+","+color+"99)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:900,fontSize:size*0.32,boxShadow:"0 0 10px "+color+"35"}}>
+    <div style={{width:size,height:size,borderRadius:"50%",flexShrink:0,background:color.startsWith("var(")?color:"linear-gradient(135deg,"+color+","+color+"99)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:900,fontSize:size*0.32,boxShadow:color.startsWith("var(")?"none":"0 0 10px "+color+"35"}}>
       {(n||"?")[0]}{(c||"")[0]}
     </div>
   );
@@ -725,6 +739,7 @@ export default function App() {
   const [positions, setPositions] = useState([]);
   const [dashMode, setDashMode]   = useState("personale");
   const [statTab, setStatTab]     = useState("dash");
+  const [showAss, setShowAss]     = useState(false);
   const [sidebarMode, setSidebarMode] = useState("tutti");
   const [fMembroTeam, setFMembroTeam] = useState(""); // "" | id membro — solo per vista Team
 
@@ -1069,30 +1084,28 @@ export default function App() {
 
   // "Prossimo step": porta il prospect alla fase scelta, senza chiedere date (usa oggi)
   async function setProspectStep(p, fase) {
-    const storico=buildStorico(p,fase,today());
-    await patchProspect(p,{fase,storico},"\u2192 "+FASE_LABEL[fase]);
+    await patchProspect(p, stepPatch(p,fase), "\u2192 "+FASE_LABEL[fase]);
   }
 
   // "Situazione": iscritto / riprendere piu' avanti / balzato / (vuoto = di nuovo in processo)
   async function setSituazione(p, v) {
-    if (v==="iscritto") {
-      const storico=buildStorico(p,"SUB",today());
-      await patchProspect(p,{fase:"SUB",storico,statoColore:"iscritto"},"Iscritto \u2705 (per i BV apri la matita e scegli il pacchetto)");
-    } else if (v==="riprendere") {
-      await patchProspect(p,{statoColore:"da_risentire"},"Da riprendere pi\u00f9 avanti");
-    } else if (v==="balzato") {
-      await patchProspect(p,{statoColore:"sparito"},"Balzato");
-    } else {
-      // torna in processo: se era SUB / fase speciale, riparte dall'ultima fase del percorso raggiunta
-      let fase=p.fase; let storico=p.storico||[];
-      if (fase==="SUB"||FASI_SPECIALI.includes(fase)) {
-        storico=storico.filter(x=>x.fase!=="SUB");
-        let best="INVITO";
-        storico.forEach(x=>{const i=FASI_FUNNEL.indexOf(x.fase); if(i>=0&&i>FASI_FUNNEL.indexOf(best)) best=x.fase;});
-        fase=best;
-      }
-      await patchProspect(p,{statoColore:"",fase,storico},"Di nuovo in processo");
-    }
+    const r=sitPatch(p,v);
+    await patchProspect(p, r.patch, r.msg);
+  }
+
+  // Assistente "Dimmi": applica insieme fase, situazione, chat e nota in un solo salvataggio
+  async function applicaAssistente(p, az) {
+    let q={...p}; let patch={};
+    if (az.step) { const pt=stepPatch(q,az.step); patch={...patch,...pt}; q={...q,...pt}; }
+    if (az.sit)  { const pt=sitPatch(q,az.sit).patch; patch={...patch,...pt}; q={...q,...pt}; }
+    if (az.chat) patch.chatAperta=true;
+    if (az.nota) { const d=new Date(); const dd=String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0"); patch.note=(p.note?p.note+"\n":"")+dd+": "+az.nota; }
+    await patchProspect(p, patch, "Salvato su "+p.nome+" \u2705");
+    setShowAss(false);
+  }
+  function nuovoDaAssistente(nm, testo) {
+    setForm({fase:"INVITO",fonte:"Instagram",conosciutoAt:today(),nome:nm.nome,cognome:nm.cognome,note:testo});
+    setModal("add"); setShowAss(false);
   }
 
   async function setTicketEvento(id, eventoId) {
@@ -1340,16 +1353,19 @@ export default function App() {
       {saving && <div style={{position:"fixed",top:14,right:14,zIndex:9998,background:"var(--bg4)",border:"1px solid var(--border2)",borderRadius:9,padding:"7px 14px",fontSize:12,color:"var(--a2)",display:"flex",alignItems:"center",gap:7}}><span className="spinner" />Salvataggio...</div>}
 
       <Sidebar view={view} setView={setView} data={data} auth={auth} onLogout={handleLogout} downlineCount={downline.length} />
+      <button className="ass-fab" onClick={()=>setShowAss(true)} title="Chat" style={{position:"fixed",right:18,bottom:24,zIndex:900,display:"flex",alignItems:"center",gap:8,padding:"13px 20px",borderRadius:99,border:"none",cursor:"pointer",fontWeight:800,fontSize:14,color:"#fff",background:"linear-gradient(135deg,var(--a1),var(--a2))",boxShadow:"0 12px 28px -8px #6d5efcbb"}}>{"\ud83c\udf99\ufe0f"} Chat</button>
+      {showAss && <Assistente prospects={[...data,...teamProspects]} onApply={applicaAssistente} onNew={nuovoDaAssistente} onClose={()=>setShowAss(false)} faseLabel={f=>PROSPECT_FASE_LABEL[f]||f} />}
+
 
       <main className="mc" style={{flex:1,overflowY:"auto",height:"100vh",paddingBottom:0}}>
         {view==="lista" && <Lista onToggleChat={setChatAperta} onSetStep={setProspectStep} onSetSituazione={setSituazione} onEdit={p=>{setForm({...p});setModal("edit");}} prospects={listaData} total={data.length+teamProspects.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} fSituazione={fSituazione} setFSituazione={setFSituazione} fMembroTeam={fMembroTeam} setFMembroTeam={setFMembroTeam} downline={downline} onAdd={openAdd} hasTeam={dlProspects.length>0} />}
         {view==="stats"   && (
           <div className="stat-wrap">
-            <div style={{padding:"2rem 2.2rem 0",maxWidth:1280,margin:"0 auto"}}>
+            <div className="page-wrap" style={{padding:"2rem 2.2rem 0",maxWidth:1280,margin:"0 auto"}}>
               <div style={{fontWeight:800,fontSize:26,color:"var(--text)",letterSpacing:-.8,marginBottom:14}}>Statistica</div>
-              <div style={{display:"inline-flex",background:"var(--bg3)",borderRadius:12,padding:4,gap:2}}>
+              <div style={{display:"flex",background:"var(--bg3)",borderRadius:12,padding:4,gap:2,maxWidth:460}}>
                 {[["dash","Panoramica"],["stats","Funnel e fonti"],["mappa","Mappa"]].map(([k,l])=>(
-                  <button key={k} onClick={()=>setStatTab(k)} style={{padding:"8px 18px",borderRadius:9,border:"none",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit",background:statTab===k?"#fff":"transparent",color:statTab===k?"var(--a2)":"var(--muted)",boxShadow:statTab===k?"0 1px 3px #0f172a1a":"none"}}>{l}</button>
+                  <button key={k} onClick={()=>setStatTab(k)} style={{flex:1,padding:"9px 10px",borderRadius:9,border:"none",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit",background:statTab===k?"#fff":"transparent",color:statTab===k?"var(--a2)":"var(--muted)",boxShadow:statTab===k?"0 1px 3px #0f172a1a":"none"}}>{l}</button>
                 ))}
               </div>
             </div>
@@ -1501,7 +1517,7 @@ function Dash({ cd, cdSub, cdAct, cdFU, cdNI, cdConv, totSub, totConv, totAll, f
     {label:"Ticket evento",value:ticketVenduti||0,icon:"",color:"#a855f7",sub:"tu + downline",detail:"Venduti"},
   ];
   return (
-    <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
+    <div className="page-wrap" style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
       <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:"1.2rem",gap:12,flexWrap:"wrap"}}>
         <div>
           <div style={{fontSize:11,fontWeight:700,color:"var(--a1)",textTransform:"uppercase",letterSpacing:1.4,marginBottom:4}}>Ciclo {dashCiclo}{dashCiclo===CICLO_CORRENTE?" \u00b7 in corso":""}</div>
@@ -1732,9 +1748,9 @@ function Statistiche({ data, dlProspects, downline, positions }) {
 
   const ts={background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:8,color:"var(--text)",fontSize:12};
   const tProps={contentStyle:ts,itemStyle:{color:"var(--text)"},labelStyle:{color:"var(--text)",fontWeight:700}};
-  if (!activeData.length) return <div style={{padding:"2rem 2.2rem"}}><h1 style={{fontWeight:900,fontSize:26,color:"var(--text)",marginBottom:8}}>Statistiche</h1><div style={{textAlign:"center",padding:"5rem",color:"var(--muted)"}}><div style={{fontSize:44,marginBottom:12}}></div><p>{hasTeam ? "Nessun dato in questa modalita — prova a switchare su Team" : "Aggiungi prospect per vedere le statistiche"}</p></div></div>;
+  if (!activeData.length) return <div className="page-wrap" style={{padding:"2rem 2.2rem"}}><h1 style={{fontWeight:900,fontSize:26,color:"var(--text)",marginBottom:8}}>Statistiche</h1><div style={{textAlign:"center",padding:"5rem",color:"var(--muted)"}}><div style={{fontSize:44,marginBottom:12}}></div><p>{hasTeam ? "Nessun dato in questa modalita — prova a switchare su Team" : "Aggiungi prospect per vedere le statistiche"}</p></div></div>;
   return (
-    <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
+    <div className="page-wrap" style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
       <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:24,gap:12,flexWrap:"wrap"}}>
         <div>
           <h1 style={{fontWeight:900,fontSize:26,color:"var(--text)",letterSpacing:-0.8}}>Statistiche</h1>
@@ -1867,6 +1883,24 @@ function Statistiche({ data, dlProspects, downline, positions }) {
 }
 
 //  LISTA 
+// Calcolo dei cambiamenti (funzioni pure, riusate dalla tabella e dall'assistente vocale)
+function stepPatch(p, fase) {
+  return { fase, storico: buildStorico(p, fase, today()) };
+}
+function sitPatch(p, v) {
+  if (v==="iscritto") return { patch:{ fase:"SUB", storico:buildStorico(p,"SUB",today()), statoColore:"iscritto" }, msg:"Iscritto \u2705 (per i BV apri la matita e scegli il pacchetto)" };
+  if (v==="riprendere") return { patch:{ statoColore:"da_risentire" }, msg:"Da riprendere pi\u00f9 avanti" };
+  if (v==="balzato") return { patch:{ statoColore:"sparito" }, msg:"Balzato" };
+  let fase=p.fase; let storico=p.storico||[];
+  if (fase==="SUB"||FASI_SPECIALI.includes(fase)) {
+    storico=storico.filter(x=>x.fase!=="SUB");
+    let best="INVITO";
+    storico.forEach(x=>{const i=FASI_FUNNEL.indexOf(x.fase); if(i>=0&&i>FASI_FUNNEL.indexOf(best)) best=x.fase;});
+    fase=best;
+  }
+  return { patch:{ statoColore:"", fase, storico }, msg:"Di nuovo in processo" };
+}
+
 // Situazione di un prospect (colonna "Situazione"): "" = ancora in processo
 function situazioneOf(p) {
   if (p.statoColore==="iscritto" || p.fase==="SUB") return "iscritto";
@@ -1889,8 +1923,12 @@ const PROSPECT_STEPS = [
 const PROSPECT_FASE_LABEL = { ...FASE_LABEL, INVITO:"Da fissare" };
 
 function Lista({ onToggleChat, onSetStep, onSetSituazione, onEdit, prospects, total, search, setSearch, fFase, setFFase, fFonte, setFFonte, fCiclo, setFCiclo, fSituazione, setFSituazione, fMembroTeam, setFMembroTeam, downline, onAdd, hasTeam }) {
-  const mine = prospects.filter(p=>!p._userId);
-  const team = prospects.filter(p=>!!p._userId);
+  const isMobile = useIsMobile();
+  const [limit,setLimit] = useState(50);
+  useEffect(()=>{ setLimit(50); },[search,fFase,fFonte,fCiclo,fSituazione,fMembroTeam]);
+  const shown = prospects.slice(0,limit);
+  const mine = shown.filter(p=>!p._userId);
+  const team = shown.filter(p=>!!p._userId);
   const th = {textAlign:"left",color:"var(--muted)",fontWeight:700,fontSize:10.5,textTransform:"uppercase",letterSpacing:.8,padding:"13px 14px",whiteSpace:"nowrap",background:"var(--bg3)"};
   const td = {padding:"11px 14px",verticalAlign:"middle"};
   const heads = ["Prospect","Telefono","Ciclo","Fonte","Fase","Chat aperta","Prossimo step","Situazione",""];
@@ -1938,8 +1976,49 @@ function Lista({ onToggleChat, onSetStep, onSetSituazione, onEdit, prospects, to
     );
   };
 
+  const renderCard = (p) => {
+    const c=cicloOfDate(p.conosciutoAt);
+    const sit=situazioneOf(p);
+    const sitOpt=SITUAZIONE_OPTS.find(o=>o.v===sit);
+    const tint=sitOpt?sitOpt.color:null;
+    const faseClr=FASE_CLR[p.fase]||"var(--a1)";
+    const pill={display:"inline-flex",alignItems:"center",borderRadius:99,padding:"4px 11px",fontSize:12,fontWeight:700,whiteSpace:"nowrap"};
+    return (
+      <div key={p.id} style={{border:"1px solid var(--border)",borderLeft:"4px solid "+(tint||faseClr),borderRadius:16,padding:"14px",marginBottom:10,background:tint?tint+"10":"#fff",boxShadow:"0 1px 2px #0f172a0a"}}>
+        <div style={{display:"flex",alignItems:"center",gap:11}}>
+          <Av n={p.nome} c={p.cognome} color={faseClr} size={42}/>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{color:"var(--text)",fontWeight:800,fontSize:16,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.nome} {p.cognome}</div>
+            <div style={{fontSize:12,color:"var(--muted)"}}>{[p.citta, p._userId?("di "+(p._ownerName||"")):""].filter(Boolean).join(" \u00b7 ")}</div>
+          </div>
+          <button onClick={()=>onEdit(p)} style={{background:"var(--bg3)",border:"1px solid var(--border)",borderRadius:11,cursor:"pointer",padding:"9px 12px",fontSize:15}}>{"\u270f\ufe0f"}</button>
+        </div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:6,margin:"11px 0"}}>
+          <span style={{...pill,color:"#fff",background:faseClr}}>{PROSPECT_FASE_LABEL[p.fase]||p.fase}</span>
+          {c && <span style={{...pill,background:"var(--bg4)",color:"var(--a2)"}}>C{c}</span>}
+          <span style={{...pill,background:"var(--bg3)",color:"var(--muted)"}}>{p.fonte}</span>
+          {p.telefono && <a href={"tel:"+p.telefono} style={{...pill,background:"#ecfdf5",color:"#059669",textDecoration:"none"}}>{"\ud83d\udcde"} {p.telefono}</a>}
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+          <select value="" onChange={e=>{ if(e.target.value) onSetStep(p,e.target.value); }} style={{padding:"11px 10px",fontWeight:600}}>
+            <option value="">Prossimo step</option>
+            {PROSPECT_STEPS.map(st=><option key={st.v} value={st.v}>{st.label}</option>)}
+          </select>
+          <select value={sit} onChange={e=>onSetSituazione(p,e.target.value)}
+            style={{padding:"11px 10px",fontWeight:700,color:sitOpt?sitOpt.color:"var(--text)",background:sitOpt?sitOpt.color+"14":"#fff",borderColor:sitOpt?sitOpt.color+"66":"var(--border2)"}}>
+            <option value="">In processo</option>
+            {SITUAZIONE_OPTS.map(o=><option key={o.v} value={o.v}>{o.label}</option>)}
+          </select>
+        </div>
+        <label style={{display:"flex",alignItems:"center",gap:10,marginTop:11,fontSize:14,fontWeight:600,color:"var(--text)",cursor:"pointer"}}>
+          <input type="checkbox" checked={!!p.chatAperta} onChange={e=>onToggleChat(p.id,e.target.checked)} style={{width:22,height:22,accentColor:"#6d5efc"}} /> Chat aperta
+        </label>
+      </div>
+    );
+  };
+
   return (
-    <div style={{padding:"2rem 2.2rem",maxWidth:1400,margin:"0 auto"}}>
+    <div className="page-wrap" style={{padding:"2rem 2.2rem",maxWidth:1400,margin:"0 auto"}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1.4rem",flexWrap:"wrap",gap:12}}>
         <div>
           <h1 style={{fontWeight:800,fontSize:26,color:"var(--text)"}}>Prospect</h1>
@@ -1972,18 +2051,31 @@ function Lista({ onToggleChat, onSetStep, onSetSituazione, onEdit, prospects, to
       </div>
       {prospects.length===0
         ?<div style={{textAlign:"center",padding:"4rem",color:"var(--muted)"}}><p style={{fontSize:14,marginBottom:14}}>Nessun prospect trovato</p><button onClick={onAdd} style={{padding:"10px 20px",fontSize:13,fontWeight:700,background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:12,cursor:"pointer"}}>Aggiungi il primo</button></div>
-        :<div className="tbl-wrap card-soft" style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:18,overflow:"auto"}}>
-          <table style={{width:"100%",borderCollapse:"collapse",minWidth:1000}}>
-            <thead><tr>{heads.map((h,i)=>(<th key={i} style={th}>{h}</th>))}</tr></thead>
-            <tbody>
-              {mine.map(renderRow)}
-              {team.length>0 && mine.length>0 && (
-                <tr><td colSpan={heads.length} style={{padding:"10px 14px",fontSize:11,fontWeight:800,color:"var(--a2)",textTransform:"uppercase",letterSpacing:1,background:"var(--bg4)"}}>Prospect del team</td></tr>
-              )}
-              {team.map(renderRow)}
-            </tbody>
-          </table>
-        </div>
+        :<>
+          {isMobile
+            ? <div>
+                {mine.map(renderCard)}
+                {team.length>0 && mine.length>0 && <div style={{margin:"14px 2px 10px",fontSize:11,fontWeight:800,color:"var(--a2)",textTransform:"uppercase",letterSpacing:1}}>Prospect del team</div>}
+                {team.map(renderCard)}
+              </div>
+            : <div className="tbl-wrap card-soft" style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:18,overflow:"auto"}}>
+                <table style={{width:"100%",borderCollapse:"collapse",minWidth:1000}}>
+                  <thead><tr>{heads.map((h,i)=>(<th key={i} style={th}>{h}</th>))}</tr></thead>
+                  <tbody>
+                    {mine.map(renderRow)}
+                    {team.length>0 && mine.length>0 && (
+                      <tr><td colSpan={heads.length} style={{padding:"10px 14px",fontSize:11,fontWeight:800,color:"var(--a2)",textTransform:"uppercase",letterSpacing:1,background:"var(--bg4)"}}>Prospect del team</td></tr>
+                    )}
+                    {team.map(renderRow)}
+                  </tbody>
+                </table>
+              </div>}
+          {prospects.length>limit && (
+            <div style={{textAlign:"center",marginTop:14}}>
+              <button onClick={()=>setLimit(l=>l+50)} style={{padding:"12px 22px",background:"var(--bg4)",color:"var(--a2)",border:"1px solid var(--border2)",borderRadius:12,cursor:"pointer",fontWeight:700,fontSize:14}}>Mostra altri ({prospects.length-limit} rimanenti)</button>
+            </div>
+          )}
+        </>
       }
     </div>
   );

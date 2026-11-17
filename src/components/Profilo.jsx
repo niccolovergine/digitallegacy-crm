@@ -89,7 +89,7 @@ export function ProfiloView({ auth, onUpdateProfile, downlineCount }) {
   }
 
   return (
-    <div style={{ padding: "2rem 2.2rem", maxWidth: 680, margin: "0 auto" }}>
+    <div className="page-wrap" style={{ padding: "2rem 2.2rem", maxWidth: 680, margin: "0 auto" }}>
       {msg && (
         <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, background: msg.color, color: "#fff", padding: "12px 22px", borderRadius: 12, fontWeight: 700, fontSize: 13, boxShadow: "0 8px 30px #00000060" }}>
           {msg.text}

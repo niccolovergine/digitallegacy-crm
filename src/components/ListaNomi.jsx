@@ -83,7 +83,14 @@ export function PersonaModal({ persona, onSave, onClose, onDelete, onInvita, isE
   );
 }
 
+function useIsMobile() {
+  const [m,setM]=useState(typeof window!=="undefined" && window.innerWidth<=768);
+  useEffect(()=>{ const f=()=>setM(window.innerWidth<=768); window.addEventListener("resize",f); return ()=>window.removeEventListener("resize",f); },[]);
+  return m;
+}
+
 export function ListaNomiView({ auth, onInvitaProspect }) {
+  const isMobile = useIsMobile();
   const [lista, setLista] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null);
@@ -161,10 +168,10 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
   const ordinata = [...filtered.filter(p=>!p.invitato), ...filtered.filter(p=>p.invitato)];
 
   return (
-    <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
+    <div className="page-wrap" style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
       {toast && <div style={{position:"fixed",bottom:24,right:24,zIndex:9999,background:toast.color,color:"#fff",padding:"12px 22px",borderRadius:12,fontWeight:700,fontSize:13,boxShadow:"0 8px 30px #00000060"}}>{toast.msg}</div>}
 
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1.4rem"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1.4rem",flexWrap:"wrap",gap:12}}>
         <div>
           <h1 style={{fontWeight:900,fontSize:26,color:"var(--text)",letterSpacing:-0.8}}>Lista Nomi</h1>
           <p style={{color:"var(--muted)",fontSize:12,marginTop:3}}>La tua lista personale. Aggiungi le persone che conosci, poi spostale nei Prospect</p>
@@ -201,6 +208,27 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
               <div style={{padding:"1rem 1.4rem",borderBottom:"1px solid var(--border)",fontSize:13,fontWeight:700,color:"var(--text)"}}>
                 La tua lista <span style={{fontSize:11,color:"var(--muted)",fontWeight:500,marginLeft:8}}>{ordinata.length} persone</span>
               </div>
+              {isMobile ? (
+                <div style={{padding:"4px 12px 12px"}}>
+                  {ordinata.map(p=>(
+                    <div key={p.id} onClick={()=>{setSel(p);setModal("edit");}} style={{padding:"14px 4px",borderBottom:"1px solid var(--border)",opacity:p.invitato?0.65:1}}>
+                      <div style={{display:"flex",alignItems:"center",gap:11}}>
+                        <Av n={p.nome} c={p.cognome} size={40}/>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{color:"var(--text)",fontWeight:800,fontSize:16}}>{p.nome} {p.cognome}</div>
+                          {p.note && <div style={{color:"var(--muted)",fontSize:12.5,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.note}</div>}
+                        </div>
+                        {p.temperatura && <span style={{fontSize:12,fontWeight:700,padding:"4px 11px",borderRadius:99,color:TEMP_CLR[p.temperatura],background:TEMP_CLR[p.temperatura]+"1f"}}>{p.temperatura}</span>}
+                      </div>
+                      <div style={{marginTop:10}} onClick={e=>e.stopPropagation()}>
+                        {p.invitato
+                          ? <span style={{fontSize:12,fontWeight:700,color:"#059669",background:"#ecfdf5",borderRadius:99,padding:"5px 12px"}}>Aggiunto a prospect</span>
+                          : <button onClick={()=>invitaPersona(p,p.id)} style={{width:"100%",padding:"11px",background:"#ecfdf5",color:"#059669",border:"1px solid #a7f3d0",borderRadius:12,cursor:"pointer",fontWeight:700,fontSize:14}}>Aggiungi a prospect</button>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
               <table style={{width:"100%",borderCollapse:"collapse"}}>
                 <thead><tr style={{background:"var(--bg3)"}}>
                   {["Nome","Temperatura","Note",""].map((h,i)=>(
@@ -220,6 +248,7 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
                   </tr>
                 ))}</tbody>
               </table>
+              )}
             </div>
       }
 

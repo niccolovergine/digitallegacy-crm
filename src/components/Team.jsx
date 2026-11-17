@@ -105,7 +105,7 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positio
     const ms=teamStats(mP);
     const teamColor=getTeamForMe(selectedMember)==="sinistra"?"var(--a1)":getTeamForMe(selectedMember)==="destra"?"#10b981":"#6b7280";
     return(
-      <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
+      <div className="page-wrap" style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
         <button onClick={()=>setSelectedMember(null)} style={{display:"flex",alignItems:"center",gap:8,background:"none",border:"none",color:"var(--a2)",cursor:"pointer",fontSize:13,fontWeight:700,marginBottom:20}}>
           {"\u2190"} Torna al Team
         </button>
@@ -219,7 +219,7 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positio
   }
 
   return(
-    <div style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
+    <div className="page-wrap" style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
       <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:"1.5rem",gap:12,flexWrap:"wrap"}}>
         <div>
           <h1 style={{fontWeight:900,fontSize:26,color:"var(--text)",letterSpacing:-0.8,lineHeight:1}}>Team</h1>

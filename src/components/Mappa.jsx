@@ -236,7 +236,7 @@ export function MappaSezione({ auth, eventi, sbGetMappaAttivi, sbGetMappaTicket,
   const nonRiconosciuteTot = [...new Set([...datiAttivi.nonRiconosciute, ...datiTicket.nonRiconosciute, ...datiIscrizioni.nonRiconosciute])];
 
   return (
-    <div style={{ padding: "2rem 2.2rem", maxWidth: 1000, margin: "0 auto" }}>
+    <div className="page-wrap" style={{ padding: "2rem 2.2rem", maxWidth: 1000, margin: "0 auto" }}>
       <div style={{ marginBottom: 22 }}>
         <h1 style={{ fontWeight: 900, fontSize: 30, color: "var(--text)", letterSpacing: -0.8 }}>🗺️ Mappa del team</h1>
         <p style={{ color: "var(--muted)", fontSize: 13, marginTop: 6 }}>Dove si concentrano attivi, ticket e nuove iscrizioni — a livello di tutta Digital Legacy, aiuta a scegliere le tappe del tour.</p>
@@ -268,7 +268,7 @@ export function MappaSezione({ auth, eventi, sbGetMappaAttivi, sbGetMappaTicket,
       ) : (
         <div style={{ display:"flex", gap:24, flexWrap:"wrap", justifyContent:"center", alignItems:"flex-start" }}>
           <div style={{ position:"relative", flex:"0 0 auto" }}>
-            <svg viewBox={"0 0 "+MAPW+" "+MAPH} width={MAPW} height={MAPH} style={{ background:"#f6f7fb", borderRadius:12, border:"1px solid var(--border2)", maxWidth:"100%" }}>
+            <svg viewBox={"0 0 "+MAPW+" "+MAPH} width={MAPW} height={MAPH} style={{ background:"#f6f7fb", borderRadius:12, border:"1px solid var(--border2)", maxWidth:"100%", height:"auto" }}>
               <path d={pathOf(CONTINENTE)} fill="#eef0fb" stroke="#c7cde3" strokeWidth="1.4" />
               <path d={pathOf(SICILIA)} fill="#eef0fb" stroke="#c7cde3" strokeWidth="1.4" />
               <path d={pathOf(SARDEGNA)} fill="#eef0fb" stroke="#c7cde3" strokeWidth="1.4" />

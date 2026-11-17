@@ -2,10 +2,16 @@ import { useState, useEffect, useMemo } from "react";
 
 function Av({ n, c, color = "var(--a1)", size = 34 }) {
   return (
-    <div style={{ width: size, height: size, borderRadius: "50%", flexShrink: 0, background: "linear-gradient(135deg," + color + "," + color + "99)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 900, fontSize: size * 0.32, boxShadow: "0 0 10px " + color + "35" }}>
+    <div style={{ width: size, height: size, borderRadius: "50%", flexShrink: 0, background: color.startsWith("var(") ? color : "linear-gradient(135deg," + color + "," + color + "99)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 900, fontSize: size * 0.32, boxShadow: color.startsWith("var(") ? "none" : "0 0 10px " + color + "35" }}>
       {(n || "?")[0]}{(c || "")[0]}
     </div>
   );
+}
+
+function useIsMobile() {
+  const [m, setM] = useState(typeof window !== "undefined" && window.innerWidth <= 768);
+  useEffect(() => { const f = () => setM(window.innerWidth <= 768); window.addEventListener("resize", f); return () => window.removeEventListener("resize", f); }, []);
+  return m;
 }
 
 export function EventiView({ auth, allProfiles, downline, positions, showToast, data, dlProspects, onSetTicketEvento,
@@ -13,6 +19,7 @@ export function EventiView({ auth, allProfiles, downline, positions, showToast, 
   sbListEventoStatus, sbUpsertEventoStatus,
   sbListEventoPersone, sbInsertEventoPersona, sbUpdateEventoPersona, sbDeleteEventoPersona,
   onTicketCountChange }) {
+  const isMobile = useIsMobile();
 
   const [eventi, setEventi] = useState([]);
   const [eventoAttivo, setEventoAttivo] = useState(null);
@@ -195,7 +202,7 @@ export function EventiView({ auth, allProfiles, downline, positions, showToast, 
 
 
   return (
-    <div style={{ padding: "2rem 2.2rem", maxWidth: 1280, margin: "0 auto" }}>
+    <div className="page-wrap" style={{ padding: "2rem 2.2rem", maxWidth: 1280, margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.4rem", gap: 12, flexWrap: "wrap" }}>
         <h1 style={{ fontWeight: 900, fontSize: 26, color: "var(--text)", letterSpacing: -0.8 }}>Eventi</h1>
       </div>
@@ -273,6 +280,34 @@ export function EventiView({ auth, allProfiles, downline, positions, showToast, 
                   </div>
                 ))}
               </div>
+              {isMobile ? (
+                <div>
+                  {membriFiltrati.map(m => {
+                    const legColor = m.leg === "sinistra" ? "var(--a1)" : m.leg === "destra" ? "#10b981" : "#6b7280";
+                    const chk = { width: 22, height: 22, accentColor: "#6d5efc" };
+                    const row = { display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 600, color: "var(--text)" };
+                    return (
+                      <div key={m.id} style={{ border: "1px solid var(--border)", borderRadius: 16, padding: 14, marginBottom: 10 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                          <Av n={m.nome} c={m.cognome} color={m.id === auth.userId ? "var(--a1)" : "#6b7280"} size={38} />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 800, fontSize: 15, color: "var(--text)" }}>{m.id === auth.userId ? "Tu" : (m.nome || "") + " " + (m.cognome || "")}</div>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: legColor }}>{m.leg ? m.leg.charAt(0).toUpperCase() + m.leg.slice(1) : "\u2014"}</div>
+                          </div>
+                          <button onClick={() => setTicketBuyersFor(m.id)} style={{ padding: "8px 12px", borderRadius: 10, cursor: "pointer", fontWeight: 800, fontSize: 13, fontFamily: "inherit", background: m.needsMigration ? "#ef444418" : "var(--bg3)", border: m.needsMigration ? "1px solid #ef444450" : "1px solid var(--border2)", color: m.needsMigration ? "#dc2626" : "var(--text)" }}>
+                            Extra venduti: {m.confermatiCount}
+                          </button>
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                          <label style={row}><input type="checkbox" checked={m.ha_ticket} onChange={e => aggiornaStatus(m.id, { ha_ticket: e.target.checked })} style={chk} /> Ticket</label>
+                          <label style={row}><input type="checkbox" checked={m.hotel} onChange={e => aggiornaStatus(m.id, { hotel: e.target.checked })} style={chk} /> Hotel</label>
+                          <label style={row}><input type="checkbox" checked={m.viaggio} onChange={e => aggiornaStatus(m.id, { viaggio: e.target.checked })} style={chk} /> Viaggio</label>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 700 }}>
                   <thead>
@@ -318,6 +353,7 @@ export function EventiView({ auth, allProfiles, downline, positions, showToast, 
                   </tbody>
                 </table>
               </div>
+              )}
             </div>
           )}
 
