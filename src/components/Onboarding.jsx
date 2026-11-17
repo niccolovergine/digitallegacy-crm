@@ -39,6 +39,7 @@ const DRIVE = [
 ];
 const NETWORK = [
   { id:"n1", t:"Guarda «THE MAP»", d:"Registrati e guarda la mappa: ti fa vedere dove stai andando.", link:THE_MAP, linkT:"Apri THE MAP →" },
+  { id:"n1b", t:"Scarica l'app Click", d:"L'app con i corsi social del team.", app:["click"] },
   { id:"n2", t:"Segui questi profili Instagram", d:"Sono le persone e gli account del team: seguili tutti per restare dentro al progetto.", profili:true },
   { id:"n3", t:"INIZIA IL TUO PRIMO LIBRO", d:"Scegli dal drive dei libri iniziali e parti. Quando li hai finiti passa a quelli avanzati.", drive:true },
 ];
@@ -182,7 +183,7 @@ export function OnboardingView({ auth }) {
 
             {x.app && (
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:10,marginTop:10}}>
-                {APP.map(a => (
+                {APP.filter(a => Array.isArray(x.app) ? x.app.includes(a.id) : a.id !== "click").map(a => (
                   <div key={a.id} style={{border:"1px solid var(--border)",borderRadius:14,padding:12,textAlign:"center"}}>
                     <div style={{fontSize:28}}>{a.emoji}</div>
                     <div style={{fontWeight:800,color:"var(--text)",margin:"2px 0 8px"}}>{a.nome}</div>
