@@ -11,6 +11,36 @@ const APP = [
   { id:"deep", nome:"DeepSage",  emoji:"🌀",
     android:"https://play.google.com/store/apps/details?id=com.deepsage.mobile&pli=1",
     ios:"https://apps.apple.com/it/app/deepsage/id6754235082?l=en-GB" },
+  { id:"sintra", nome:"Sintra", emoji:"🤖", ios:"https://apps.apple.com/app/id6754648008" },
+  { id:"click",  nome:"Click",  emoji:"📲", ios:"https://apps.apple.com/app/id6459833241" },
+];
+// ── SEZIONE NETWORK ──
+const THE_MAP = "https://themap.click/signup";
+const PROFILI = [
+  ["Digital Legacy","https://www.instagram.com/digitalegacy_?igsh=MXByZHZ5aHRvMHZsZg%3D%3D&utm_source=qr"],
+  ["Be Official","https://www.instagram.com/wearebeofficial_/"],
+  ["Niccolò Vergine","https://www.instagram.com/nicvergine/?utm_source=ig_web_button_share_sheet"],
+  ["Stefano Frontino","https://www.instagram.com/frontinostefano?utm_source=ig_web_button_share_sheet&cplk=ZDNlZDc0MzIxNw=="],
+  ["Matteo Bianco","https://www.instagram.com/matteobianco_real?utm_source=ig_web_button_share_sheet&xtok=ZDNlZDc0MzIxNw=="],
+  ["Giorgio Trabaldo","https://www.instagram.com/giorgiotrabaldo?utm_source=ig_web_button_share_sheet&exln=ZDNlZDc0MzIxNw=="],
+  ["Letizia Auddino","https://www.instagram.com/letiziaauddino?igsh=bDdtMG50NmhtaWs5"],
+  ["Nicholas Innocenzo","https://www.instagram.com/nick.innocenzo?utm_source=ig_web_button_share_sheet&obrf=ZDNlZDc0MzIxNw=="],
+  ["Alessio Zaio","https://www.instagram.com/alessiozaio/profilecard/?igsh=cGd4aWFqc2tleXc5"],
+  ["Alex Mauri","https://www.instagram.com/_alexmauri_?utm_source=ig_web_button_share_sheet&vrfl=ZDNlZDc0MzIxNw=="],
+  ["Giulia Gullone","https://www.instagram.com/giuliagullone?utm_source=ig_web_button_share_sheet&psln=ZDNlZDc0MzIxNw=="],
+  ["Andrea Traina","https://www.instagram.com/andreatraina_?utm_source=ig_web_button_share_sheet&xtok=ZDNlZDc0MzIxNw=="],
+  ["Matteo Spera","https://www.instagram.com/matteo.spera_/"],
+  ["Lorenzo Riva","https://www.instagram.com/__lorenzoriva__/"],
+  ["Lorenzo Bahr","https://www.instagram.com/lorenzo.bahr?utm_source=ig_web_button_share_sheet&dlrf=ZDNlZDc0MzIxNw=="],
+];
+const DRIVE = [
+  ["📗 Drive libri iniziali","https://drive.google.com/drive/folders/147roNTpwCpuVtiaVpsyZd2IGV10Y9Iul"],
+  ["📘 Drive libri avanzati","https://drive.google.com/drive/folders/1GwXyQh0vD7wqLJ2nBkJFBtaLxw3pwJjc?usp=sharing"],
+];
+const NETWORK = [
+  { id:"n1", t:"Guarda «THE MAP»", d:"Registrati e guarda la mappa: ti fa vedere dove stai andando.", link:THE_MAP, linkT:"Apri THE MAP →" },
+  { id:"n2", t:"Segui questi profili Instagram", d:"Sono le persone e gli account del team: seguili tutti per restare dentro al progetto.", profili:true },
+  { id:"n3", t:"INIZIA IL TUO PRIMO LIBRO", d:"Scegli dal drive dei libri iniziali e parti. Quando li hai finiti passa a quelli avanzati.", drive:true },
 ];
 const WOW_LOGIN = "https://wowpowers.com/it/auth/sign-in";
 const VIDEO_INTRO = "https://player.vimeo.com/video/1165486669?h=6511738550";
@@ -130,7 +160,8 @@ export function OnboardingView({ auth }) {
 
   const pk = PACCHETTI.find(x => x.id === st.pacchetto);
   const mercati = pk ? pk.mercati.map(id => ({ id, ...MERCATI[id] })) : [];
-  const tutti = [...COMUNI, ...mercati.flatMap(m => m.steps)];
+  const sez = st.sezione || "servizi";
+  const tutti = sez === "network" ? NETWORK : [...COMUNI, ...mercati.flatMap(m => m.steps)];
   const fatti = tutti.filter(x => done[x.id]).length;
   const pct = tutti.length ? Math.round(fatti / tutti.length * 100) : 0;
 
@@ -157,7 +188,7 @@ export function OnboardingView({ auth }) {
                     <div style={{fontWeight:800,color:"var(--text)",margin:"2px 0 8px"}}>{a.nome}</div>
                     <button onClick={()=>setStore(store===a.id?null:a.id)} style={{...btnP,width:"100%",padding:"10px"}}>⬇ Scarica</button>
                     {store===a.id && <div style={{display:"grid",gap:8,marginTop:8}}>
-                      <a href={a.android} target="_blank" rel="noreferrer" style={btnG}>▶ Google Play</a>
+                      {a.android && <a href={a.android} target="_blank" rel="noreferrer" style={btnG}>▶ Google Play</a>}
                       <a href={a.ios} target="_blank" rel="noreferrer" style={btnG}> Apple Store</a></div>}
                   </div>))}
               </div>)}
@@ -165,6 +196,11 @@ export function OnboardingView({ auth }) {
             {x.video && <div style={{position:"relative",paddingTop:"56.25%",marginTop:10,borderRadius:14,overflow:"hidden",border:"1px solid var(--border)",background:"#000"}}>
               <iframe src={VIDEO_INTRO} title="Video introduttivo" allow="fullscreen; picture-in-picture" allowFullScreen style={{position:"absolute",inset:0,width:"100%",height:"100%",border:0}} /></div>}
 
+            {x.link && x.linkT && <a href={x.link} target="_blank" rel="noreferrer" style={{...btnP,display:"inline-block",textDecoration:"none",marginTop:10}}>{x.linkT}</a>}
+            {x.profili && <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(210px,1fr))",gap:8,marginTop:10}}>
+              {PROFILI.map(([n,u])=><a key={n} href={u} target="_blank" rel="noreferrer" style={{...btnG,textAlign:"left",textDecoration:"none"}}>📸 {n}</a>)}</div>}
+            {x.drive && <div style={{display:"grid",gap:8,marginTop:10}}>
+              {DRIVE.map(([n,u])=><a key={n} href={u} target="_blank" rel="noreferrer" style={{...btnP,textDecoration:"none",textAlign:"center"}}>{n}</a>)}</div>}
             {x.now && <button onClick={()=>setPila(["now"])} style={{...btnP,marginTop:10}}>Apri l'esercizio NOW →</button>}
             {x.guida && <button onClick={()=>setPila([x.guida])} style={{...btnP,marginTop:10}}>Apri la guida →</button>}
             {x.wow && <WowHow titolo={x.wow} link={x.link} />}
@@ -180,12 +216,28 @@ export function OnboardingView({ auth }) {
       <h1 style={{fontWeight:900,fontSize:30,letterSpacing:-.8,color:"var(--text)",margin:"4px 0 6px"}}>Onboarding</h1>
       <div style={{color:"var(--muted)",fontSize:15,marginBottom:18}}>Segui gli step in ordine e spunta ogni passo quando l'hai fatto.</div>
 
-      {pk && <>
+      {/* ───── SCELTA SEZIONE ───── */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:22}}>
+        {[["servizi","🛠️","Servizi","App, formazione, mercati"],["network","🤝","Network","Mentalità, profili e libri"]].map(([id,em,n,d])=>{
+          const on = sez===id;
+          return <button key={id} onClick={()=>up({sezione:id})} style={{cursor:"pointer",fontFamily:"inherit",textAlign:"left",padding:"20px 18px",borderRadius:18,border:"3px solid "+(on?"transparent":"var(--border)"),background:on?"linear-gradient(135deg,var(--a1),var(--a2))":"var(--bg2)",color:on?"#fff":"var(--text)",boxShadow:on?"0 8px 22px rgba(0,0,0,.18)":"none"}}>
+            <div style={{fontSize:30}}>{em}</div>
+            <div style={{fontWeight:900,fontSize:22,margin:"2px 0"}}>{n}</div>
+            <div style={{fontSize:13,opacity:on?.9:.7}}>{d}</div>
+          </button>;})}
+      </div>
+
+      {(sez==="network" || pk) && <>
         <div style={{height:8,borderRadius:99,background:"var(--border)",overflow:"hidden",marginBottom:6}}>
           <div style={{width:pct+"%",height:"100%",background:"linear-gradient(90deg,var(--a1),var(--a2))",transition:"width .4s"}} /></div>
         <div style={{fontSize:12,color:"var(--muted)",marginBottom:22,fontWeight:700}}>{fatti} di {tutti.length} step completati · {pct}%</div>
       </>}
 
+      {sez==="network" ? (<>
+        <div style={eyebrow}>Network</div>
+        <h2 style={{fontWeight:900,fontSize:23,color:"var(--text)",margin:"2px 0 12px"}}>Mentalità e network</h2>
+        <div style={{display:"grid",gap:10}}>{NETWORK.map((x,i)=><Step key={x.id} x={x} n={i+1} />)}</div>
+      </>) : (<>
       {/* ───── PARTE 1: per tutti ───── */}
       <div style={eyebrow}>Parte 1 · Per tutti</div>
       <h2 style={{fontWeight:900,fontSize:23,color:"var(--text)",margin:"2px 0 12px"}}>Le basi</h2>
@@ -221,7 +273,7 @@ export function OnboardingView({ auth }) {
               {m.nota && <div style={{color:"var(--muted)",fontSize:13.5,marginBottom:8}}>{m.nota}</div>}
               <div style={{display:"grid",gap:10,marginTop:8}}>{m.steps.map((x,i)=><Step key={x.id} x={x} n={i+1} />)}</div>
             </div>))}
-          {fatti === tutti.length && (
+          {sez!=="network" && fatti === tutti.length && (
             <div style={{...card,textAlign:"center",marginTop:26,borderColor:"#10b981"}}>
               <div style={{fontSize:34}}>🏆</div>
               <div style={{fontWeight:900,fontSize:20,color:"var(--text)"}}>Onboarding completato!</div>
@@ -229,6 +281,8 @@ export function OnboardingView({ auth }) {
             </div>)}
         </>
       )}
+
+      </>)}
 
       <div style={{textAlign:"center",marginTop:30}}>
         <button onClick={()=>{ if(window.confirm("Ripartire da capo con l'onboarding?")) { const n={}; setSt(n); save(key,n); } }}
