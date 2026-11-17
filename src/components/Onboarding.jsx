@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { GUIDE as CONTENUTI, GUIDE_TITOLI } from "./onboardingGuide";
+import FOTO_URL from "./onboardingFotoUrl";
 
 // ── LINK: modificali qui se cambiano ─────────────────────────────
 const APP = [
@@ -19,18 +21,13 @@ const BASE = [
   { id:"forex",     nome:"Forex",     emoji:"💵", corso:"WES Forex Basic" },
   { id:"crypto",    nome:"Crypto",    emoji:"₿",  corso:"WES Crypto Basic" },
 ];
-// Le guide Notion NON vengono linkate: verranno copiate dentro al CRM (campo "notion" = fonte da cui copiare)
+// Guide di approfondimento: il contenuto sta in onboardingGuide.js (guida = id di quel file)
 const GUIDE = [
-  { id:"azionario", nome:"Azionario", emoji:"📈", titolo:"Guida Stock Market",
-    notion:"https://iridescent-bangle-b4a.notion.site/ONBOARDING-su-AZIONARIO-37baa33ffc6d8012b84cc82d0907920f" },
-  { id:"forex", nome:"Forex", emoji:"💵", titolo:"Guida NXT",
-    notion:"" },
-  { id:"crypto", nome:"Crypto", emoji:"₿", titolo:"Guida Crypto Market (solo con SGM)",
-    notion:"https://iridescent-bangle-b4a.notion.site/ONBOARDING-CRYPTO-MARKET-only-with-SGM-37baa33ffc6d803b9b26ed7de8de2b30" },
-  { id:"indici", nome:"Indici e Materie prime", emoji:"🛢️", titolo:"Guida Indici e Materie prime",
-    notion:"https://iridescent-bangle-b4a.notion.site/ONBOARDING-su-INDICI-MATERIE-PRIME-389aa33ffc6d80a795eafc8139854017" },
+  { id:"azionario", nome:"Azionario", emoji:"📈", titolo:"Guida Stock Market", guida:"azionario" },
+  { id:"forex", nome:"Forex", emoji:"💵", titolo:"Guida NXT", guida:null },
+  { id:"crypto", nome:"Crypto", emoji:"₿", titolo:"Guida Crypto Market (solo con SGM)", guida:"crypto" },
+  { id:"indici", nome:"Indici e Materie prime", emoji:"🛢️", titolo:"Guida Indici e Materie prime", guida:"indici" },
 ];
-const SCELTA_MERCATO = "https://iridescent-bangle-b4a.notion.site/ONBOARDING-WOW-SCELTA-PERCORSO-389aa33ffc6d804182d3d433beb6335b";
 // ─────────────────────────────────────────────────────────────────
 
 const card = { background:"var(--bg2)", border:"1px solid var(--border)", borderRadius:18, padding:"1.2rem 1.3rem" };
@@ -74,17 +71,71 @@ function Conferma({ titolo, voci, onOk, onBack }) {
   );
 }
 
+const FOTO_FILE = Object.keys(FOTO_URL).reduce((m,k)=>{ m[k.replace(/\.[a-z]+$/,"")]=k; return m; },{});
+function Foto({ name }) {
+  const file = FOTO_FILE[name];
+  const [src, setSrc] = useState("/onboarding/" + file);
+  if (!file) return null;
+  return <img src={src} alt="" loading="lazy" onError={()=>{ if (src !== FOTO_URL[file]) setSrc(FOTO_URL[file]); }}
+    style={{width:"100%",maxWidth:560,display:"block",margin:"10px auto",borderRadius:14,border:"1px solid var(--border)"}} />;
+}
+
+function Blocco({ b, apri }) {
+  const [k, a1, a2, a3, a4] = b;
+  const txt = { color:"var(--text)", fontSize:15, lineHeight:1.6, margin:"6px 0" };
+  if (k==="h")  return <h3 style={{fontWeight:900,fontSize:19,color:"var(--text)",margin:"22px 0 6px",letterSpacing:-.3}}>{a1}</h3>;
+  if (k==="h3") return <div style={{fontWeight:800,fontSize:15.5,color:"var(--text)",margin:"16px 0 4px"}}>{a1}</div>;
+  if (k==="p")  return <p style={txt}>{a1}</p>;
+  if (k==="q")  return <div style={{...txt,background:"var(--bg)",border:"1px solid var(--border)",borderLeft:"4px solid var(--a1)",borderRadius:12,padding:"10px 14px",fontWeight:600}}>{a1}</div>;
+  if (k==="ul") return <ul style={{...txt,paddingLeft:22}}>{a1.map((x,i)=><li key={i} style={{margin:"4px 0"}}>{x}</li>)}</ul>;
+  if (k==="img") return <Foto name={a1} />;
+  if (k==="yt") return <div style={{position:"relative",paddingTop:"56.25%",margin:"10px 0",borderRadius:14,overflow:"hidden",border:"1px solid var(--border)"}}>
+    <iframe src={"https://www.youtube.com/embed/"+a1+"?rel=0"} title="Video" allowFullScreen style={{position:"absolute",inset:0,width:"100%",height:"100%",border:0}} /></div>;
+  if (k==="a")  return <a href={a2} target="_blank" rel="noreferrer" style={{...btnG,margin:"6px 0",textAlign:"left"}}>{a1} →</a>;
+  if (k==="g")  return <button onClick={()=>apri(a1)} style={{...btnG,margin:"6px 0",width:"100%",justifyContent:"space-between",boxSizing:"border-box",textAlign:"left"}}>{a2}<span>→</span></button>;
+  if (k==="t")  return <div style={{border:"1px solid var(--border)",borderRadius:14,overflow:"hidden",margin:"8px 0"}}>{a1.map((r,i)=>(
+      <div key={i} className="otab" style={{display:"grid",gridTemplateColumns:"minmax(110px,32%) 1fr",gap:12,padding:"10px 14px",background:i%2?"var(--bg)":"var(--bg2)",fontSize:14,lineHeight:1.5}}>
+        <div style={{fontWeight:800,color:"var(--text)"}}>{r[0]}</div><div style={{color:"var(--muted)"}}>{r[1]}</div></div>))}</div>;
+  if (k==="step") return (
+    <div style={{...card,padding:"12px 14px",margin:"8px 0"}}>
+      <div style={{fontWeight:700,color:"var(--text)",fontSize:15}}>{a1}</div>
+      {a2 && <a href={a2} target="_blank" rel="noreferrer" style={{...btnG,marginTop:8,padding:"10px 14px",fontSize:14}}>Apri su WOW →</a>}
+      {a4 && <button onClick={()=>apri(a4)} style={{...btnP,marginTop:8,padding:"10px 14px",fontSize:14}}>Apri la guida →</button>}
+      {a3 && <Foto name={a3} />}
+    </div>);
+  return null;
+}
+
+function Lettore({ id, apri, indietro }) {
+  useEffect(()=>{ window.scrollTo(0,0); },[id]);
+  return (
+    <div className="page-wrap" style={{padding:"2rem 2.2rem",maxWidth:760,margin:"0 auto"}}>
+      <button onClick={indietro} style={{...btnG,padding:"9px 14px",fontSize:14,marginBottom:14}}>← Indietro</button>
+      <div style={eyebrow}>Guida</div>
+      <h1 style={{fontWeight:900,fontSize:26,letterSpacing:-.6,color:"var(--text)",margin:"4px 0 8px"}}>{GUIDE_TITOLI[id]}</h1>
+      {(CONTENUTI[id]||[]).map((b,i)=><Blocco key={id+i} b={b} apri={apri} />)}
+      <div style={{marginTop:26}}><button onClick={indietro} style={btnG}>← Indietro</button></div>
+    </div>
+  );
+}
+
 export function OnboardingView({ auth }) {
   const key = "dl_onboarding_" + (auth?.userId || "x");
   const [st, setSt] = useState(() => load(key));
   const [modal, setModal] = useState(null); // "intro" | "base"
   const [store, setStore] = useState(null);  // app per cui scegliere lo store
   const [mercato, setMercato] = useState(st.mercato || "azionario");
+  const [pila, setPila] = useState([]); // guide aperte (l'ultima è quella visibile)
   const up = (patch) => { const n = { ...st, ...patch }; setSt(n); save(key, n); };
 
   const passo = st.fine ? 4 : st.base ? 3 : st.intro ? 2 : 1;
   const pct = Math.round(((passo - 1) / 3) * 100);
   const g = GUIDE.find(x => x.id === mercato) || GUIDE[0];
+
+  if (pila.length) {
+    const id = pila[pila.length-1];
+    return <Lettore id={id} apri={x=>setPila([...pila,x])} indietro={()=>setPila(pila.slice(0,-1))} />;
+  }
 
   const Bloccato = ({ testo }) => (
     <div style={{...card, textAlign:"center", color:"var(--muted)", padding:"1.6rem"}}>🔒 {testo}</div>
@@ -193,7 +244,8 @@ export function OnboardingView({ auth }) {
 
           <div style={card}>
             <div style={{fontWeight:800,color:"var(--text)",marginBottom:2}}>📖 Guida: capire quale mercato fa più il caso tuo</div>
-            <div style={{color:"var(--muted)",fontSize:13.5}}>Guida in preparazione: la inseriamo qui dentro a breve.</div>
+            <div style={{color:"var(--muted)",fontSize:13.5,marginBottom:10}}>Le linee guida per scegliere su quale dei 3 mercati concentrarti.</div>
+            <button onClick={()=>setPila(["scelta"])} style={btnP}>Apri la guida →</button>
           </div>
 
           <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
@@ -209,7 +261,9 @@ export function OnboardingView({ auth }) {
             <div style={{fontSize:26}}>{g.emoji}</div>
             <div style={eyebrow}>Approfondimento</div>
             <div style={{fontWeight:900,fontSize:19,color:"var(--text)",margin:"2px 0 10px"}}>{g.nome}</div>
-            <div style={{...btnG,justifyContent:"space-between",width:"100%",boxSizing:"border-box",cursor:"default",opacity:.7}}>{g.titolo}<span style={{fontSize:12,fontWeight:700}}>in arrivo</span></div>
+            {g.guida
+              ? <button onClick={()=>setPila([g.guida])} style={{...btnG,justifyContent:"space-between",width:"100%",boxSizing:"border-box"}}>{g.titolo}<span>→</span></button>
+              : <div style={{...btnG,justifyContent:"space-between",width:"100%",boxSizing:"border-box",cursor:"default",opacity:.7}}>{g.titolo}<span style={{fontSize:12,fontWeight:700}}>in arrivo</span></div>}
           </div>
 
           <div style={{...card,textAlign:"center",background:"var(--bg)"}}>
