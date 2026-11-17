@@ -6,6 +6,7 @@ import { ListaNomiView } from "./components/ListaNomi";
 import { EventiView } from "./components/Eventi";
 import { Assistente } from "./components/Assistente";
 import { MappaSezione } from "./components/Mappa";
+import { OnboardingView } from "./components/Onboarding";
 
 const SB_URL = "https://gyxvhnwzkhjrgpqvakfw.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5eHZobnd6a2hqcmdwcXZha2Z3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NTEzOTQsImV4cCI6MjA5OTUyNzM5NH0.aYAzw7j6YcBIWdBsdHq0ibZrjyyK5CZqNAcchfdQt0o";
@@ -1382,13 +1383,14 @@ export default function App() {
           sbListEventoStatus={sbListEventoStatus} sbUpsertEventoStatus={sbUpsertEventoStatus}
           sbListEventoPersone={sbListEventoPersone} sbInsertEventoPersona={sbInsertEventoPersona} sbUpdateEventoPersona={sbUpdateEventoPersona} sbDeleteEventoPersona={sbDeleteEventoPersona}
           onTicketCountChange={setTicketVendutiCount} />}
+        {view==="onboarding" && <OnboardingView auth={auth} />}
         {view==="profilo" && <ProfiloView auth={auth} onUpdateProfile={updateProfile} downlineCount={downline.length} showToast={showToast} />}
       </main>
 
       {/* Mobile bottom nav - shown via CSS on mobile only */}
       <div className="mobtop" style={{position:"fixed",top:0,left:0,right:0,height:56,background:"#0b1d4a",zIndex:800,alignItems:"center",gap:12,padding:"0 14px",boxShadow:"0 4px 14px -6px #0b1d4a99"}}>
         <button onClick={()=>setMenuOpen(true)} aria-label="Menu" style={{width:40,height:40,borderRadius:12,border:"none",background:"#ffffff1f",color:"#fff",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{"\u2630"}</button>
-        <div style={{color:"#fff",fontWeight:800,fontSize:16,letterSpacing:-.2}}>{({nomi:"Lista Nomi",lista:"Prospect",team:"Team",eventi:"Eventi",stats:"Statistica",profilo:"Profilo"})[view]||"Digital Legacy"}</div>
+        <div style={{color:"#fff",fontWeight:800,fontSize:16,letterSpacing:-.2}}>{({nomi:"Lista Nomi",lista:"Prospect",team:"Team",eventi:"Eventi",stats:"Statistica",onboarding:"Onboarding",profilo:"Profilo"})[view]||"Digital Legacy"}</div>
       </div>
       {menuOpen && (
         <div onClick={()=>setMenuOpen(false)} style={{position:"fixed",inset:0,background:"#0f172a80",zIndex:1200}}>
@@ -1403,6 +1405,7 @@ export default function App() {
               {id:"team",label:"Team",icon:"\ud83d\udc65",badge:downline.length||0},
               {id:"eventi",label:"Eventi",icon:"\ud83c\udf9f\ufe0f"},
               {id:"stats",label:"Statistica",icon:"\ud83d\udcca"},
+              {id:"onboarding",label:"Onboarding",icon:"\ud83d\ude80"},
               {id:"profilo",label:"Profilo",icon:"\ud83d\udc64"},
             ].map(item=>{
               const active=view===item.id;
@@ -1448,6 +1451,7 @@ function Sidebar({ view, setView, data, auth, onLogout, downlineCount }) {
     { id:"team",    icon:"\ud83d\udc65", label:"Team", badge:downlineCount||0 },
     { id:"eventi",  icon:"\ud83c\udf9f\ufe0f", label:"Eventi" },
     { id:"stats",   icon:"\ud83d\udcca", label:"Statistica" },
+    { id:"onboarding", icon:"\ud83d\ude80", label:"Onboarding" },
     { id:"profilo", icon:"\ud83d\udc64", label:"Profilo" },
   ];
   return (
