@@ -4,6 +4,7 @@ import { TeamView } from "./components/Team";
 import { ProfiloView } from "./components/Profilo";
 import { ListaNomiView } from "./components/ListaNomi";
 import { EventiView, EventoPopup } from "./components/Eventi";
+import { setLang } from "./i18n";
 import { Assistente } from "./components/Assistente";
 import { MappaSezione } from "./components/Mappa";
 import { OnboardingView } from "./components/Onboarding";
@@ -347,7 +348,9 @@ html[data-theme=scuro] .logo-l{display:none}
 html[data-theme=scuro] .card-soft{box-shadow:0 1px 2px #0006,0 8px 24px -12px #000a}
 .tema-btn{position:fixed;top:14px;right:18px;z-index:1100;width:42px;height:42px;border-radius:99px;border:1px solid var(--border2);background:var(--bg2);color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px -4px #0003;transition:transform .2s}
 .tema-btn:hover{transform:scale(1.08)}
+.lang-btn{right:68px}
 @media(max-width:768px){.tema-btn{top:7px;right:10px;width:42px;height:42px;background:#ffffff1f;border-color:transparent;color:#fff}}
+@media(max-width:768px){.lang-btn{right:58px}}
 .ass-fab{display:none!important}
 `;
 
@@ -758,6 +761,11 @@ export default function App() {
   const [menuOpen, setMenuOpen]   = useState(false);
   const [sidebarMode, setSidebarMode] = useState("tutti");
   const [scuro, setScuro] = useState(()=>{ try { return localStorage.getItem("dl_tema")==="scuro"; } catch { return false; } });
+  const [inglese, setInglese] = useState(()=>{ try { return localStorage.getItem("dl_lang")==="en"; } catch { return false; } });
+  useEffect(()=>{
+    setLang(inglese ? "en" : "it");
+    try { localStorage.setItem("dl_lang", inglese ? "en" : "it"); } catch {}
+  },[inglese]);
   const [fMembroTeam, setFMembroTeam] = useState(""); // "" | id membro — solo per vista Team
 
   useEffect(()=>{
@@ -1366,7 +1374,10 @@ export default function App() {
       &&(!fMembroTeam||(fMembroTeam==="__miei"?!p._userId:p._userId===fMembroTeam));
   });
 
-  if (!auth) return <AuthScreen onAuth={setAuth} />;
+  if (!auth) return (<>
+    <button className="tema-btn" onClick={()=>setInglese(v=>!v)} aria-label={inglese?"Italiano":"English"} title={inglese?"Italiano":"English"} style={{right:18,top:14,background:"var(--bg2)",borderColor:"var(--border2)",color:"var(--text)"}}>{inglese?"🇮🇹":"🇬🇧"}</button>
+    <AuthScreen onAuth={setAuth} />
+  </>);
   if (!ready) return (
     <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",background:"var(--bg)",flexDirection:"column",gap:12}}>
       <span className="spinner" style={{width:28,height:28,borderWidth:3}} />
@@ -1406,6 +1417,7 @@ export default function App() {
         {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} clienti={clienti} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onSetLeader={setLeader} onSetAttivo={setAttivo} onAddCliente={openAddCliente} onAddMembro={openAddMembro} onAddProspectForMember={openAddForMember} onSetChatAperta={setChatAperta} showToast={showToast} onUpdateCliente={updateClienteQuick} onDeleteCliente={deleteClienteQuick} sbGetListaNomiTeam={sbGetListaNomiTeam} LUDOVICO_ID={LUDOVICO_ID} />}
         {view==="nomi"    && <ListaNomiView auth={auth} onInvitaProspect={invitaProspect} />}
         {view==="eventi"  && <EventiView auth={auth} allProfiles={allProfiles} downline={downline} isNic={auth.userId===LUDOVICO_ID} ticketRows={ticketRows} isLeader={!!auth.profile?.is_leader || auth.userId===LUDOVICO_ID} onToggle={toggleTicket} />}
+        {auth && <button className="tema-btn lang-btn" onClick={()=>setInglese(v=>!v)} aria-label={inglese?"Italiano":"English"} title={inglese?"Italiano":"English"}>{inglese?"🇮🇹":"🇬🇧"}</button>}
         {auth && <button className="tema-btn" onClick={()=>setScuro(v=>!v)} aria-label={scuro?"Tema chiaro":"Tema scuro"} title={scuro?"Passa al chiaro":"Passa allo scuro"}>{scuro?"☀️":"🌙"}</button>}
         {auth && ready && ticketPronti && <EventoPopup haTicket={ticketRows.some(r=>r.evento==="global-mission" && r.user_id===auth.userId)} />}
         {view==="onboarding" && <OnboardingView auth={auth} />}
