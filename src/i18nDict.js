@@ -973,5 +973,7 @@ export const DICT = {
 "Inattivi (": "Inactive (",
 "— quando?": "— when?",
 "Per usare questa funzione serve disattivare \"Confirm email\" nelle impostazioni Auth di Supabase": "To use this function you need to disable \"Confirm email\" in Supabase's Auth settings",
-". Prima di pensare a investire, il primo passo è tornare in positivo.": ". Before thinking about investing, the first step is getting back into the black."
+". Prima di pensare a investire, il primo passo è tornare in positivo.": ". Before thinking about investing, the first step is getting back into the black.",
+"Ciclo di conoscenza": "Cycle when you met them",
+"(in corso)": "(current)"
 };

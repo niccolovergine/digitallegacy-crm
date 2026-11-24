@@ -2293,6 +2293,20 @@ function FormModal({ form, setForm, onSave, onClose, onDelete, isEdit, isLeader,
         <div><label style={lbl}>Città</label><input value={form.citta||""} onChange={e=>set("citta",e.target.value)} placeholder="es. Milano" /></div>
         <div><label style={lbl}>Telefono *</label><input value={form.telefono||""} onChange={e=>set("telefono",e.target.value)} placeholder="+39 333 000 0000" /></div>
         <div style={{gridColumn:"1/-1"}}><label style={lbl}>Fonte</label><select value={form.fonte||"Instagram"} onChange={e=>set("fonte",e.target.value)}>{FONTI.map(f=><option key={f} value={f}>{f}</option>)}</select></div>
+        {!isEdit && (
+          <div style={{gridColumn:"1/-1"}}>
+            <label style={lbl}>Ciclo di conoscenza</label>
+            <select value={cicloOfDate(form.conosciutoAt)||CICLO_CORRENTE} onChange={e=>{
+              const c=Number(e.target.value);
+              if(c===cicloOfDate(today())){ set("conosciutoAt",today()); return; }
+              const r=CICLI.find(x=>x[0]===c); if(!r) return;
+              const last=new Date(r[2]+"T00:00:00Z"); last.setUTCDate(last.getUTCDate()-1);
+              set("conosciutoAt",last.toISOString().split("T")[0]);
+            }}>
+              {CICLO_NUMS.filter(c=>c<=CICLO_CORRENTE).map(c=><option key={c} value={c}>Ciclo {c}{c===CICLO_CORRENTE?" (in corso)":""}</option>)}
+            </select>
+          </div>
+        )}
         {form.fase==="SUB" && (
           <div style={{gridColumn:"1/-1"}}>
             <label style={lbl}>Pacchetto</label>
