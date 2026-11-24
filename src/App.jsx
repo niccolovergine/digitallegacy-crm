@@ -1391,7 +1391,7 @@ export default function App() {
         )}
         {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} clienti={clienti} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onSetLeader={setLeader} onSetAttivo={setAttivo} onAddCliente={openAddCliente} onAddMembro={openAddMembro} onAddProspectForMember={openAddForMember} onSetChatAperta={setChatAperta} showToast={showToast} onUpdateCliente={updateClienteQuick} onDeleteCliente={deleteClienteQuick} sbGetListaNomiTeam={sbGetListaNomiTeam} LUDOVICO_ID={LUDOVICO_ID} />}
         {view==="nomi"    && <ListaNomiView auth={auth} onInvitaProspect={invitaProspect} />}
-        {view==="eventi"  && <EventiView auth={auth} allProfiles={allProfiles} ticketRows={ticketRows} isLeader={!!auth.profile?.is_leader || auth.userId===LUDOVICO_ID} onToggle={toggleTicket} />}
+        {view==="eventi"  && <EventiView auth={auth} allProfiles={allProfiles} downline={downline} isNic={auth.userId===LUDOVICO_ID} ticketRows={ticketRows} isLeader={!!auth.profile?.is_leader || auth.userId===LUDOVICO_ID} onToggle={toggleTicket} />}
         {auth && ready && ticketPronti && <EventoPopup haTicket={ticketRows.some(r=>r.evento==="global-mission" && r.user_id===auth.userId)} />}
         {view==="onboarding" && <OnboardingView auth={auth} />}
         {view==="profilo" && <ProfiloView auth={auth} onUpdateProfile={updateProfile} downlineCount={downline.length} showToast={showToast} />}

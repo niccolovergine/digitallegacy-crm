@@ -7,6 +7,7 @@ export const EVENTI = [
   { id:"salisburgo", nome:"Convention Salisburgo", quando:"3-4 aprile 2027", emoji:"🏔️", colore:"#7c3aed", logo:"/eventi/salisburgo.png" },
 ];
 // fino a questa data (compresa) si vedono banner e festeggiamenti del Global Mission
+const CAPIENZA = { "global-mission": 150 }; // posti in sala
 const GM_FINE = new Date(2026, 11, 12, 23, 59, 59);
 export const globalMissionAttivo = () => new Date() <= GM_FINE;
 
@@ -24,21 +25,27 @@ export function EventoLogo({ ev, size = 90 }) {
 
 const card = { background:"var(--bg2)", border:"1px solid var(--border)", borderRadius:18 };
 
-export function EventiView({ auth, allProfiles, ticketRows, isLeader, onToggle }) {
+export function EventiView({ auth, allProfiles, downline, isNic, ticketRows, isLeader, onToggle }) {
   const [evId, setEvId] = useState("global-mission");
   const [q, setQ] = useState("");
   const [filtro, setFiltro] = useState("tutti");
   const ev = EVENTI.find(e => e.id === evId);
 
-  const membri = useMemo(() =>
-    (allProfiles || [])
-      .filter(p => p.attivo !== false && (p.nome || p.cognome))
-      .sort((a, b) => ((a.cognome||"")+(a.nome||"")).localeCompare((b.cognome||"")+(b.nome||""))),
-  [allProfiles]);
+  // ognuno vede solo sé stesso e chi sta sotto di lui; Nic vede tutti
+  const membri = useMemo(() => {
+    const me = (allProfiles || []).find(p => p.id === auth?.userId);
+    const base = isNic ? (allProfiles || []) : [...(me ? [me] : []), ...(downline || [])];
+    const visti = new Set();
+    return base
+      .filter(p => { if (visti.has(p.id)) return false; visti.add(p.id); return p.attivo !== false && (p.nome || p.cognome); })
+      .sort((a, b) => ((a.cognome||"")+(a.nome||"")).localeCompare((b.cognome||"")+(b.nome||"")));
+  }, [allProfiles, downline, isNic, auth]);
 
   const hanno = useMemo(() => new Set((ticketRows || []).filter(r => r.evento === evId).map(r => r.user_id)), [ticketRows, evId]);
-  const conTicket = membri.filter(m => hanno.has(m.id)).length;
-  const pct = membri.length ? Math.round(conTicket / membri.length * 100) : 0;
+  // totale ticket dell'evento (tutti): lo vedono solo i leader
+  const totale = (ticketRows || []).filter(r => r.evento === evId).length;
+  const cap = CAPIENZA[evId];
+  const pct = cap ? Math.min(100, Math.round(totale / cap * 100)) : 0;
 
   const lista = membri.filter(m => {
     const nome = ((m.nome||"") + " " + (m.cognome||"")).toLowerCase();
@@ -68,16 +75,17 @@ export function EventiView({ auth, allProfiles, ticketRows, isLeader, onToggle }
         })}
       </div>
 
-      {/* riepilogo */}
-      <div style={{...card,padding:"18px 20px",marginBottom:16}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10,flexWrap:"wrap"}}>
-          <div style={{fontWeight:900,fontSize:20,color:"var(--text)"}}>{ev.nome} · {ev.quando}</div>
-          <div style={{fontWeight:900,fontSize:22,color:ev.colore}}>{conTicket}<span style={{fontSize:14,color:"var(--muted)",fontWeight:700}}> / {membri.length} con ticket</span></div>
-        </div>
-        <div style={{height:8,borderRadius:99,background:"var(--border)",overflow:"hidden",marginTop:10}}>
-          <div style={{width:pct+"%",height:"100%",background:ev.colore,transition:"width .4s"}} /></div>
-        {!isLeader && <div style={{fontSize:13,color:"var(--muted)",marginTop:10}}>🔒 Solo i leader possono segnare i ticket. Tu puoi guardare la lista.</div>}
-      </div>
+      {/* riepilogo: solo leader */}
+      {isLeader && (
+        <div style={{...card,padding:"18px 20px",marginBottom:16}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10,flexWrap:"wrap"}}>
+            <div style={{fontWeight:900,fontSize:20,color:"var(--text)"}}>{ev.nome} · {ev.quando}</div>
+            <div style={{fontWeight:900,fontSize:26,color:ev.colore}}>{totale}{cap && <span style={{fontSize:16,color:"var(--muted)",fontWeight:700}}> / {cap}</span>}</div>
+          </div>
+          {cap && <div style={{height:8,borderRadius:99,background:"var(--border)",overflow:"hidden",marginTop:10}}>
+            <div style={{width:pct+"%",height:"100%",background:ev.colore,transition:"width .4s"}} /></div>}
+        </div>)}
+      {!isLeader && <div style={{fontSize:13,color:"var(--muted)",margin:"-4px 0 14px"}}>🔒 Solo i leader possono segnare i ticket. Tu puoi guardare la lista.</div>}
 
       {/* ricerca + filtri */}
       <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
