@@ -270,11 +270,13 @@ function teamStats(prospects) {
 
 const TEMI = {
   chiaro: { label:"Chiaro", preview:"linear-gradient(135deg,#6d5efc,#4f46e5)", vars:{"--bg":"#ffffff","--bg2":"#ffffff","--bg3":"#f6f7fb","--bg4":"#eef0fb","--border":"#e9ecf4","--border2":"#d7dcea","--a1":"#6d5efc","--a2":"#4f46e5","--a1-10":"#6d5efc1a","--a1-12":"#6d5efc1f","--a1-13":"#6d5efc21","--a1-18":"#6d5efc2e","--a1-25":"#6d5efc40","--a1-31":"#6d5efc4f","--text":"#0f172a","--muted":"#64748b","--muted2":"#cbd5e1","--sidebar-active":"#eef0fb","--sidebar-border":"#6d5efc33"} },
+  scuro: { label:"Scuro", preview:"linear-gradient(135deg,#0b1020,#1d2850)", vars:{"--bg":"#0b1020","--bg2":"#121a30","--bg3":"#172041","--bg4":"#1d2850","--border":"#243055","--border2":"#34416b","--a1":"#8b7dff","--a2":"#7c6cf5","--a1-10":"#8b7dff1a","--a1-12":"#8b7dff1f","--a1-13":"#8b7dff21","--a1-18":"#8b7dff2e","--a1-25":"#8b7dff40","--a1-31":"#8b7dff4f","--text":"#e8ecf8","--muted":"#94a3c4","--muted2":"#475578","--sidebar-active":"#1d2850","--sidebar-border":"#8b7dff33"} },
 };
 
 function applyTema(temaKey) {
   const t = TEMI[temaKey] || TEMI.chiaro;
   const root = document.documentElement;
+  root.setAttribute("data-theme", temaKey === "scuro" ? "scuro" : "chiaro");
   Object.entries(t.vars).forEach(([k,v]) => root.style.setProperty(k, v));
   document.body.style.background = t.vars["--bg"];
 }
@@ -298,7 +300,7 @@ button{font-family:inherit}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
 table{border-collapse:collapse}
-input,select,textarea{background:#fff;border:1px solid var(--border2);border-radius:12px;padding:9px 13px;color:var(--text);font-size:13px;font-family:'Plus Jakarta Sans',system-ui,sans-serif;outline:none;width:100%;transition:border .2s}
+input,select,textarea{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:9px 13px;color:var(--text);font-size:13px;font-family:'Plus Jakarta Sans',system-ui,sans-serif;outline:none;width:100%;transition:border .2s}
 input:focus,select:focus,textarea:focus{border-color:var(--a1);box-shadow:0 0 0 3px var(--a1-13)}
 input::placeholder,textarea::placeholder{color:var(--muted)}
 select option{background:var(--bg3)}
@@ -338,6 +340,14 @@ input[type=date]::-webkit-calendar-picker-indicator{cursor:pointer}
   h1{font-size:22px!important}
 }
 div.mobtop{display:none}
+.logo-d{display:none}
+html[data-theme=scuro] .btn-esci{background:#3b1d24!important;color:#fca5a5!important;border-color:#7f1d1d!important}
+html[data-theme=scuro] .logo-d{display:block}
+html[data-theme=scuro] .logo-l{display:none}
+html[data-theme=scuro] .card-soft{box-shadow:0 1px 2px #0006,0 8px 24px -12px #000a}
+.tema-btn{position:fixed;top:14px;right:18px;z-index:1100;width:42px;height:42px;border-radius:99px;border:1px solid var(--border2);background:var(--bg2);color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px -4px #0003;transition:transform .2s}
+.tema-btn:hover{transform:scale(1.08)}
+@media(max-width:768px){.tema-btn{top:7px;right:10px;width:42px;height:42px;background:#ffffff1f;border-color:transparent;color:#fff}}
 .ass-fab{display:none!important}
 `;
 
@@ -747,15 +757,19 @@ export default function App() {
   const [showAss, setShowAss]     = useState(false);
   const [menuOpen, setMenuOpen]   = useState(false);
   const [sidebarMode, setSidebarMode] = useState("tutti");
+  const [scuro, setScuro] = useState(()=>{ try { return localStorage.getItem("dl_tema")==="scuro"; } catch { return false; } });
   const [fMembroTeam, setFMembroTeam] = useState(""); // "" | id membro — solo per vista Team
 
   useEffect(()=>{
     const el=document.createElement("style");
     el.textContent=CSS;
     document.head.appendChild(el);
-    applyTema("chiaro"); // default
     return ()=>document.head.removeChild(el);
   },[]);
+  useEffect(()=>{
+    applyTema(scuro ? "scuro" : "chiaro");
+    try { localStorage.setItem("dl_tema", scuro ? "scuro" : "chiaro"); } catch {}
+  },[scuro]);
 
   useEffect(()=>{
     // Tema bloccato su "nero" per tutti — il selettore è stato rimosso dal Profilo
@@ -1379,7 +1393,7 @@ export default function App() {
               <div style={{fontWeight:800,fontSize:26,color:"var(--text)",letterSpacing:-.8,marginBottom:14}}>Statistica</div>
               <div style={{display:"flex",background:"var(--bg3)",borderRadius:12,padding:4,gap:2,maxWidth:460}}>
                 {[["dash","Panoramica"],["stats","Funnel e fonti"],["mappa","Mappa"]].map(([k,l])=>(
-                  <button key={k} onClick={()=>setStatTab(k)} style={{flex:1,padding:"9px 10px",borderRadius:9,border:"none",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit",background:statTab===k?"#fff":"transparent",color:statTab===k?"var(--a2)":"var(--muted)",boxShadow:statTab===k?"0 1px 3px #0f172a1a":"none"}}>{l}</button>
+                  <button key={k} onClick={()=>setStatTab(k)} style={{flex:1,padding:"9px 10px",borderRadius:9,border:"none",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"inherit",background:statTab===k?"var(--bg2)":"transparent",color:statTab===k?"var(--a2)":"var(--muted)",boxShadow:statTab===k?"0 1px 3px #0f172a1a":"none"}}>{l}</button>
                 ))}
               </div>
             </div>
@@ -1392,6 +1406,7 @@ export default function App() {
         {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} clienti={clienti} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onSetLeader={setLeader} onSetAttivo={setAttivo} onAddCliente={openAddCliente} onAddMembro={openAddMembro} onAddProspectForMember={openAddForMember} onSetChatAperta={setChatAperta} showToast={showToast} onUpdateCliente={updateClienteQuick} onDeleteCliente={deleteClienteQuick} sbGetListaNomiTeam={sbGetListaNomiTeam} LUDOVICO_ID={LUDOVICO_ID} />}
         {view==="nomi"    && <ListaNomiView auth={auth} onInvitaProspect={invitaProspect} />}
         {view==="eventi"  && <EventiView auth={auth} allProfiles={allProfiles} downline={downline} isNic={auth.userId===LUDOVICO_ID} ticketRows={ticketRows} isLeader={!!auth.profile?.is_leader || auth.userId===LUDOVICO_ID} onToggle={toggleTicket} />}
+        {auth && <button className="tema-btn" onClick={()=>setScuro(v=>!v)} aria-label={scuro?"Tema chiaro":"Tema scuro"} title={scuro?"Passa al chiaro":"Passa allo scuro"}>{scuro?"☀️":"🌙"}</button>}
         {auth && ready && ticketPronti && <EventoPopup haTicket={ticketRows.some(r=>r.evento==="global-mission" && r.user_id===auth.userId)} />}
         {view==="onboarding" && <OnboardingView auth={auth} />}
         {view==="profilo" && <ProfiloView auth={auth} onUpdateProfile={updateProfile} downlineCount={downline.length} showToast={showToast} />}
@@ -1467,7 +1482,8 @@ function Sidebar({ view, setView, data, auth, onLogout, downlineCount }) {
   return (
     <aside className="sb" style={{width:236,minWidth:236,background:"var(--bg)",borderRight:"1px solid var(--border)",padding:"1.6rem 1rem",display:"flex",flexDirection:"column",gap:4,height:"100vh",overflowY:"auto"}}>
       <div style={{marginBottom:24,padding:"0 4px",textAlign:"center"}}>
-        <img src="/logo-digital-legacy.png" alt="Digital Legacy" style={{width:"100%",display:"block"}} />
+        <img className="logo-l" src="/logo-digital-legacy.png" alt="Digital Legacy" style={{width:"100%"}} />
+        <img className="logo-d" src="/logo-digital-legacy-chiaro.png" alt="Digital Legacy" style={{width:"100%"}} />
         <div style={{fontSize:11,fontWeight:700,color:"var(--muted)",letterSpacing:1.5,marginTop:2}}>CRM</div>
       </div>
 
@@ -1484,7 +1500,7 @@ function Sidebar({ view, setView, data, auth, onLogout, downlineCount }) {
 
       <div style={{marginTop:"auto",paddingTop:14,borderTop:"1px solid var(--border)"}}>
         <div style={{fontSize:11,color:"var(--muted)",marginBottom:8,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{auth?.email}</div>
-        <button onClick={onLogout} style={{width:"100%",padding:"9px 10px",background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",borderRadius:10,cursor:"pointer",fontWeight:700,fontSize:12}}>Esci</button>
+        <button className="btn-esci" onClick={onLogout} style={{width:"100%",padding:"9px 10px",background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",borderRadius:10,cursor:"pointer",fontWeight:700,fontSize:12}}>Esci</button>
       </div>
     </aside>
   );
@@ -1992,7 +2008,7 @@ function Lista({ onToggleChat, onSetStep, onSetSituazione, onEdit, prospects, to
         </td>
         <td style={td}>
           <select value={sit} onChange={e=>onSetSituazione(p,e.target.value)}
-            style={{width:"auto",minWidth:160,padding:"7px 10px",fontSize:12.5,fontWeight:700,color:sitOpt?sitOpt.color:"var(--text)",background:sitOpt?sitOpt.color+"14":"#fff",borderColor:sitOpt?sitOpt.color+"66":"var(--border2)"}}>
+            style={{width:"auto",minWidth:160,padding:"7px 10px",fontSize:12.5,fontWeight:700,color:sitOpt?sitOpt.color:"var(--text)",background:sitOpt?sitOpt.color+"14":"var(--bg2)",borderColor:sitOpt?sitOpt.color+"66":"var(--border2)"}}>
             <option value="">In processo</option>
             {SITUAZIONE_OPTS.map(o=><option key={o.v} value={o.v}>{o.label}</option>)}
           </select>
@@ -2031,7 +2047,7 @@ function Lista({ onToggleChat, onSetStep, onSetSituazione, onEdit, prospects, to
             {PROSPECT_STEPS.map(st=><option key={st.v} value={st.v}>{st.label}</option>)}
           </select>
           <select value={sit} onChange={e=>onSetSituazione(p,e.target.value)}
-            style={{padding:"11px 10px",fontWeight:700,color:sitOpt?sitOpt.color:"var(--text)",background:sitOpt?sitOpt.color+"14":"#fff",borderColor:sitOpt?sitOpt.color+"66":"var(--border2)"}}>
+            style={{padding:"11px 10px",fontWeight:700,color:sitOpt?sitOpt.color:"var(--text)",background:sitOpt?sitOpt.color+"14":"var(--bg2)",borderColor:sitOpt?sitOpt.color+"66":"var(--border2)"}}>
             <option value="">In processo</option>
             {SITUAZIONE_OPTS.map(o=><option key={o.v} value={o.v}>{o.label}</option>)}
           </select>
