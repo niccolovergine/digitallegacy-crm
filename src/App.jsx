@@ -1405,9 +1405,9 @@ export default function App() {
       {menuOpen && (
         <div onClick={()=>setMenuOpen(false)} style={{position:"fixed",inset:0,background:"#0f172a80",zIndex:1200}}>
           <div onClick={e=>e.stopPropagation()} style={{width:"80%",maxWidth:300,height:"100%",background:"#0b1d4a",padding:"20px 14px",display:"flex",flexDirection:"column",gap:6,boxShadow:"10px 0 40px -10px #000a"}}>
-            <div style={{background:"#fff",borderRadius:14,padding:"10px 12px 6px",marginBottom:18,textAlign:"center"}}>
-              <img src="/logo-digital-legacy.png" alt="Digital Legacy" style={{width:"100%",display:"block"}} />
-              <div style={{fontSize:11,fontWeight:700,color:"#64748b",letterSpacing:1.5}}>CRM</div>
+            <div style={{padding:"6px 8px 0",marginBottom:18,textAlign:"center"}}>
+              <img src="/logo-digital-legacy-chiaro.png" alt="Digital Legacy" style={{width:"100%",display:"block"}} />
+              <div style={{fontSize:11,fontWeight:700,color:"#93a4d6",letterSpacing:1.5,marginTop:2}}>CRM</div>
             </div>
             {[
               {id:"nomi",label:"Lista Nomi",icon:"\ud83d\udcdd"},
