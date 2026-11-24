@@ -3,7 +3,7 @@ import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, Cart
 import { TeamView } from "./components/Team";
 import { ProfiloView } from "./components/Profilo";
 import { ListaNomiView } from "./components/ListaNomi";
-import { EventiView } from "./components/Eventi";
+import { EventiView, EventoPopup } from "./components/Eventi";
 import { Assistente } from "./components/Assistente";
 import { MappaSezione } from "./components/Mappa";
 import { OnboardingView } from "./components/Onboarding";
@@ -90,6 +90,9 @@ const LUDOVICO_ID = "3eeef288-c1f0-409e-bde7-d35cf5694e7d";
 const sbListEventi       = (tok)            => sbFetch("/rest/v1/eventi?select=*&order=data.desc", { _token:tok });
 const sbInsertEvento     = (tok, row)       => sbFetch("/rest/v1/eventi", { method:"POST", _token:tok, body:JSON.stringify(row) });
 const sbDeleteEvento     = (tok, id)        => sbFetch("/rest/v1/eventi?id=eq."+id, { method:"DELETE", _token:tok });
+const sbListEventoTicket = (tok)            => sbFetch("/rest/v1/evento_ticket?select=evento,user_id", { _token:tok });
+const sbAddEventoTicket  = (tok, ev, uid, by) => sbFetch("/rest/v1/evento_ticket?on_conflict=evento,user_id", { method:"POST", _token:tok, headers:{ "Prefer":"resolution=ignore-duplicates,return=minimal" }, body:JSON.stringify({ evento:ev, user_id:uid, updated_by:by }) });
+const sbDelEventoTicket  = (tok, ev, uid)     => sbFetch("/rest/v1/evento_ticket?evento=eq."+ev+"&user_id=eq."+uid, { method:"DELETE", _token:tok, headers:{ "Prefer":"return=minimal" } });
 const sbListEventoPersone = (tok, eventoId) => sbFetch("/rest/v1/evento_persone?select=*"+(eventoId?("&evento_id=eq."+eventoId):""), { _token:tok });
 const sbGetMappaAttivi     = (tok)             => sbFetch("/rest/v1/rpc/get_mappa_attivi", { method:"POST", _token:tok, body:JSON.stringify({}) });
 const sbGetMappaTicket     = (tok, eventoId)   => sbFetch("/rest/v1/rpc/get_mappa_ticket", { method:"POST", _token:tok, body:JSON.stringify({ p_evento_id:eventoId }) });
@@ -735,6 +738,8 @@ export default function App() {
   const [eventi, setEventi]       = useState([]);
   const [allProfiles, setAllProfiles] = useState([]);
   const [ticketVendutiCount, setTicketVendutiCount] = useState(0);
+  const [ticketRows, setTicketRows] = useState([]);
+  const [ticketPronti, setTicketPronti] = useState(false);
   const [dlProspects, setDlProspects] = useState([]);
   const [positions, setPositions] = useState([]);
   const [dashMode, setDashMode]   = useState("personale");
@@ -813,13 +818,21 @@ export default function App() {
   },[auth]);
 
   useEffect(()=>{
-    if (!auth) { setTicketVendutiCount(0); return; }
-    const myTeamIds = new Set([auth.userId, ...downline.map(d=>d.id)]);
-    sbListEventoPersone(auth.token, null).then(rows=>{
-      const count = (rows||[]).filter(r => r.stato==="venduto" && myTeamIds.has(r.user_id)).length;
-      setTicketVendutiCount(count);
-    }).catch(()=>{});
-  },[auth, downline]);
+    if (!auth) { setTicketRows([]); return; }
+    sbListEventoTicket(auth.token).then(rows=>setTicketRows(rows||[])).catch(()=>{}).finally(()=>setTicketPronti(true));
+  },[auth]);
+  useEffect(()=>{
+    const myTeamIds = new Set([auth?.userId, ...downline.map(d=>d.id)]);
+    setTicketVendutiCount(ticketRows.filter(r => r.evento==="global-mission" && myTeamIds.has(r.user_id)).length);
+  },[ticketRows, downline, auth]);
+  async function toggleTicket(evento, uid, value) {
+    const prima = ticketRows;
+    setTicketRows(r => value ? [...r.filter(x=>!(x.evento===evento&&x.user_id===uid)), { evento, user_id:uid }] : r.filter(x=>!(x.evento===evento&&x.user_id===uid)));
+    try {
+      if (value) await sbAddEventoTicket(auth.token, evento, uid, auth.userId);
+      else await sbDelEventoTicket(auth.token, evento, uid);
+    } catch(e) { setTicketRows(prima); showToast("Non salvato: "+e.message,"#ef4444"); }
+  }
 
   function isMyDownline(profile, myId, allProfiles) {
     if (profile.positioned_under === myId) return true;
@@ -1378,11 +1391,8 @@ export default function App() {
         )}
         {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} clienti={clienti} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onSetLeader={setLeader} onSetAttivo={setAttivo} onAddCliente={openAddCliente} onAddMembro={openAddMembro} onAddProspectForMember={openAddForMember} onSetChatAperta={setChatAperta} showToast={showToast} onUpdateCliente={updateClienteQuick} onDeleteCliente={deleteClienteQuick} sbGetListaNomiTeam={sbGetListaNomiTeam} LUDOVICO_ID={LUDOVICO_ID} />}
         {view==="nomi"    && <ListaNomiView auth={auth} onInvitaProspect={invitaProspect} />}
-        {view==="eventi"  && <EventiView auth={auth} allProfiles={allProfiles} downline={downline} positions={positions} showToast={showToast} data={data} dlProspects={dlProspects} onSetTicketEvento={setTicketEvento}
-          sbListEventi={sbListEventi}
-          sbListEventoStatus={sbListEventoStatus} sbUpsertEventoStatus={sbUpsertEventoStatus}
-          sbListEventoPersone={sbListEventoPersone} sbInsertEventoPersona={sbInsertEventoPersona} sbUpdateEventoPersona={sbUpdateEventoPersona} sbDeleteEventoPersona={sbDeleteEventoPersona}
-          onTicketCountChange={setTicketVendutiCount} />}
+        {view==="eventi"  && <EventiView auth={auth} allProfiles={allProfiles} ticketRows={ticketRows} isLeader={!!auth.profile?.is_leader || auth.userId===LUDOVICO_ID} onToggle={toggleTicket} />}
+        {auth && ready && ticketPronti && <EventoPopup haTicket={ticketRows.some(r=>r.evento==="global-mission" && r.user_id===auth.userId)} />}
         {view==="onboarding" && <OnboardingView auth={auth} />}
         {view==="profilo" && <ProfiloView auth={auth} onUpdateProfile={updateProfile} downlineCount={downline.length} showToast={showToast} />}
       </main>
