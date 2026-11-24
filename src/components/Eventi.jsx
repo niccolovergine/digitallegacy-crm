@@ -45,6 +45,7 @@ export function EventiView({ auth, allProfiles, downline, isNic, ticketRows, isL
   // totale ticket dell'evento (tutti): lo vedono solo i leader
   const totale = (ticketRows || []).filter(r => r.evento === evId).length;
   const cap = CAPIENZA[evId];
+  const nelTeam = membri.filter(m => hanno.has(m.id)).length; // ticket nel mio team (io + chi sta sotto)
   const pct = cap ? Math.min(100, Math.round(totale / cap * 100)) : 0;
 
   const lista = membri.filter(m => {
@@ -84,6 +85,10 @@ export function EventiView({ auth, allProfiles, downline, isNic, ticketRows, isL
           </div>
           {cap && <div style={{height:8,borderRadius:99,background:"var(--border)",overflow:"hidden",marginTop:10}}>
             <div style={{width:pct+"%",height:"100%",background:ev.colore,transition:"width .4s"}} /></div>}
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10,marginTop:16,paddingTop:14,borderTop:"1px solid var(--border)"}}>
+            <div style={{fontWeight:800,fontSize:16,color:"var(--text)"}}>👥 Il tuo team</div>
+            <div style={{fontWeight:900,fontSize:22,color:"#10b981"}}>{nelTeam}<span style={{fontSize:15,color:"var(--muted)",fontWeight:700}}> / {membri.length}</span></div>
+          </div>
         </div>)}
       {!isLeader && <div style={{fontSize:13,color:"var(--muted)",margin:"-4px 0 14px"}}>🔒 Solo i leader possono segnare i ticket. Tu puoi guardare la lista.</div>}
 
