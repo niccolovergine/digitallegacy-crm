@@ -92,7 +92,7 @@ export function Assistente({ prospects, onApply, onNew, onClose, faseLabel }) {
 
   return (
     <div onClick={onClose} style={{ position:"fixed", inset:0, background:"#0f172a66", backdropFilter:"blur(6px)", zIndex:1100, display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
-      <div onClick={e=>e.stopPropagation()} style={{ width:"100%", maxWidth:560, maxHeight:"92vh", overflowY:"auto", background:"#fff", borderRadius:"22px 22px 0 0", padding:"1.3rem 1.2rem 1.6rem", boxShadow:"0 -20px 60px -20px #0f172a55" }}>
+      <div onClick={e=>e.stopPropagation()} style={{ width:"100%", maxWidth:560, maxHeight:"92vh", overflowY:"auto", background:"var(--bg2)", borderRadius:"22px 22px 0 0", padding:"1.3rem 1.2rem 1.6rem", boxShadow:"0 -20px 60px -20px #0f172a55" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
           <div style={{ fontWeight:800, fontSize:18, color:"var(--text)" }}>Chat: dimmi cosa è successo</div>
           <button onClick={onClose} style={{ background:"var(--bg3)", border:"1px solid var(--border)", borderRadius:9, padding:"4px 11px", fontSize:14, cursor:"pointer", color:"var(--muted)" }}>{"✕"}</button>
@@ -109,7 +109,7 @@ export function Assistente({ prospects, onApply, onNew, onClose, faseLabel }) {
         {!SR && <div style={{ fontSize:12, color:"var(--muted)", marginBottom:12 }}>Per dettare usa il microfono della tastiera del telefono, poi premi Analizza.</div>}
 
         {cands && cands.length===0 && (
-          <div style={{ background:"#fffbeb", border:"1px solid #fde68a", borderRadius:14, padding:14 }}>
+          <div style={{ background:"#f59e0b1a", border:"1px solid #fde68a", borderRadius:14, padding:14 }}>
             <div style={{ fontWeight:700, color:"#92400e", marginBottom:8 }}>Non trovo nessun prospect con quel nome.</div>
             <button onClick={()=>onNew(indovinaNome(text), text)} style={{ width:"100%", padding:"12px", borderRadius:12, border:"none", cursor:"pointer", fontWeight:700, fontSize:14, color:"#fff", background:"linear-gradient(135deg,var(--a1),var(--a2))" }}>+ Crea nuovo prospect</button>
           </div>
@@ -120,7 +120,7 @@ export function Assistente({ prospects, onApply, onNew, onClose, faseLabel }) {
             <label style={lbl}>Chi è?</label>
             <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:14 }}>
               {cands.map(p=>(
-                <button key={p.id} onClick={()=>setSel(p)} style={{ textAlign:"left", padding:"11px 13px", borderRadius:13, cursor:"pointer", fontFamily:"inherit", border: sel&&sel.id===p.id ? "2px solid var(--a1)" : "1px solid var(--border2)", background: sel&&sel.id===p.id ? "var(--bg4)" : "#fff" }}>
+                <button key={p.id} onClick={()=>setSel(p)} style={{ textAlign:"left", padding:"11px 13px", borderRadius:13, cursor:"pointer", fontFamily:"inherit", border: sel&&sel.id===p.id ? "2px solid var(--a1)" : "1px solid var(--border2)", background: sel&&sel.id===p.id ? "var(--bg4)" : "var(--bg2)" }}>
                   <div style={{ fontWeight:800, fontSize:15, color:"var(--text)" }}>{p.nome} {p.cognome}</div>
                   <div style={{ fontSize:12, color:"var(--muted)" }}>{[p.citta, faseLabel(p.fase), p._userId?("di "+(p._ownerName||"team")):"mio"].filter(Boolean).join(" · ")}</div>
                 </button>

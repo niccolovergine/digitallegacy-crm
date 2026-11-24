@@ -71,8 +71,8 @@ export function PersonaModal({ persona, onSave, onClose, onDelete, onInvita, isE
       </div>
 
       <div style={{display:"flex",gap:9,justifyContent:"flex-end",flexWrap:"wrap",marginTop:8}}>
-        {onDelete && <button onClick={onDelete} style={{padding:"10px 15px",background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",borderRadius:11,cursor:"pointer",fontWeight:700,fontSize:13}}>Elimina</button>}
-        {isEdit && !form.invitato && onInvita && <button onClick={()=>onInvita(form)} style={{padding:"10px 16px",background:"#ecfdf5",color:"#059669",border:"1px solid #a7f3d0",borderRadius:11,cursor:"pointer",fontWeight:700,fontSize:13}}>Aggiungi a prospect</button>}
+        {onDelete && <button onClick={onDelete} style={{padding:"10px 15px",background:"#ef44441a",color:"#dc2626",border:"1px solid #fecaca",borderRadius:11,cursor:"pointer",fontWeight:700,fontSize:13}}>Elimina</button>}
+        {isEdit && !form.invitato && onInvita && <button onClick={()=>onInvita(form)} style={{padding:"10px 16px",background:"#10b9811f",color:"#059669",border:"1px solid #a7f3d0",borderRadius:11,cursor:"pointer",fontWeight:700,fontSize:13}}>Aggiungi a prospect</button>}
         {isEdit && form.invitato && onInvita && <span style={{padding:"10px 14px",fontSize:12,color:"#059669",fontWeight:700}}>Aggiunto a prospect</span>}
         <button onClick={onClose} style={{padding:"10px 15px",background:"var(--bg3)",color:"var(--muted)",border:"1px solid var(--border)",borderRadius:11,cursor:"pointer",fontWeight:600,fontSize:13}}>Annulla</button>
         <button onClick={()=>onSave(form)} style={{padding:"10px 22px",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:11,cursor:"pointer",fontWeight:700,fontSize:13,boxShadow:"0 8px 18px -8px #6d5efcaa"}}>
@@ -222,8 +222,8 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
                       </div>
                       <div style={{marginTop:10}} onClick={e=>e.stopPropagation()}>
                         {p.invitato
-                          ? <span style={{fontSize:12,fontWeight:700,color:"#059669",background:"#ecfdf5",borderRadius:99,padding:"5px 12px"}}>Aggiunto a prospect</span>
-                          : <button onClick={()=>invitaPersona(p,p.id)} style={{width:"100%",padding:"11px",background:"#ecfdf5",color:"#059669",border:"1px solid #a7f3d0",borderRadius:12,cursor:"pointer",fontWeight:700,fontSize:14}}>Aggiungi a prospect</button>}
+                          ? <span style={{fontSize:12,fontWeight:700,color:"#059669",background:"#10b9811f",borderRadius:99,padding:"5px 12px"}}>Aggiunto a prospect</span>
+                          : <button onClick={()=>invitaPersona(p,p.id)} style={{width:"100%",padding:"11px",background:"#10b9811f",color:"#059669",border:"1px solid #a7f3d0",borderRadius:12,cursor:"pointer",fontWeight:700,fontSize:14}}>Aggiungi a prospect</button>}
                       </div>
                     </div>
                   ))}
@@ -242,8 +242,8 @@ export function ListaNomiView({ auth, onInvitaProspect }) {
                     <td style={{padding:"12px 16px",color:"var(--muted)",fontSize:12.5,maxWidth:320}}><div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.note||"—"}</div></td>
                     <td style={{padding:"12px 16px",textAlign:"right"}} onClick={e=>e.stopPropagation()}>
                       {p.invitato
-                        ? <span style={{fontSize:11,fontWeight:700,color:"#059669",background:"#ecfdf5",borderRadius:99,padding:"4px 11px"}}>Aggiunto a prospect</span>
-                        : <button onClick={()=>invitaPersona(p,p.id)} style={{padding:"6px 13px",background:"#ecfdf5",color:"#059669",border:"1px solid #a7f3d0",borderRadius:99,cursor:"pointer",fontWeight:700,fontSize:12}}>Aggiungi a prospect</button>}
+                        ? <span style={{fontSize:11,fontWeight:700,color:"#059669",background:"#10b9811f",borderRadius:99,padding:"4px 11px"}}>Aggiunto a prospect</span>
+                        : <button onClick={()=>invitaPersona(p,p.id)} style={{padding:"6px 13px",background:"#10b9811f",color:"#059669",border:"1px solid #a7f3d0",borderRadius:99,cursor:"pointer",fontWeight:700,fontSize:12}}>Aggiungi a prospect</button>}
                     </td>
                   </tr>
                 ))}</tbody>

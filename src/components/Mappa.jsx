@@ -268,7 +268,7 @@ export function MappaSezione({ auth, eventi, sbGetMappaAttivi, sbGetMappaTicket,
       ) : (
         <div style={{ display:"flex", gap:24, flexWrap:"wrap", justifyContent:"center", alignItems:"flex-start" }}>
           <div style={{ position:"relative", flex:"0 0 auto" }}>
-            <svg viewBox={"0 0 "+MAPW+" "+MAPH} width={MAPW} height={MAPH} style={{ background:"#f6f7fb", borderRadius:12, border:"1px solid var(--border2)", maxWidth:"100%", height:"auto" }}>
+            <svg viewBox={"0 0 "+MAPW+" "+MAPH} width={MAPW} height={MAPH} style={{ background:"var(--bg3)", borderRadius:12, border:"1px solid var(--border2)", maxWidth:"100%", height:"auto" }}>
               <path d={pathOf(CONTINENTE)} fill="#eef0fb" stroke="#c7cde3" strokeWidth="1.4" />
               <path d={pathOf(SICILIA)} fill="#eef0fb" stroke="#c7cde3" strokeWidth="1.4" />
               <path d={pathOf(SARDEGNA)} fill="#eef0fb" stroke="#c7cde3" strokeWidth="1.4" />

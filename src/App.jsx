@@ -2026,7 +2026,7 @@ function Lista({ onToggleChat, onSetStep, onSetSituazione, onEdit, prospects, to
     const faseClr=FASE_CLR[p.fase]||"var(--a1)";
     const pill={display:"inline-flex",alignItems:"center",borderRadius:99,padding:"4px 11px",fontSize:12,fontWeight:700,whiteSpace:"nowrap"};
     return (
-      <div key={p.id} style={{border:"1px solid var(--border)",borderLeft:"4px solid "+(tint||faseClr),borderRadius:16,padding:"14px",marginBottom:10,background:tint?tint+"10":"#fff",boxShadow:"0 1px 2px #0f172a0a"}}>
+      <div key={p.id} style={{border:"1px solid var(--border)",borderLeft:"4px solid "+(tint||faseClr),borderRadius:16,padding:"14px",marginBottom:10,background:tint?tint+"10":"var(--bg2)",boxShadow:"0 1px 2px #0f172a0a"}}>
         <div style={{display:"flex",alignItems:"center",gap:11}}>
           <Av n={p.nome} c={p.cognome} color={faseClr} size={42}/>
           <div style={{flex:1,minWidth:0}}>
@@ -2039,7 +2039,7 @@ function Lista({ onToggleChat, onSetStep, onSetSituazione, onEdit, prospects, to
           <span style={{...pill,color:"#fff",background:faseClr}}>{PROSPECT_FASE_LABEL[p.fase]||p.fase}</span>
           {c && <span style={{...pill,background:"var(--bg4)",color:"var(--a2)"}}>C{c}</span>}
           <span style={{...pill,background:"var(--bg3)",color:"var(--muted)"}}>{p.fonte}</span>
-          {p.telefono && <a href={"tel:"+p.telefono} style={{...pill,background:"#ecfdf5",color:"#059669",textDecoration:"none"}}>{"\ud83d\udcde"} {p.telefono}</a>}
+          {p.telefono && <a href={"tel:"+p.telefono} style={{...pill,background:"#10b9811f",color:"#059669",textDecoration:"none"}}>{"\ud83d\udcde"} {p.telefono}</a>}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
           <select value="" onChange={e=>{ if(e.target.value) onSetStep(p,e.target.value); }} style={{padding:"11px 10px",fontWeight:600}}>
@@ -2304,7 +2304,7 @@ function FormModal({ form, setForm, onSave, onClose, onDelete, isEdit, isLeader,
       </div>
       <div style={{marginBottom:18}}><label style={lbl}>Note</label><textarea value={form.note||""} onChange={e=>set("note",e.target.value)} style={{height:76,resize:"vertical"}} placeholder="Dove lo hai conosciuto, contesto..." /></div>
       <div style={{display:"flex",gap:9,justifyContent:"flex-end",flexWrap:"wrap"}}>
-        {onDelete&&<button onClick={onDelete} style={{padding:"10px 16px",background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",borderRadius:11,cursor:"pointer",fontWeight:700,fontSize:13}}>Elimina</button>}
+        {onDelete&&<button onClick={onDelete} style={{padding:"10px 16px",background:"#ef44441a",color:"#dc2626",border:"1px solid #fecaca",borderRadius:11,cursor:"pointer",fontWeight:700,fontSize:13}}>Elimina</button>}
         <button onClick={onClose} style={{padding:"10px 16px",background:"var(--bg3)",color:"var(--muted)",border:"1px solid var(--border)",borderRadius:11,cursor:"pointer",fontWeight:600,fontSize:13}}>Annulla</button>
         <button onClick={onSave} style={{padding:"10px 22px",background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:11,cursor:"pointer",fontWeight:700,fontSize:13,boxShadow:"0 8px 18px -8px #6d5efcaa"}}>{isEdit?"Aggiorna":"Aggiungi"}</button>
       </div>
