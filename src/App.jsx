@@ -1802,13 +1802,19 @@ function Statistiche({ data, dlProspects, downline, positions }) {
 
   const ts={background:"var(--bg3)",border:"1px solid var(--border2)",borderRadius:8,color:"var(--text)",fontSize:12};
   const tProps={contentStyle:ts,itemStyle:{color:"var(--text)"},labelStyle:{color:"var(--text)",fontWeight:700}};
-  if (!activeData.length) return <div className="page-wrap" style={{padding:"2rem 2.2rem"}}><h1 style={{fontWeight:900,fontSize:26,color:"var(--text)",marginBottom:8}}>Statistiche</h1><div style={{textAlign:"center",padding:"5rem",color:"var(--muted)"}}><div style={{fontSize:44,marginBottom:12}}></div><p>{hasTeam ? "Nessun dato in questa modalita — prova a switchare su Team" : "Aggiungi prospect per vedere le statistiche"}</p></div></div>;
+  if (!activeData.length && !(statsMode==="team")) return <div className="page-wrap" style={{padding:"2rem 2.2rem"}}><h1 style={{fontWeight:900,fontSize:26,color:"var(--text)",marginBottom:8}}>Statistiche</h1><div style={{textAlign:"center",padding:"5rem",color:"var(--muted)"}}><div style={{fontSize:44,marginBottom:12}}></div><p>{hasTeam ? "Nessun dato in questa modalita — prova a switchare su Team" : "Aggiungi prospect per vedere le statistiche"}</p></div></div>;
   return (
     <div className="page-wrap" style={{padding:"2rem 2.2rem",maxWidth:1280,margin:"0 auto"}}>
       <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:24,gap:12,flexWrap:"wrap"}}>
         <div>
           <h1 style={{fontWeight:900,fontSize:26,color:"var(--text)",letterSpacing:-0.8}}>Statistiche</h1>
           <p style={{color:"var(--muted)",fontSize:12,marginTop:4}}>Dove converti e dove ti perdi persone nel percorso</p>
+          {statsMode==="team" && (()=>{
+            const ramo = memberRoot ? (()=>{const m=(downline||[]).find(x=>x.id===memberRoot);return m?((m.nome||m.email)+" "+(m.cognome||"")).trim():"";})() : "";
+            const gamba = legFilter==="sinistra"?" · gamba sinistra":legFilter==="destra"?" · gamba destra":"";
+            const label = (memberRoot ? ramo+(soloLui?" (solo lui)":" e il suo team") : fMembro==="self"?"Solo tu":"Tutto il team")+(fMembro!=="self"&&!(memberRoot&&soloLui)?gamba:"");
+            return <div style={{display:"inline-flex",alignItems:"center",gap:8,marginTop:8,background:"var(--a1-10)",border:"1px solid var(--a1-25)",borderRadius:10,padding:"6px 12px",fontSize:12,fontWeight:700,color:"var(--text)"}}>👥 <span>{label}</span>: <span style={{color:"var(--a2)",fontSize:15,fontWeight:900}}>{activeData.length}</span> prospect in totale</div>;
+          })()}
         </div>
         {hasTeam && (
           <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
