@@ -1405,9 +1405,9 @@ export default function App() {
       {menuOpen && (
         <div onClick={()=>setMenuOpen(false)} style={{position:"fixed",inset:0,background:"#0f172a80",zIndex:1200}}>
           <div onClick={e=>e.stopPropagation()} style={{width:"80%",maxWidth:300,height:"100%",background:"#0b1d4a",padding:"20px 14px",display:"flex",flexDirection:"column",gap:6,boxShadow:"10px 0 40px -10px #000a"}}>
-            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:18,paddingLeft:4}}>
-              <div style={{width:34,height:34,borderRadius:11,background:"linear-gradient(135deg,var(--a1),var(--a2))",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:800,fontSize:15}}>DL</div>
-              <div style={{color:"#fff",fontWeight:800,fontSize:15,lineHeight:1.15}}>Digital Legacy<div style={{fontSize:11,fontWeight:600,color:"#93a4d6"}}>CRM</div></div>
+            <div style={{background:"#fff",borderRadius:14,padding:"10px 12px 6px",marginBottom:18,textAlign:"center"}}>
+              <img src="/logo-digital-legacy.png" alt="Digital Legacy" style={{width:"100%",display:"block"}} />
+              <div style={{fontSize:11,fontWeight:700,color:"#64748b",letterSpacing:1.5}}>CRM</div>
             </div>
             {[
               {id:"nomi",label:"Lista Nomi",icon:"\ud83d\udcdd"},
@@ -1466,9 +1466,9 @@ function Sidebar({ view, setView, data, auth, onLogout, downlineCount }) {
   ];
   return (
     <aside className="sb" style={{width:236,minWidth:236,background:"var(--bg)",borderRight:"1px solid var(--border)",padding:"1.6rem 1rem",display:"flex",flexDirection:"column",gap:4,height:"100vh",overflowY:"auto"}}>
-      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:26,paddingLeft:6}}>
-        <div style={{width:34,height:34,borderRadius:11,background:"linear-gradient(135deg,var(--a1),var(--a2))",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:800,fontSize:15,boxShadow:"0 6px 16px -4px #6d5efc80"}}>DL</div>
-        <div style={{fontWeight:800,fontSize:15,color:"var(--text)",lineHeight:1.15,letterSpacing:-.3}}>Digital Legacy<div style={{fontSize:11,fontWeight:600,color:"var(--muted)"}}>CRM</div></div>
+      <div style={{marginBottom:24,padding:"0 4px",textAlign:"center"}}>
+        <img src="/logo-digital-legacy.png" alt="Digital Legacy" style={{width:"100%",display:"block"}} />
+        <div style={{fontSize:11,fontWeight:700,color:"var(--muted)",letterSpacing:1.5,marginTop:2}}>CRM</div>
       </div>
 
       {navs.map(item=>{
