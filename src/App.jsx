@@ -766,6 +766,7 @@ export default function App() {
     setLang(inglese ? "en" : "it");
     try { localStorage.setItem("dl_lang", inglese ? "en" : "it"); } catch {}
   },[inglese]);
+  const [fAmbito, setFAmbito] = useState("tutti"); // tutti | solo | sinistra | destra
   const [fMembroTeam, setFMembroTeam] = useState(""); // "" | id membro — solo per vista Team
 
   useEffect(()=>{
@@ -1362,6 +1363,33 @@ export default function App() {
     return { ...p, _ownerName: owner ? (owner.nome||owner.email)+" "+(owner.cognome||"") : "", _leg: getLegForMe(p._userId) };
   });
 
+  // filtro per persona/ramo/gamba nella lista Prospect
+  const ramoIds = (() => {
+    if (!fMembroTeam || fMembroTeam==="__miei") return null;
+    const ids=new Set([fMembroTeam]); let fr=[fMembroTeam];
+    while(fr.length){ const nx=[]; downline.forEach(m=>{ if(!ids.has(m.id)&&fr.includes(m.positioned_under)){ids.add(m.id);nx.push(m.id);} }); fr=nx; }
+    return ids;
+  })();
+  const legDi = (rootId, uid) => {
+    let cur=uid, g=0;
+    while(cur && g++<60){ const m=downline.find(x=>x.id===cur); if(!m) return null;
+      if(m.positioned_under===rootId){ const ps=positions.find(x=>x.upline_id===rootId&&x.member_id===cur); return ps?ps.team:null; }
+      cur=m.positioned_under; }
+    return null;
+  };
+  const matchTeam = p => {
+    if (!fMembroTeam || fMembroTeam==="__miei") {
+      const mio = !p._userId;
+      if (fMembroTeam==="__miei") return fAmbito==="sinistra"||fAmbito==="destra" ? false : mio;
+      if (fAmbito==="solo") return mio;
+      if (fAmbito==="sinistra"||fAmbito==="destra") return !mio && p._leg===fAmbito;
+      return true;
+    }
+    if (fAmbito==="solo") return p._userId===fMembroTeam;
+    if (fAmbito==="sinistra"||fAmbito==="destra") return p._userId!==fMembroTeam && ramoIds.has(p._userId) && legDi(fMembroTeam,p._userId)===fAmbito;
+    return ramoIds.has(p._userId);
+  };
+
   // Prospect unificati: prima i miei (piu' recenti in alto), poi quelli del team
   const listaSource = [...data].reverse().concat([...teamProspects].reverse());
   const listaData=listaSource.filter(p=>{
@@ -1371,7 +1399,7 @@ export default function App() {
       &&(fSituazione==="tutti"||sit===(fSituazione==="processo"?"":fSituazione))
       &&(!fFase||p.fase===fFase)&&(!fFonte||p.fonte===fFonte)
       &&(!fCiclo||cicloOfDate(p.conosciutoAt)===Number(fCiclo))
-      &&(!fMembroTeam||(fMembroTeam==="__miei"?!p._userId:p._userId===fMembroTeam));
+      &&matchTeam(p);
   });
 
   if (!auth) return (<>
@@ -1397,7 +1425,7 @@ export default function App() {
 
 
       <main className="mc" style={{flex:1,overflowY:"auto",height:"100vh",paddingBottom:0}}>
-        {view==="lista" && <Lista onToggleChat={setChatAperta} onSetStep={setProspectStep} onSetSituazione={setSituazione} onEdit={p=>{setForm({...p});setModal("edit");}} prospects={listaData} total={data.length+teamProspects.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} fSituazione={fSituazione} setFSituazione={setFSituazione} fMembroTeam={fMembroTeam} setFMembroTeam={setFMembroTeam} downline={downline} onAdd={openAdd} hasTeam={dlProspects.length>0} />}
+        {view==="lista" && <Lista onToggleChat={setChatAperta} onSetStep={setProspectStep} onSetSituazione={setSituazione} onEdit={p=>{setForm({...p});setModal("edit");}} prospects={listaData} total={data.length+teamProspects.length} search={search} setSearch={setSearch} fFase={fFase} setFFase={setFFase} fFonte={fFonte} setFFonte={setFFonte} fCiclo={fCiclo} setFCiclo={setFCiclo} fSituazione={fSituazione} setFSituazione={setFSituazione} fMembroTeam={fMembroTeam} setFMembroTeam={v=>{setFMembroTeam(v);setFAmbito("tutti");}} fAmbito={fAmbito} setFAmbito={setFAmbito} downline={downline} onAdd={openAdd} hasTeam={dlProspects.length>0} />}
         {view==="stats"   && (
           <div className="stat-wrap">
             <div className="page-wrap" style={{padding:"2rem 2.2rem 0",maxWidth:1280,margin:"0 auto"}}>
@@ -1982,10 +2010,10 @@ const PROSPECT_STEPS = [
 ];
 const PROSPECT_FASE_LABEL = { ...FASE_LABEL, INVITO:"Da fissare" };
 
-function Lista({ onToggleChat, onSetStep, onSetSituazione, onEdit, prospects, total, search, setSearch, fFase, setFFase, fFonte, setFFonte, fCiclo, setFCiclo, fSituazione, setFSituazione, fMembroTeam, setFMembroTeam, downline, onAdd, hasTeam }) {
+function Lista({ onToggleChat, onSetStep, onSetSituazione, onEdit, prospects, total, search, setSearch, fFase, setFFase, fFonte, setFFonte, fCiclo, setFCiclo, fSituazione, setFSituazione, fMembroTeam, setFMembroTeam, fAmbito, setFAmbito, downline, onAdd, hasTeam }) {
   const isMobile = useIsMobile();
   const [limit,setLimit] = useState(50);
-  useEffect(()=>{ setLimit(50); },[search,fFase,fFonte,fCiclo,fSituazione,fMembroTeam]);
+  useEffect(()=>{ setLimit(50); },[search,fFase,fFonte,fCiclo,fSituazione,fMembroTeam,fAmbito]);
   const shown = prospects.slice(0,limit);
   const mine = shown.filter(p=>!p._userId);
   const team = shown.filter(p=>!!p._userId);
@@ -2101,13 +2129,7 @@ function Lista({ onToggleChat, onSetStep, onSetSituazione, onEdit, prospects, to
         </select>
         <select value={fFonte} onChange={e=>setFFonte(e.target.value)} style={{flex:1,minWidth:120}}><option value="">Tutte le fonti</option>{FONTI.map(f=><option key={f}>{f}</option>)}</select>
         <select value={fCiclo} onChange={e=>setFCiclo(e.target.value)} style={{flex:1,minWidth:130}}><option value="">Tutti i cicli</option>{CICLO_NUMS.map(c=><option key={c} value={c}>Ciclo {c}</option>)}</select>
-        {hasTeam && (
-          <select value={fMembroTeam} onChange={e=>setFMembroTeam(e.target.value)} style={{flex:1,minWidth:170}}>
-            <option value="">Tutti (miei + team)</option>
-            <option value="__miei">Solo i miei</option>
-            {(downline||[]).map(m=><option key={m.id} value={m.id}>{m.nome||m.email} {m.cognome||""}</option>)}
-          </select>
-        )}
+        {hasTeam && <FiltroTeam downline={downline} fMembroTeam={fMembroTeam} setFMembroTeam={setFMembroTeam} fAmbito={fAmbito} setFAmbito={setFAmbito} />}
       </div>
       {prospects.length===0
         ?<div style={{textAlign:"center",padding:"4rem",color:"var(--muted)"}}><p style={{fontSize:14,marginBottom:14}}>Nessun prospect trovato</p><button onClick={onAdd} style={{padding:"10px 20px",fontSize:13,fontWeight:700,background:"linear-gradient(135deg,var(--a1),var(--a2))",color:"#fff",border:"none",borderRadius:12,cursor:"pointer"}}>Aggiungi il primo</button></div>
@@ -2142,6 +2164,41 @@ function Lista({ onToggleChat, onSetStep, onSetSituazione, onEdit, prospects, to
 }
 
 //  FORM MODAL
+function FiltroTeam({ downline, fMembroTeam, setFMembroTeam, fAmbito, setFAmbito }) {
+  const [q,setQ]=useState(""); const [open,setOpen]=useState(false);
+  const nome=m=>((m.nome||m.email||"")+" "+(m.cognome||"")).trim();
+  const sel=fMembroTeam&&fMembroTeam!=="__miei"?(downline||[]).find(m=>m.id===fMembroTeam):null;
+  const ql=q.trim().toLowerCase();
+  const risultati=(downline||[]).filter(m=>!ql||nome(m).toLowerCase().includes(ql)).slice(0,8);
+  const ambiti=sel?[["tutti","Lui + il suo team"],["solo","Solo lui"],["sinistra","Sinistra"],["destra","Destra"]]
+    :[["tutti","Tutti"],["solo","Solo i miei"],["sinistra","Mio team sinistra"],["destra","Mio team destra"]];
+  return (
+    <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",flex:"1 1 100%"}}>
+      <div style={{position:"relative",flex:"1 1 220px",minWidth:200}}>
+        {sel
+          ? <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,background:"var(--a1-10)",border:"1px solid var(--a1-25)",borderRadius:10,padding:"9px 12px",fontSize:13,fontWeight:700,color:"var(--text)"}}>
+              <span>{"👤 "}{nome(sel)}</span>
+              <button onClick={()=>{setFMembroTeam("");setQ("");}} style={{background:"none",border:"none",cursor:"pointer",color:"var(--muted)",fontSize:15,fontWeight:800}}>{"✕"}</button>
+            </div>
+          : <input value={q} onChange={e=>{setQ(e.target.value);setOpen(true);}} onFocus={()=>setOpen(true)} onBlur={()=>setTimeout(()=>setOpen(false),150)} placeholder="Cerca una persona del team..." />}
+        {!sel && open && (
+          <div style={{position:"absolute",top:"100%",left:0,right:0,marginTop:4,background:"var(--bg2)",border:"1px solid var(--border2)",borderRadius:10,boxShadow:"0 12px 30px -10px #0f172a55",zIndex:30,maxHeight:260,overflowY:"auto"}}>
+            {risultati.length===0
+              ? <div style={{padding:"10px 12px",fontSize:12,color:"var(--muted)"}}>Nessuno trovato</div>
+              : risultati.map(m=><div key={m.id} onMouseDown={e=>{e.preventDefault();setFMembroTeam(m.id);setQ("");setOpen(false);}} style={{padding:"9px 12px",fontSize:13,cursor:"pointer",color:"var(--text)"}}>{nome(m)}</div>)}
+          </div>
+        )}
+      </div>
+      <div style={{display:"flex",background:"var(--bg3)",borderRadius:10,padding:4,border:"1px solid var(--border)",flexWrap:"wrap"}}>
+        {ambiti.map(([k,l])=>(
+          <button key={k} onClick={()=>setFAmbito(k)} className="tabbtn"
+            style={{background:fAmbito===k?"var(--bg4)":"transparent",color:fAmbito===k?"var(--a2)":"var(--muted)",boxShadow:fAmbito===k?"inset 0 0 0 1px var(--sidebar-border)":"none",fontSize:11,padding:"6px 12px"}}>{l}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ClienteQuickModal({ form, setForm, onSave, onClose, isLeader, downline, saving }) {
   const set=(k,v)=>setForm(f=>({...f,[k]:v}));
   const lbl={fontSize:11,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.8,marginBottom:5,display:"block"};

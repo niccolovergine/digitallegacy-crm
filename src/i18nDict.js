@@ -976,5 +976,11 @@ export const DICT = {
 ". Prima di pensare a investire, il primo passo è tornare in positivo.": ". Before thinking about investing, the first step is getting back into the black.",
 "Ciclo di conoscenza": "Cycle when you met them",
 "(in corso)": "(current)",
-"prospect in totale": "prospects in total"
+"prospect in totale": "prospects in total",
+"Cerca una persona del team...": "Search a team member...",
+"Lui + il suo team": "Them + their team",
+"Solo lui": "Only them",
+"Mio team sinistra": "My left team",
+"Mio team destra": "My right team",
+"Nessuno trovato": "No one found"
 };
