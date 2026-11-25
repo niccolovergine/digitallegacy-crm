@@ -22,6 +22,15 @@ function pattern(s) {
   }).join("");
   if (w !== s) return w.replace(/\balle ore\b/, "at");
   let m;
+  if ((m = s.match(/^in mano a (.+)$/))) return "held by " + m[1];
+  if ((m = s.match(/^🟡 Passato a te da (.+)$/))) return "🟡 Passed on to you by " + m[1];
+  if ((m = s.match(/^(\d+) (persona|persone)$/))) return m[1] + (m[1]==="1" ? " person" : " people");
+  if ((m = s.match(/^Livello (\d) · (\d+)%$/))) return "Level " + m[1] + " · " + m[2] + "%";
+  if ((m = s.match(/^⚠️ Sembra livello (\d), ma deve essere pagato livello (\d)$/))) return "⚠️ Looks like level " + m[1] + ", but must be paid level " + m[2];
+  if ((m = s.match(/^⚠️ Controlla su XConnectly: (\d+) persone? dovrebbe(?:ro)? essere pagate? a un livello diverso da quello che sembra\.$/))) return "⚠️ Check on XConnectly: " + m[1] + (m[1]==="1" ? " person" : " people") + " should be paid at a different level than it looks.";
+  if ((m = s.match(/^iscritto da (.+)$/))) return "enrolled by " + m[1];
+  if ((m = s.match(/^(⚠️ )?Nominale L(\d): deve essere pagato L(\d)$/))) return (m[1]||"") + "Nominal L" + m[2] + ": must be paid L" + m[3];
+  if ((m = s.match(/^depositanti? ha(nno)? un livello atteso diverso da quello nominale: controlla su XConnectly che ti paghino al livello giusto\.$/))) return (m[1] ? "depositors have" : "depositor has") + " an expected level different from the nominal one: check on XConnectly that you are paid at the right level.";
   if ((m = s.match(/^(\d+) giorni?$/))) return m[1] + (m[1] === "1" ? " day" : " days");
   if ((m = s.match(/^Giorno (\d+) di (\d+)$/))) return "Day " + m[1] + " of " + m[2];
   if ((m = s.match(/^Ciclo (\d+)(.*)$/))) { const r = (m[2] || "").trim(); return "Cycle " + m[1] + (r ? " " + (DICT[r] ?? r) : ""); }

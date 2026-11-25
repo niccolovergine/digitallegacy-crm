@@ -3,6 +3,7 @@ import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, Cart
 import { TeamView } from "./components/Team";
 import { ProfiloView } from "./components/Profilo";
 import { ListaNomiView } from "./components/ListaNomi";
+import XCView from "./components/XC.jsx";
 import { EventiView, EventoPopup } from "./components/Eventi";
 import { setLang } from "./i18n";
 import { Assistente } from "./components/Assistente";
@@ -94,6 +95,11 @@ const sbDeleteEvento     = (tok, id)        => sbFetch("/rest/v1/eventi?id=eq."+
 const sbListEventoTicket = (tok)            => sbFetch("/rest/v1/evento_ticket?select=evento,user_id", { _token:tok });
 const sbAddEventoTicket  = (tok, ev, uid, by) => sbFetch("/rest/v1/evento_ticket?on_conflict=evento,user_id", { method:"POST", _token:tok, headers:{ "Prefer":"resolution=ignore-duplicates,return=minimal" }, body:JSON.stringify({ evento:ev, user_id:uid, updated_by:by }) });
 const sbDelEventoTicket  = (tok, ev, uid)     => sbFetch("/rest/v1/evento_ticket?evento=eq."+ev+"&user_id=eq."+uid, { method:"DELETE", _token:tok, headers:{ "Prefer":"return=minimal" } });
+const sbListXcSpill = (tok) => sbFetch("/rest/v1/xc_spillover?select=member_id,leader_id", { _token:tok });
+const sbAddXcSpill = (tok, mid, lid) => sbFetch("/rest/v1/xc_spillover?on_conflict=member_id,leader_id", { method:"POST", _token:tok, headers:{ "Prefer":"resolution=ignore-duplicates,return=minimal" }, body:JSON.stringify({ member_id:mid, leader_id:lid }) });
+const sbDelXcSpill = (tok, mid, lid) => sbFetch("/rest/v1/xc_spillover?member_id=eq."+mid+"&leader_id=eq."+lid, { method:"DELETE", _token:tok, headers:{ "Prefer":"return=minimal" } });
+const sbListXc = (tok) => sbFetch("/rest/v1/xc_membri?select=*", { _token:tok });
+const sbSaveXc = (tok, row) => sbFetch("/rest/v1/xc_membri?on_conflict=member_id", { method:"POST", _token:tok, headers:{ "Prefer":"resolution=merge-duplicates,return=minimal" }, body:JSON.stringify(row) });
 const sbListEventoPersone = (tok, eventoId) => sbFetch("/rest/v1/evento_persone?select=*"+(eventoId?("&evento_id=eq."+eventoId):""), { _token:tok });
 const sbGetMappaAttivi     = (tok)             => sbFetch("/rest/v1/rpc/get_mappa_attivi", { method:"POST", _token:tok, body:JSON.stringify({}) });
 const sbGetMappaTicket     = (tok, eventoId)   => sbFetch("/rest/v1/rpc/get_mappa_ticket", { method:"POST", _token:tok, body:JSON.stringify({ p_evento_id:eventoId }) });
@@ -752,6 +758,9 @@ export default function App() {
   const [allProfiles, setAllProfiles] = useState([]);
   const [ticketVendutiCount, setTicketVendutiCount] = useState(0);
   const [ticketRows, setTicketRows] = useState([]);
+  const [xcRows, setXcRows] = useState([]);
+  const [xcSpill, setXcSpill] = useState([]);
+  const sonoLeader = !!(auth && (auth.profile?.is_leader || auth.userId===LUDOVICO_ID));
   const [ticketPronti, setTicketPronti] = useState(false);
   const [dlProspects, setDlProspects] = useState([]);
   const [positions, setPositions] = useState([]);
@@ -848,6 +857,24 @@ export default function App() {
     const myTeamIds = new Set([auth?.userId, ...downline.map(d=>d.id)]);
     setTicketVendutiCount(ticketRows.filter(r => r.evento==="global-mission" && myTeamIds.has(r.user_id)).length);
   },[ticketRows, downline, auth]);
+  useEffect(()=>{
+    if (!auth || !sonoLeader) { setXcRows([]); return; }
+    sbListXc(auth.token).then(r=>setXcRows(r||[])).catch(()=>{});
+    sbListXcSpill(auth.token).then(r=>setXcSpill(r||[])).catch(()=>{});
+  },[auth, sonoLeader]);
+  async function spillXc(memberId, value) {
+    const prima = xcSpill;
+    setXcSpill(r => value ? [...r.filter(x=>!(x.member_id===memberId&&x.leader_id===auth.userId)), { member_id:memberId, leader_id:auth.userId }] : r.filter(x=>!(x.member_id===memberId&&x.leader_id===auth.userId)));
+    try { if (value) await sbAddXcSpill(auth.token, memberId, auth.userId); else await sbDelXcSpill(auth.token, memberId, auth.userId); }
+    catch(e) { setXcSpill(prima); showToast("Non salvato: "+e.message,"#ef4444"); }
+  }
+  async function salvaXc(memberId, row) {
+    const prima = xcRows;
+    const nuovo = { member_id:memberId, affiliate:!!row.affiliate, etoro:!!row.etoro, etoro_data:row.etoro_data||null, etoro_pagato:!!row.etoro_pagato, email:(row.email||"").trim()||null, broker:!!row.broker, broker_nome:row.broker_nome||null, broker_data:row.broker_data||null };
+    setXcRows(r=>[...r.filter(x=>x.member_id!==memberId), nuovo]);
+    try { await sbSaveXc(auth.token, { ...nuovo, updated_by:auth.userId, updated_at:new Date().toISOString() }); }
+    catch(e) { setXcRows(prima); showToast("Non salvato: "+e.message,"#ef4444"); }
+  }
   async function toggleTicket(evento, uid, value) {
     const prima = ticketRows;
     setTicketRows(r => value ? [...r.filter(x=>!(x.evento===evento&&x.user_id===uid)), { evento, user_id:uid }] : r.filter(x=>!(x.evento===evento&&x.user_id===uid)));
@@ -896,7 +923,6 @@ export default function App() {
 
   async function saveForm() {
     if (!form.nome?.trim()) return;
-    if (modal==="add" && !(form.telefono||"").trim()) { showToast("Inserisci il numero di telefono","#ef4444"); return; }
     if (form.fase === "SUB" && !form.pacchetto) { showToast("Seleziona il pacchetto per un iscritto ", "#ef4444"); return; }
     if (modal==="add") {
       const nomeNorm=form.nome.trim().toLowerCase();
@@ -1396,7 +1422,7 @@ export default function App() {
     const q=search.toLowerCase();
     const sit=situazioneOf(p);
     return (!q||(p.nome+" "+p.cognome+" "+(p.citta||"")).toLowerCase().includes(q))
-      &&(fSituazione==="tutti"||sit===(fSituazione==="processo"?"":fSituazione))
+      &&(fSituazione==="tutti"||(fSituazione==="persi"?["futuro_si","riprendere","non_interessato"].includes(sit):sit===(fSituazione==="processo"?"":fSituazione)))
       &&(!fFase||p.fase===fFase)&&(!fFonte||p.fonte===fFonte)
       &&(!fCiclo||cicloOfDate(p.conosciutoAt)===Number(fCiclo))
       &&matchTeam(p);
@@ -1419,7 +1445,7 @@ export default function App() {
       {toast && <div className="toast-pos" style={{position:"fixed",bottom:24,right:24,zIndex:9999,background:toast.color,color:"#fff",padding:"12px 22px",borderRadius:12,fontWeight:700,fontSize:13,boxShadow:"0 8px 30px #00000060",animation:"fadeIn .25s ease"}}>{toast.msg}</div>}
       {saving && <div style={{position:"fixed",top:14,right:14,zIndex:9998,background:"var(--bg4)",border:"1px solid var(--border2)",borderRadius:9,padding:"7px 14px",fontSize:12,color:"var(--a2)",display:"flex",alignItems:"center",gap:7}}><span className="spinner" />Salvataggio...</div>}
 
-      <Sidebar view={view} setView={setView} data={data} auth={auth} onLogout={handleLogout} downlineCount={downline.length} />
+      <Sidebar view={view} setView={setView} data={data} auth={auth} onLogout={handleLogout} downlineCount={downline.length} sonoLeader={sonoLeader} />
       <button className="ass-fab" onClick={()=>setShowAss(true)} title="Chat" style={{position:"fixed",right:18,bottom:24,zIndex:900,display:"flex",alignItems:"center",gap:8,padding:"13px 20px",borderRadius:99,border:"none",cursor:"pointer",fontWeight:800,fontSize:14,color:"#fff",background:"linear-gradient(135deg,var(--a1),var(--a2))",boxShadow:"0 12px 28px -8px #6d5efcbb"}}>{"\ud83c\udf99\ufe0f"} Chat</button>
       {showAss && <Assistente prospects={[...data,...teamProspects]} onApply={applicaAssistente} onNew={nuovoDaAssistente} onClose={()=>setShowAss(false)} faseLabel={f=>PROSPECT_FASE_LABEL[f]||f} />}
 
@@ -1444,6 +1470,7 @@ export default function App() {
         )}
         {view==="team"    && <TeamView auth={auth} downline={downline} dlProspects={dlProspects} clienti={clienti} onAssignTeam={assignTeam} onAddManual={addDownlineManually} positions={positions} onOpenProspect={openDetail} onPositionInTree={positionInTree} onSetLeader={setLeader} onSetAttivo={setAttivo} onAddCliente={openAddCliente} onAddMembro={openAddMembro} onAddProspectForMember={openAddForMember} onSetChatAperta={setChatAperta} showToast={showToast} onUpdateCliente={updateClienteQuick} onDeleteCliente={deleteClienteQuick} sbGetListaNomiTeam={sbGetListaNomiTeam} LUDOVICO_ID={LUDOVICO_ID} />}
         {view==="nomi"    && <ListaNomiView auth={auth} onInvitaProspect={invitaProspect} />}
+        {view==="xc" && sonoLeader && <XCView auth={auth} allProfiles={allProfiles} downline={downline} clienti={clienti} rows={xcRows} onSave={salvaXc} spill={xcSpill} onSpill={spillXc} leaderIds={new Set([LUDOVICO_ID, ...allProfiles.filter(p=>p.is_leader).map(p=>p.id)])} />}
         {view==="eventi"  && <EventiView auth={auth} allProfiles={allProfiles} downline={downline} isNic={auth.userId===LUDOVICO_ID} ticketRows={ticketRows} isLeader={!!auth.profile?.is_leader || auth.userId===LUDOVICO_ID} onToggle={toggleTicket} />}
         {auth && <button className="tema-btn lang-btn" onClick={()=>setInglese(v=>!v)} aria-label={inglese?"Italiano":"English"} title={inglese?"Italiano":"English"}>{inglese?"🇮🇹":"🇬🇧"}</button>}
         {auth && <button className="tema-btn" onClick={()=>setScuro(v=>!v)} aria-label={scuro?"Tema chiaro":"Tema scuro"} title={scuro?"Passa al chiaro":"Passa allo scuro"}>{scuro?"☀️":"🌙"}</button>}
@@ -1455,7 +1482,7 @@ export default function App() {
       {/* Mobile bottom nav - shown via CSS on mobile only */}
       <div className="mobtop" style={{position:"fixed",top:0,left:0,right:0,height:56,background:"#0b1d4a",zIndex:800,alignItems:"center",gap:12,padding:"0 14px",boxShadow:"0 4px 14px -6px #0b1d4a99"}}>
         <button onClick={()=>setMenuOpen(true)} aria-label="Menu" style={{width:40,height:40,borderRadius:12,border:"none",background:"#ffffff1f",color:"#fff",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{"\u2630"}</button>
-        <div style={{color:"#fff",fontWeight:800,fontSize:16,letterSpacing:-.2}}>{({nomi:"Lista Nomi",lista:"Prospect",team:"Team",eventi:"Eventi",stats:"Statistica",onboarding:"Onboarding",profilo:"Profilo"})[view]||"Digital Legacy"}</div>
+        <div style={{color:"#fff",fontWeight:800,fontSize:16,letterSpacing:-.2}}>{({nomi:"Lista Nomi",lista:"Prospect",team:"Team",eventi:"Eventi",xc:"XC",stats:"Statistica",onboarding:"Onboarding",profilo:"Profilo"})[view]||"Digital Legacy"}</div>
       </div>
       {menuOpen && (
         <div onClick={()=>setMenuOpen(false)} style={{position:"fixed",inset:0,background:"#0f172a80",zIndex:1200}}>
@@ -1469,6 +1496,7 @@ export default function App() {
               {id:"lista",label:"Prospect",icon:"\ud83c\udfaf",badge:data.length},
               {id:"team",label:"Team",icon:"\ud83d\udc65",badge:downline.length||0},
               {id:"eventi",label:"Eventi",icon:"\ud83c\udf9f\ufe0f"},
+              ...(sonoLeader?[{id:"xc",label:"XC",icon:"\ud83d\udcb1"}]:[]),
               {id:"stats",label:"Statistica",icon:"\ud83d\udcca"},
               {id:"onboarding",label:"Onboarding",icon:"\ud83d\ude80"},
               {id:"profilo",label:"Profilo",icon:"\ud83d\udc64"},
@@ -1509,12 +1537,13 @@ export default function App() {
 }
 
 //  SIDEBAR 
-function Sidebar({ view, setView, data, auth, onLogout, downlineCount }) {
+function Sidebar({ view, setView, data, auth, onLogout, downlineCount, sonoLeader }) {
   const navs = [
     { id:"nomi",    icon:"\ud83d\udcdd", label:"Lista Nomi" },
     { id:"lista",   icon:"\ud83c\udfaf", label:"Prospect", badge:data.length },
     { id:"team",    icon:"\ud83d\udc65", label:"Team", badge:downlineCount||0 },
     { id:"eventi",  icon:"\ud83c\udf9f\ufe0f", label:"Eventi" },
+    ...(sonoLeader?[{ id:"xc", icon:"\ud83d\udcb1", label:"XC" }]:[]),
     { id:"stats",   icon:"\ud83d\udcca", label:"Statistica" },
     { id:"onboarding", icon:"\ud83d\ude80", label:"Onboarding" },
     { id:"profilo", icon:"\ud83d\udc64", label:"Profilo" },
@@ -1978,7 +2007,8 @@ function stepPatch(p, fase) {
 function sitPatch(p, v) {
   if (v==="iscritto") return { patch:{ fase:"SUB", storico:buildStorico(p,"SUB",today()), statoColore:"iscritto" }, msg:"Iscritto \u2705 (per i BV apri la matita e scegli il pacchetto)" };
   if (v==="riprendere") return { patch:{ statoColore:"da_risentire" }, msg:"Da riprendere pi\u00f9 avanti" };
-  if (v==="balzato") return { patch:{ statoColore:"sparito" }, msg:"Balzato" };
+  if (v==="non_interessato") return { patch:{ fase:"NON_INT", storico:buildStorico(p,"NON_INT",today()), statoColore:"" }, msg:"Non interessato" };
+  if (v==="futuro_si") return { patch:{ statoColore:"futuro_si" }, msg:"Futuro s\u00ec" };
   let fase=p.fase; let storico=p.storico||[];
   if (fase==="SUB"||FASI_SPECIALI.includes(fase)) {
     storico=storico.filter(x=>x.fase!=="SUB");
@@ -1993,13 +2023,16 @@ function sitPatch(p, v) {
 function situazioneOf(p) {
   if (p.statoColore==="iscritto" || p.fase==="SUB") return "iscritto";
   if (p.statoColore==="da_risentire" || p.fase==="FOLLOW_UP") return "riprendere";
-  if (p.statoColore==="sparito" || p.fase==="NON_INT" || p.fase==="NON_PIACE") return "balzato";
+  if (p.statoColore==="futuro_si") return "futuro_si";
+  // vecchi "sparito"/"balzato" -> Non interessato
+  if (p.statoColore==="sparito" || p.statoColore==="balzato" || p.fase==="NON_INT" || p.fase==="NON_PIACE") return "non_interessato";
   return "";
 }
 const SITUAZIONE_OPTS = [
   { v:"iscritto",   label:"Iscritto",             color:"#10b981" },
   { v:"riprendere", label:"Riprendere più avanti", color:"#f59e0b" },
-  { v:"balzato",    label:"Balzato",              color:"#ef4444" },
+  { v:"non_interessato", label:"Non interessato",   color:"#6b7280" },
+  { v:"futuro_si",  label:"Futuro sì",            color:"#ef4444" },
 ];
 const PROSPECT_STEPS = [
   { v:"CONOSCITIVA", label:"Fatta conoscitiva" },
@@ -2120,7 +2153,9 @@ function Lista({ onToggleChat, onSetStep, onSetSituazione, onEdit, prospects, to
           <option value="processo">In processo</option>
           <option value="iscritto">Iscritti</option>
           <option value="riprendere">Da riprendere più avanti</option>
-          <option value="balzato">Balzati</option>
+          <option value="non_interessato">Non interessati</option>
+          <option value="futuro_si">Futuro sì</option>
+          <option value="persi">Da recuperare (futuro sì + riprendere + non int.)</option>
           <option value="tutti">Tutti</option>
         </select>
         <select value={fFase} onChange={e=>setFFase(e.target.value)} style={{flex:1,minWidth:130}}>
@@ -2354,7 +2389,7 @@ function FormModal({ form, setForm, onSave, onClose, onDelete, isEdit, isLeader,
         <div><label style={lbl}>Nome *</label><input value={form.nome||""} onChange={e=>set("nome",e.target.value)} placeholder="Nome" /></div>
         <div><label style={lbl}>Cognome</label><input value={form.cognome||""} onChange={e=>set("cognome",e.target.value)} placeholder="Cognome" /></div>
         <div><label style={lbl}>Città</label><input value={form.citta||""} onChange={e=>set("citta",e.target.value)} placeholder="es. Milano" /></div>
-        <div><label style={lbl}>Telefono *</label><input value={form.telefono||""} onChange={e=>set("telefono",e.target.value)} placeholder="+39 333 000 0000" /></div>
+        <div><label style={lbl}>Telefono</label><input value={form.telefono||""} onChange={e=>set("telefono",e.target.value)} placeholder="+39 333 000 0000" /></div>
         <div style={{gridColumn:"1/-1"}}><label style={lbl}>Fonte</label><select value={form.fonte||"Instagram"} onChange={e=>set("fonte",e.target.value)}>{FONTI.map(f=><option key={f} value={f}>{f}</option>)}</select></div>
         {!isEdit && (
           <div style={{gridColumn:"1/-1"}}>
