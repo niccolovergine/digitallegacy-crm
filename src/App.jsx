@@ -870,7 +870,7 @@ export default function App() {
   }
   async function salvaXc(memberId, row) {
     const prima = xcRows;
-    const nuovo = { member_id:memberId, affiliate:!!row.affiliate, etoro:!!row.etoro, etoro_data:row.etoro_data||null, etoro_pagato:!!row.etoro_pagato, email:(row.email||"").trim()||null, broker:!!row.broker, broker_nome:row.broker_nome||null, broker_data:row.broker_data||null };
+    const nuovo = { member_id:memberId, affiliate:!!row.affiliate, etoro:!!row.etoro, etoro_data:row.etoro_data||null, etoro_pagato:!!row.etoro_pagato, etoro_livello_pagato:row.etoro_livello_pagato?Number(row.etoro_livello_pagato):null, email:(row.email||"").trim()||null, broker:!!row.broker, broker_nome:row.broker_nome||null, broker_data:row.broker_data||null };
     setXcRows(r=>[...r.filter(x=>x.member_id!==memberId), nuovo]);
     try { await sbSaveXc(auth.token, { ...nuovo, updated_by:auth.userId, updated_at:new Date().toISOString() }); }
     catch(e) { setXcRows(prima); showToast("Non salvato: "+e.message,"#ef4444"); }

@@ -1037,5 +1037,10 @@ export const DICT = {
 "📧 Email di registrazione": "📧 Registration email",
 "La mail usata su XConnectly / eToro": "The email used on XConnectly / eToro",
 "⚠️ Mettila: ti serve se apri un ticket": "⚠️ Add it: you need it if you open a ticket",
-"Cerca per nome o email...": "Search by name or email..."
+"Cerca per nome o email...": "Search by name or email...",
+"una persona fuori dal tuo team": "a person outside your team",
+"📄 Report PDF": "📄 PDF report",
+"📋 Copia per email": "📋 Copy for email",
+"✓ Copiato": "✓ Copied",
+"Pagato a livello": "Paid at level"
 };
