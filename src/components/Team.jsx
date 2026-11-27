@@ -223,7 +223,12 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positio
       <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:"1.5rem",gap:12,flexWrap:"wrap"}}>
         <div>
           <h1 style={{fontWeight:900,fontSize:26,color:"var(--text)",letterSpacing:-0.8,lineHeight:1}}>Team</h1>
-          <p style={{color:"var(--muted)",fontSize:12,marginTop:4}}>{downline.filter(m=>m.attivo!==false).length} membri nella tua downline{downline.some(m=>m.attivo===false) && <span>{" · "}<span>{downline.filter(m=>m.attivo===false).length+" inattivi non contati"}</span></span>}</p>
+          <p style={{color:"var(--muted)",fontSize:12,marginTop:4}}>{attiviDownline.length} membri nella tua downline{downline.some(m=>m.attivo===false) && <span>{" · "}<span>{inattiviDownline.length+" inattivi non contati"}</span></span>}</p>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:8}}>
+            <span style={{background:"var(--bg4)",border:"1px solid var(--border)",borderRadius:99,padding:"5px 12px",fontSize:12.5,fontWeight:800,color:"var(--a2)"}}>{"⬅️ "}<span>{sinistra.length+" a sinistra"}</span></span>
+            <span style={{background:"var(--bg4)",border:"1px solid var(--border)",borderRadius:99,padding:"5px 12px",fontSize:12.5,fontWeight:800,color:"var(--a2)"}}><span>{destra.length+" a destra"}</span>{" ➡️"}</span>
+            {noTeam.length>0 && <span style={{background:"var(--bg3)",border:"1px solid var(--border)",borderRadius:99,padding:"5px 12px",fontSize:12.5,fontWeight:700,color:"var(--muted)"}}>{noTeam.length+" non assegnati"}</span>}
+          </div>
         </div>
       </div>
 
@@ -246,7 +251,7 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positio
             {["all","sinistra","destra","nessuna"].map(f=>(
               <button key={f} onClick={()=>setTeamFilter(f)}
                 style={{padding:"6px 13px",borderRadius:8,border:teamFilter===f?"1px solid #2563eb40":"1px solid transparent",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"inherit",transition:"all .2s",background:teamFilter===f?"var(--bg4)":"var(--bg3)",color:teamFilter===f?"var(--a2)":"var(--muted)"}}>
-                {f==="all"?"Tutti":f==="nessuna"?"Non assegnati":f.charAt(0).toUpperCase()+f.slice(1)}
+                {f==="all"?"Tutti":f==="nessuna"?"Non assegnati":f.charAt(0).toUpperCase()+f.slice(1)}{" "}<span style={{opacity:.7}}>{f==="all"?attiviDownline.length:f==="sinistra"?sinistra.length:f==="destra"?destra.length:noTeam.length}</span>
               </button>
             ))}
             {inattiviDownline.length>0 && (
