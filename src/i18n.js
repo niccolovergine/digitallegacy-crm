@@ -29,6 +29,7 @@ function pattern(s) {
   if ((m = s.match(/^⚠️ Sembra livello (\d), ma deve essere pagato livello (\d)$/))) return "⚠️ Looks like level " + m[1] + ", but must be paid level " + m[2];
   if ((m = s.match(/^⚠️ Controlla su XConnectly: (\d+) persone? dovrebbe(?:ro)? essere pagate? a un livello diverso da quello che sembra\.$/))) return "⚠️ Check on XConnectly: " + m[1] + (m[1]==="1" ? " person" : " people") + " should be paid at a different level than it looks.";
   if ((m = s.match(/^iscritto da (.+)$/))) return "enrolled by " + m[1];
+  if ((m = s.match(/^(.+) — (.+)\/mese$/))) return m[1] + " — " + m[2] + "/month";
   if ((m = s.match(/^✅ Pagato correttamente a livello (\d)$/))) return "✅ Paid correctly at level " + m[1];
   if ((m = s.match(/^(\d+) inattivi non contati$/))) return m[1] + " inactive not counted";
   if ((m = s.match(/^(⚠️ )?Nominale L(\d): deve essere pagato L(\d)$/))) return (m[1]||"") + "Nominal L" + m[2] + ": must be paid L" + m[3];

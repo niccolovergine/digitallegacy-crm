@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 // NOW — esercizio di analisi finanziaria personale (Digital Legacy).
 // I dati restano SOLO nel browser di chi li compila (localStorage): non vengono inviati a nessun server.
 const KEY = "dl_now_v1";
-const VUOTO = { step:1, nome:"", cognome:"", eta:"", casa:"", lav:"", resp:"", stip:"", extraE:[], fisse:{}, extraF:[], vari:{}, extraV:[], fondo:"", pac:"", second:"" };
+const VUOTO = { step:1, nome:"", cognome:"", eta:"", casa:"", lav:"", resp:"", stip:"", extraE:[], fisse:{}, extraF:[], vari:{}, extraV:[], fondo:"", pac:"", second:"", rank:"" };
 
 const FISSE = [
   ["Affitto / Mutuo","Il canone mensile o la rata del mutuo"],
@@ -23,6 +23,8 @@ const VARIABILI = [
   ["Cene, uscite, weekend","Vita sociale e tempo libero"],
   ["Abbigliamento","Vestiti, scarpe, accessori"],
 ];
+// Rank Be Club e incasso mensile d'esempio (simulazione): per cambiare i compensi basta modificare questa tabella
+const RANKS = [["Consultant",500],["Team Leader",1500],["Advanced Team Leader",2500],["Senior Team Leader",4000],["Executive Team Leader",8500],["Vice President",15000],["Senior Vice President",30000],["Executive Vice President",60000],["Global Director",120000]];
 const PASSI = ["Intro","Profilo","Entrate","Uscite","Fondo","Analisi"];
 
 const eur = n => new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(Math.round(n||0));
@@ -126,6 +128,57 @@ function Extra({ lista, onChange, testo }) {
 
 function Riga({ k, v, forte }) {
   return <div style={{display:"flex",justifyContent:"space-between",gap:10,padding:"7px 0",borderBottom:"1px dashed var(--border)",fontSize:14.5,fontWeight:forte?900:600,color:forte?"var(--text)":"var(--muted)"}}><span>{k}</span><span style={{color:"var(--text)"}}>{v}</span></div>;
+}
+
+// ---------- PDF pulito (A4, chiaro, centrato) ----------
+const escH = t => String(t==null?"":t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const RENDIM = [["Prudente",.04],["Media",.07],["Ottimista",.10]];
+function htmlNow(s, c, pac, second) {
+  const spese = c.uscite;
+  const nome = ((s.nome||"")+" "+(s.cognome||"")).trim();
+  const oggi = new Date().toLocaleDateString("it-IT",{day:"numeric",month:"long",year:"numeric"});
+  const css = "@page{size:A4;margin:14mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}"
+   + "body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#14162e;font-size:12.5px;line-height:1.5}"
+   + ".wrap{max-width:720px;margin:0 auto}"
+   + ".top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #5b4be8;padding-bottom:10px;margin-bottom:16px}"
+   + ".top h1{font-size:24px;margin:0;letter-spacing:-.5px}.top .sub{color:#5b5f7a;font-size:12px;margin-top:2px}.top .logo{font-weight:900;font-size:26px;color:#5b4be8;letter-spacing:-1px}"
+   + ".kpi{display:flex;gap:8px;margin-bottom:14px}.kpi div{flex:1;border:1px solid #dcd9f3;border-radius:10px;padding:8px 10px;background:#f6f5fb}.kpi small{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:#5b5f7a;font-weight:700}.kpi b{font-size:17px}"
+   + ".sec{border:1px solid #dcd9f3;border-radius:12px;padding:12px 14px;margin-bottom:12px;break-inside:avoid;page-break-inside:avoid}"
+   + ".sec .ey{font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:#5b4be8}.sec h2{font-size:16px;margin:2px 0 8px}"
+   + ".sec p{margin:0 0 8px;color:#3b3f5c}"
+   + "table{width:100%;border-collapse:collapse}th,td{padding:6px 4px;border-bottom:1px solid #e6e4f5;text-align:right}th:first-child,td:first-child{text-align:left}th{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#5b5f7a}tr:last-child td{border-bottom:none}"
+   + ".row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #dcd9f3}.row:last-child{border-bottom:none}.row.f{font-weight:700}"
+   + ".bar{height:9px;border-radius:99px;background:#e6e4f5;margin-top:8px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,#5b4be8,#8b7dff)}"
+   + ".cons{display:flex;gap:8px;margin-bottom:6px}.cons span:first-child{width:20px;flex:none}"
+   + ".note{color:#6b6f88;font-size:10.5px;margin-top:10px}.foot{margin-top:14px;color:#6b6f88;font-size:10.5px;border-top:1px solid #e6e4f5;padding-top:8px}";
+  const row = (k,v,f) => '<div class="row'+(f?' f':'')+'"><span>'+escH(k)+'</span><span>'+escH(v)+'</span></div>';
+  const cons = consigli(s,c).map(x => typeof x==="string" ? '<div class="cons"><span>•</span><span>'+escH(x)+'</span></div>' : '<div class="cons"><span>'+escH(x.t||"•")+'</span><span>'+escH(x.x)+'</span></div>').join("");
+  const perc = c.fondoTarget ? Math.min(100, c.fondo/c.fondoTarget*100) : 0;
+  let h = '<!doctype html><html lang="it"><head><meta charset="utf-8"><title>NOW – Analisi finanziaria'+(nome?" di "+escH(nome):"")+'</title><style>'+css+'</style></head><body><div class="wrap">';
+  h += '<div class="top"><div><h1>Analisi finanziaria'+(nome?" di "+escH(nome):"")+'</h1><div class="sub">NOW · Digital Legacy · '+escH(oggi)+'</div></div><div class="logo">NOW</div></div>';
+  h += '<div class="kpi"><div><small>Entrate mensili</small><b>'+eur(c.entrate)+'</b></div><div><small>Uscite mensili</small><b>'+eur(c.uscite)+'</b></div><div><small>Ti restano al mese</small><b>'+eur(c.cf)+'</b></div><div><small>Liquidità</small><b>'+eur(c.fondo)+'</b></div></div>';
+  h += '<div class="sec"><div class="ey">Scenario</div><h2>La tua situazione oggi</h2>'+row("Entrate mensili",eur(c.entrate))+row("Uscite fisse",eur(c.fisse))+row("Uscite variabili",eur(c.vari))+row("Ti restano ogni mese",eur(c.cf),true)+'</div>';
+  h += '<div class="sec"><div class="ey">1 · Piano di accumulo</div><h2>Quanto puoi mettere da parte ogni mese: '+eur(pac)+'</h2><table><tr><th>Dopo…</th>'+RENDIM.map(([n,r])=>'<th>'+n+' '+Math.round(r*100)+'%</th>').join("")+'</tr>'
+     + [5,10,20].map(a=>'<tr><td><b>'+a+' anni</b></td>'+RENDIM.map(([n,r])=>'<td>'+eur(fv(pac,r,a))+'</td>').join("")+'</tr>').join("")+'</table><div class="note">Versati in totale in 10 anni: '+eur(pac*120)+'. Simulazioni, non promesse.</div></div>';
+  h += '<div class="sec"><div class="ey">2 · Fondo di emergenza</div><h2>La tua rete di sicurezza</h2>'+row("Mesi di spese consigliati",c.mesi+" mesi")+row("Fondo consigliato",eur(c.fondoTarget))+row("Quello che hai",eur(c.fondo))+row(c.fondo>=c.fondoTarget?"Sei a posto ✅":"Ti mancano",c.fondo>=c.fondoTarget?"—":eur(c.fondoTarget-c.fondo),true)+'<div class="bar"><i style="width:'+perc+'%"></i></div></div>';
+  h += '<div class="sec"><div class="ey">3 · Consigli automatici</div><h2>Cosa emerge dai tuoi numeri</h2>'+cons+'</div>';
+  h += '<div class="sec"><div class="ey">4 · Il punto di arrivo</div><h2>Il numero che ti permette di smettere di dipendere dallo stipendio</h2><p>Le tue spese annue oggi: <b>'+eur(spese*12)+'</b>. Capitale che servirebbe con tre ipotesi di rendimento e tempo necessario con il tuo piano di accumulo ('+eur(pac)+'/mese).</p>'
+     + '<table><tr><th>Ipotesi</th><th>Capitale necessario</th><th>Tempo con il tuo piano</th></tr>'+RENDIM.map(([n,r])=>'<tr><td><b>'+n+' '+Math.round(r*100)+'%</b></td><td>'+eur(spese*12/r)+'</td><td>'+escH(txtAnni(anniPer(spese*12/r,pac,r)))+'</td></tr>').join("")+'</table>';
+  if (second > 0) {
+    h += '<p style="margin-top:10px"><b>Con una seconda entrata'+(s.rank?' da '+escH(s.rank):'')+' di '+eur(second)+' al mese</b> (piano di '+eur(pac+second)+'/mese):</p><table>'+RENDIM.map(([n,r])=>{
+      const a0=anniPer(spese*12/r,pac,r), a1=anniPer(spese*12/r,pac+second,r);
+      return '<tr><td>'+n+' '+Math.round(r*100)+'%</td><td>'+escH(txtAnni(a1)+(a0!=null&&a1!=null?" (−"+txtAnni(a0-a1)+")":""))+'</td></tr>'; }).join("")+'</table>';
+  }
+  h += '</div>';
+  h += '<div class="foot">Simulazioni a scopo educativo: i rendimenti non sono garantiti e il risultato reale può essere diverso. Strumento informativo, non è consulenza finanziaria, legale o fiscale.</div></div></body></html>';
+  return h;
+}
+function stampaPdf(html) {
+  const f = document.createElement("iframe");
+  f.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden";
+  document.body.appendChild(f);
+  const d = f.contentWindow.document; d.open(); d.write(html); d.close();
+  setTimeout(() => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch(e) {} setTimeout(()=>{ try { document.body.removeChild(f); } catch(e){} }, 60000); }, 400);
 }
 
 export function NowTool({ onBack, onDone }) {
@@ -316,9 +369,11 @@ export function NowTool({ onBack, onDone }) {
             <div style={{...card,background:"var(--bg)",marginTop:14}}>
               <div style={{fontWeight:900,color:"var(--text)",marginBottom:4}}>E se avessi una seconda entrata?</div>
               <div style={{color:"var(--muted)",fontSize:14,marginBottom:8}}>Prova a inserire quanto in più potresti guadagnare ogni mese e metterlo interamente nel piano di accumulo.</div>
-              <Campo label="Entrata extra al mese (€)"><Soldi value={s.second} onChange={v=>up({second:v})} /></Campo>
+              <Campo label="Entrata extra al mese (€)"><Soldi value={s.second} onChange={v=>up({second:v, rank:""})} /></Campo>
+              <Campo label="Oppure scegli un rank" hint="Compila la cifra con l'incasso di quel rank: puoi sempre modificarla."><select value={s.rank||""} onChange={e=>{ const r=RANKS.find(x=>x[0]===e.target.value); up(r ? {rank:r[0], second:String(r[1])} : {rank:""}); }} style={inp}><option value="">Seleziona…</option>{RANKS.map(([n,v])=><option key={n} value={n}>{n + " — " + eur(v) + "/mese"}</option>)}</select></Campo>
               {second > 0 && (
                 <div>
+                  {s.rank && <Riga k="Rank scelto" v={s.rank} />}
                   <Riga k="Piano di accumulo con la seconda entrata" v={eur(pac + second) + " /mese"} />
                   {arrivo.map(([n,r])=>(
                     <Riga key={n} k={n + " " + Math.round(r*100) + "% — tempo per arrivare"} v={txtAnni(anniPer(spese*12/r, pac+second, r)) + (anniPer(spese*12/r, pac, r) != null && anniPer(spese*12/r, pac+second, r) != null ? " (−" + txtAnni(anniPer(spese*12/r, pac, r) - anniPer(spese*12/r, pac+second, r)) + ")" : "")} />))}
@@ -333,7 +388,7 @@ export function NowTool({ onBack, onDone }) {
             <div style={{fontWeight:900,fontSize:20,color:"var(--text)",margin:"4px 0 6px"}}>Non lasciarlo qui</div>
             <div style={{color:"var(--muted)",fontSize:14,marginBottom:12}}>Salva la tua analisi completa e mandala alla tua upline: è il prossimo passo per costruire insieme il tuo piano.</div>
             <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center"}}>
-              <button onClick={()=>window.print()} style={btnP}>📤 Salva PDF</button>
+              <button onClick={()=>stampaPdf(htmlNow(s,c,pac,second))} style={btnP}>📤 Salva PDF</button>
               <button onClick={copia} style={btnG}>📋 Copia riepilogo</button>
               {onDone && <button onClick={()=>{onDone();onBack();}} style={btnG}>✓ Esercizio completato</button>}
             </div>

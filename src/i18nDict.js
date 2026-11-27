@@ -1053,5 +1053,8 @@ export const DICT = {
 "↩︎ Torna automatico": "↩︎ Back to automatic",
 "✅ Controllato su XConnectly": "✅ Checked on XConnectly",
 "Io (tu)": "Me (you)",
-"·": "·"
+"·": "·",
+"Oppure scegli un rank": "Or pick a rank",
+"Compila la cifra con l'incasso di quel rank: puoi sempre modificarla.": "Fills in the amount with that rank's income: you can always edit it.",
+"Rank scelto": "Chosen rank"
 };
