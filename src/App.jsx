@@ -870,7 +870,7 @@ export default function App() {
   }
   async function salvaXc(memberId, row) {
     const prima = xcRows;
-    const nuovo = { member_id:memberId, affiliate:!!row.affiliate, etoro:!!row.etoro, etoro_data:row.etoro_data||null, etoro_pagato:!!row.etoro_pagato, etoro_livello_pagato:row.etoro_livello_pagato?Number(row.etoro_livello_pagato):null, email:(row.email||"").trim()||null, broker:!!row.broker, broker_nome:row.broker_nome||null, broker_data:row.broker_data||null };
+    const nuovo = { member_id:memberId, affiliate:!!row.affiliate, etoro:!!row.etoro, etoro_data:row.etoro_data||null, etoro_pagato:!!row.etoro_pagato, etoro_livello_pagato:row.etoro_livello_pagato?Number(row.etoro_livello_pagato):null, email:(row.email||"").trim()||null, broker:!!row.broker, broker_nome:row.broker_nome||null, broker_data:row.broker_data||null, sponsor_xc:row.sponsor_xc||null, controllato:!!row.controllato };
     setXcRows(r=>[...r.filter(x=>x.member_id!==memberId), nuovo]);
     try { await sbSaveXc(auth.token, { ...nuovo, updated_by:auth.userId, updated_at:new Date().toISOString() }); }
     catch(e) { setXcRows(prima); showToast("Non salvato: "+e.message,"#ef4444"); }
@@ -1445,7 +1445,7 @@ export default function App() {
       {toast && <div className="toast-pos" style={{position:"fixed",bottom:24,right:24,zIndex:9999,background:toast.color,color:"#fff",padding:"12px 22px",borderRadius:12,fontWeight:700,fontSize:13,boxShadow:"0 8px 30px #00000060",animation:"fadeIn .25s ease"}}>{toast.msg}</div>}
       {saving && <div style={{position:"fixed",top:14,right:14,zIndex:9998,background:"var(--bg4)",border:"1px solid var(--border2)",borderRadius:9,padding:"7px 14px",fontSize:12,color:"var(--a2)",display:"flex",alignItems:"center",gap:7}}><span className="spinner" />Salvataggio...</div>}
 
-      <Sidebar view={view} setView={setView} data={data} auth={auth} onLogout={handleLogout} downlineCount={downline.length} sonoLeader={sonoLeader} />
+      <Sidebar view={view} setView={setView} data={data} auth={auth} onLogout={handleLogout} downlineCount={downline.filter(m=>m.attivo!==false).length} sonoLeader={sonoLeader} />
       <button className="ass-fab" onClick={()=>setShowAss(true)} title="Chat" style={{position:"fixed",right:18,bottom:24,zIndex:900,display:"flex",alignItems:"center",gap:8,padding:"13px 20px",borderRadius:99,border:"none",cursor:"pointer",fontWeight:800,fontSize:14,color:"#fff",background:"linear-gradient(135deg,var(--a1),var(--a2))",boxShadow:"0 12px 28px -8px #6d5efcbb"}}>{"\ud83c\udf99\ufe0f"} Chat</button>
       {showAss && <Assistente prospects={[...data,...teamProspects]} onApply={applicaAssistente} onNew={nuovoDaAssistente} onClose={()=>setShowAss(false)} faseLabel={f=>PROSPECT_FASE_LABEL[f]||f} />}
 
@@ -1476,7 +1476,7 @@ export default function App() {
         {auth && <button className="tema-btn" onClick={()=>setScuro(v=>!v)} aria-label={scuro?"Tema chiaro":"Tema scuro"} title={scuro?"Passa al chiaro":"Passa allo scuro"}>{scuro?"☀️":"🌙"}</button>}
         {auth && ready && ticketPronti && <EventoPopup haTicket={ticketRows.some(r=>r.evento==="global-mission" && r.user_id===auth.userId)} />}
         {view==="onboarding" && <OnboardingView auth={auth} />}
-        {view==="profilo" && <ProfiloView auth={auth} onUpdateProfile={updateProfile} downlineCount={downline.length} showToast={showToast} />}
+        {view==="profilo" && <ProfiloView auth={auth} onUpdateProfile={updateProfile} downlineCount={downline.filter(m=>m.attivo!==false).length} showToast={showToast} />}
       </main>
 
       {/* Mobile bottom nav - shown via CSS on mobile only */}
@@ -1494,7 +1494,7 @@ export default function App() {
             {[
               {id:"nomi",label:"Lista Nomi",icon:"\ud83d\udcdd"},
               {id:"lista",label:"Prospect",icon:"\ud83c\udfaf",badge:data.length},
-              {id:"team",label:"Team",icon:"\ud83d\udc65",badge:downline.length||0},
+              {id:"team",label:"Team",icon:"\ud83d\udc65",badge:downline.filter(m=>m.attivo!==false).length||0},
               {id:"eventi",label:"Eventi",icon:"\ud83c\udf9f\ufe0f"},
               ...(sonoLeader?[{id:"xc",label:"XC",icon:"\ud83d\udcb1"}]:[]),
               {id:"stats",label:"Statistica",icon:"\ud83d\udcca"},

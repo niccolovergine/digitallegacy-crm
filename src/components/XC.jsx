@@ -7,6 +7,46 @@ export const XC_PERC = { 1:40, 2:20, 3:15, 4:15, 5:10 };
 const card = { background:"var(--bg2)", border:"1px solid var(--border)", borderRadius:16 };
 const inp  = { padding:"6px 8px", fontSize:12.5, borderRadius:8, minWidth:0 };
 
+
+// "iscritto da": mostra lo sponsor e permette di correggerlo con quello vero di XConnectly
+function SponsorEdit({ nome, corretto, options, onPick }) {
+  const [open, setOpen] = useState(false);
+  const [txt, setTxt] = useState("");
+  const [msg, setMsg] = useState("");
+  const b = { background:"none", border:"none", cursor:"pointer", fontFamily:"inherit", fontSize:11.5, fontWeight:700, color:"var(--a2)", padding:0 };
+  function conferma() {
+    const t = txt.trim().toLowerCase();
+    if (!t) { setMsg("Scrivi un nome"); return; }
+    const hit = options.filter(o => o.label.toLowerCase() === t);
+    const part = hit.length ? hit : options.filter(o => o.label.toLowerCase().includes(t));
+    if (part.length === 0) { setMsg("Nessuno con questo nome"); return; }
+    if (part.length > 1) { setMsg("Più persone: scegli dalla lista"); return; }
+    onPick(part[0].id); setOpen(false); setTxt(""); setMsg("");
+  }
+  return (
+    <div>
+      <div style={{fontSize:11.5,color:"var(--muted)"}}>
+        {"iscritto da "+nome}{" "}
+        {!open && <button style={b} onClick={()=>setOpen(true)}>{"✏️ cambia"}</button>}
+      </div>
+      {corretto && !open && <div style={{fontSize:11,color:"#059669",fontWeight:700}}>{"✔ Sponsor corretto da te"}</div>}
+      {open && (
+        <div style={{marginTop:6,display:"flex",flexDirection:"column",gap:6,maxWidth:300}}>
+          <div style={{fontSize:11.5,fontWeight:700,color:"var(--text)"}}>{"Chi l'ha iscritto su XConnectly?"}</div>
+          <input list="xc-sponsor-list" value={txt} onChange={e=>{setTxt(e.target.value);setMsg("");}} placeholder="Scrivi il nome e scegli" style={inp} autoFocus />
+          <datalist id="xc-sponsor-list">{options.map(o=><option key={o.id} value={o.label} />)}</datalist>
+          {msg && <div style={{fontSize:11.5,color:"#dc2626",fontWeight:700}}>{msg}</div>}
+          <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
+            <button onClick={conferma} style={{...b,color:"#fff",background:"var(--a1)",padding:"5px 12px",borderRadius:8}}>Salva</button>
+            <button onClick={()=>{setOpen(false);setMsg("");}} style={{...b,color:"var(--muted)"}}>Annulla</button>
+            {corretto && <button onClick={()=>{onPick(null);setOpen(false);setMsg("");}} style={b}>{"↩︎ Torna automatico"}</button>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function XCView({ auth, allProfiles, downline, clienti, rows, onSave, spill, onSpill, leaderIds }) {
   const [q, setQ] = useState("");
   const [tab, setTab] = useState("tutti"); // tutti | affiliate | depositanti | controllare | spillover
@@ -33,6 +73,8 @@ export default function XCView({ auth, allProfiles, downline, clienti, rows, onS
   }
   const rowOf = id => (rows||[]).find(r => r.member_id===id) || {};
   const isAff = id => id===auth.userId || !!rowOf(id).affiliate;
+  // sponsor usato per i livelli: se un leader ha corretto "iscritto da", vale quello; altrimenti la persona sopra nel CRM
+  const sponsorOf = id => rowOf(id).sponsor_xc || byId[id]?.sponsor || null;
 
   const attivi = [
     ...(downline||[]).filter(m => m.attivo!==false),
@@ -41,7 +83,7 @@ export default function XCView({ auth, allProfiles, downline, clienti, rows, onS
 
   // livello atteso: conto solo gli affiliate tra me e il depositante, lungo la linea di sponsorizzazione
   function livello(id) {
-    let cur = byId[id]?.sponsor, steps = 0, between = 0, guard = 0;
+    let cur = sponsorOf(id), steps = 0, between = 0, guard = 0;
     const chain = [];
     while (cur && guard++ < 60) {
       steps++;
@@ -49,22 +91,32 @@ export default function XCView({ auth, allProfiles, downline, clienti, rows, onS
       const n = byId[cur]; if (!n) break;
       chain.push(n.nome + (isAff(cur) ? " (affiliate)" : ""));
       if (isAff(cur)) between++;
-      cur = n.sponsor;
+      cur = sponsorOf(cur);
     }
     return { ok:false };
   }
+
+  const sponsorOpts = (() => {
+    const tutti = [{ id:auth.userId, nome:"Io (tu)" }, ...(downline||[]).map(m=>({id:m.id,nome:nome(m)})), ...(clienti||[]).map(c=>({id:c.id,nome:nome(c)}))]
+      .filter((m,i,a)=>m.id && a.findIndex(x=>x.id===m.id)===i);
+    const conta = {}; tutti.forEach(t=>{ conta[t.nome]=(conta[t.nome]||0)+1; });
+    return tutti.map(t=>({ id:t.id, label: conta[t.nome]>1 ? t.nome+" ("+t.id.slice(0,4)+")" : t.nome })).sort((a,b)=>a.label.localeCompare(b.label));
+  })();
 
   const list = attivi.map(m => {
     const r = rowOf(m.id);
     const dep = !!(r.etoro || r.broker);
     const lv = livello(m.id);
-    const diverso = dep && lv.ok && lv.nominale !== lv.atteso;
+    const strano = dep && lv.ok && lv.nominale !== lv.atteso;
+    const pagatoGiusto = !!(r.etoro_pagato && r.etoro_livello_pagato && Number(r.etoro_livello_pagato) === lv.atteso);
+    const controllato = !!r.controllato || pagatoGiusto;       // già verificato su XConnectly
+    const diverso = strano && !controllato;                    // da controllare davvero
     const sotto = leadersSotto(m.id);
     const passato = sotto.length>0 && sotto.every(l=>marked(m.id,l));   // i leader sotto di me l'hanno passato a me
     // "in mano a": il primo leader (dal basso) che non l'ha passato su
     const inMano = sotto.find(l=>!marked(m.id,l)) || null;
     const mioSpill = marked(m.id, auth.userId);
-    return { m, r, dep, lv, diverso, sotto, passato, inMano, mioSpill };
+    return { m, r, dep, lv, diverso, strano, controllato, pagatoGiusto, sotto, passato, inMano, mioSpill };
   });
 
   const attiviLista = list.filter(x=>!x.mioSpill);
@@ -220,15 +272,15 @@ export default function XCView({ auth, allProfiles, downline, clienti, rows, onS
       {shown.length===0
         ? <div style={{...card,textAlign:"center",padding:"3rem",color:"var(--muted)",fontSize:14}}>Nessuno da mostrare qui</div>
         : <div style={{display:"flex",flexDirection:"column",gap:12}}>
-            {shown.map(({m,r,dep,lv,diverso,passato,sotto,inMano,mioSpill})=>(
-              <div key={m.id} style={{...card,padding:"14px 16px",background:passato&&!mioSpill?"#facc1522":"var(--bg2)",borderColor:diverso?"#f59e0b66":"var(--border)"}}>
+            {shown.map(({m,r,dep,lv,diverso,strano,controllato,pagatoGiusto,passato,sotto,inMano,mioSpill})=>(
+              <div key={m.id} style={{...card,padding:"14px 16px",background:passato&&!mioSpill&&!r.controllato?"#facc1522":"var(--bg2)",borderColor:diverso?"#f59e0b66":"var(--border)"}}>
                 <div style={{display:"flex",justifyContent:"space-between",gap:12,flexWrap:"wrap",alignItems:"flex-start"}}>
                   <div style={{minWidth:180}}>
                     <div style={{fontWeight:800,fontSize:15,color:"var(--text)"}}>{nome(m)}</div>
-                    <div style={{fontSize:11.5,color:"var(--muted)"}}>{"iscritto da "+(byId[byId[m.id]?.sponsor]?.nome || "una persona fuori dal tuo team")}</div>
+                    <SponsorEdit nome={byId[sponsorOf(m.id)]?.nome || "una persona fuori dal tuo team"} corretto={!!r.sponsor_xc} options={sponsorOpts.filter(o=>o.id!==m.id)} onPick={id=>save(m.id,{sponsor_xc:id,controllato:false})} />
                     {!lv.ok && <div style={{fontSize:11.5,fontWeight:700,color:"#ea580c",marginTop:3}}>{"🟠 Probabile spillover"}</div>}
                     {inMano && !mioSpill && <div style={{fontSize:11.5,color:"var(--muted)",marginTop:3}}>{"in mano a "+(byId[inMano]?.nome||"—")}</div>}
-                    {passato && !mioSpill && <div style={{fontSize:11.5,fontWeight:700,color:"#b45309",marginTop:3}}>{"🟡 Passato a te da "+sotto.map(l=>byId[l]?.nome||"—").join(", ")}</div>}
+                    {passato && !mioSpill && !r.controllato && <div style={{fontSize:11.5,fontWeight:700,color:"#b45309",marginTop:3}}>{"🟡 Passato a te da "+sotto.map(l=>byId[l]?.nome||"—").join(", ")}</div>}
                   </div>
                   <div style={{textAlign:"right",minWidth:170}}>
                     {!dep ? <span style={{color:"var(--muted)",fontSize:12}}>Nessun deposito</span>
@@ -238,6 +290,8 @@ export default function XCView({ auth, allProfiles, downline, clienti, rows, onS
                            {lv.atteso<=5 ? "Livello "+lv.atteso+" · "+XC_PERC[lv.atteso]+"%" : "Oltre il livello 5: non paga"}
                          </div>
                          {diverso && <div style={{fontSize:12,fontWeight:700,color:"#b45309",marginTop:3}}>{"⚠️ Sembra livello "+lv.nominale+", ma deve essere pagato livello "+lv.atteso}</div>}
+                         {strano && pagatoGiusto && <div style={{fontSize:12,fontWeight:700,color:"#059669",marginTop:3}}>{"✅ Pagato correttamente a livello "+lv.atteso}</div>}
+                         {strano && !pagatoGiusto && r.controllato && <div style={{fontSize:12,fontWeight:700,color:"#059669",marginTop:3}}>{"✅ Controllato su XConnectly"}</div>}
                        </div>}
                   </div>
                 </div>
@@ -246,6 +300,9 @@ export default function XCView({ auth, allProfiles, downline, clienti, rows, onS
                   <Toggle on={!!r.affiliate} label="Affiliate" color="#6d5efc" onClick={()=>save(m.id,{affiliate:!r.affiliate})} />
                   <Toggle on={!!r.etoro} label="Depositato eToro" color="#10b981" onClick={()=>save(m.id,{etoro:!r.etoro})} />
                   <Toggle on={!!r.broker} label="Depositato broker" color="#3b82f6" onClick={()=>save(m.id,{broker:!r.broker})} />
+                  {(strano || (passato && !mioSpill)) && !pagatoGiusto && (
+                    <Toggle on={!!r.controllato} label="✅ Controllato su XConnectly" color="#059669" onClick={()=>save(m.id,{controllato:!r.controllato})} />
+                  )}
                   <Toggle on={mioSpill} label="Spillover" color="#ea580c" onClick={()=>{
                     if (mioSpill) onSpill(m.id,false);
                     else if (window.confirm("Sei sicuro che "+nome(m)+" sia spillover? Sparirà dalla tua lista e passerà al leader sopra di te.")) onSpill(m.id,true);

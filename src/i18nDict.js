@@ -1042,5 +1042,16 @@ export const DICT = {
 "📄 Report PDF": "📄 PDF report",
 "📋 Copia per email": "📋 Copy for email",
 "✓ Copiato": "✓ Copied",
-"Pagato a livello": "Paid at level"
+"Pagato a livello": "Paid at level",
+"✏️ cambia": "✏️ change",
+"✔ Sponsor corretto da te": "✔ Sponsor corrected by you",
+"Chi l'ha iscritto su XConnectly?": "Who enrolled them on XConnectly?",
+"Scrivi il nome e scegli": "Type the name and pick",
+"Scrivi un nome": "Type a name",
+"Nessuno con questo nome": "Nobody with this name",
+"Più persone: scegli dalla lista": "Several people: pick from the list",
+"↩︎ Torna automatico": "↩︎ Back to automatic",
+"✅ Controllato su XConnectly": "✅ Checked on XConnectly",
+"Io (tu)": "Me (you)",
+"·": "·"
 };

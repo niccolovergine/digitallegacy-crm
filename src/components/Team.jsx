@@ -223,7 +223,7 @@ export function TeamView({auth,downline,dlProspects,clienti,onAssignTeam,positio
       <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:"1.5rem",gap:12,flexWrap:"wrap"}}>
         <div>
           <h1 style={{fontWeight:900,fontSize:26,color:"var(--text)",letterSpacing:-0.8,lineHeight:1}}>Team</h1>
-          <p style={{color:"var(--muted)",fontSize:12,marginTop:4}}>{downline.length} membri nella tua downline</p>
+          <p style={{color:"var(--muted)",fontSize:12,marginTop:4}}>{downline.filter(m=>m.attivo!==false).length} membri nella tua downline{downline.some(m=>m.attivo===false) && <span>{" · "}<span>{downline.filter(m=>m.attivo===false).length+" inattivi non contati"}</span></span>}</p>
         </div>
       </div>
 
