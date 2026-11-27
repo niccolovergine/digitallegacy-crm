@@ -355,6 +355,7 @@ html[data-theme=scuro] .card-soft{box-shadow:0 1px 2px #0006,0 8px 24px -12px #0
 .tema-btn{position:fixed;top:14px;right:18px;z-index:1100;width:42px;height:42px;border-radius:99px;border:1px solid var(--border2);background:var(--bg2);color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px -4px #0003;transition:transform .2s}
 .tema-btn:hover{transform:scale(1.08)}
 .lang-btn{right:68px}
+@media(min-width:769px){.page-wrap{padding-top:3.7rem!important}}
 @media(max-width:768px){.tema-btn{top:7px;right:10px;width:42px;height:42px;background:#ffffff1f;border-color:transparent;color:#fff}}
 @media(max-width:768px){.lang-btn{right:58px}}
 .ass-fab{display:none!important}
