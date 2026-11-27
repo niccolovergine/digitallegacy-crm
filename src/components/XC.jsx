@@ -15,10 +15,12 @@ function SponsorEdit({ nome, corretto, options, onPick }) {
   const [msg, setMsg] = useState("");
   const b = { background:"none", border:"none", cursor:"pointer", fontFamily:"inherit", fontSize:11.5, fontWeight:700, color:"var(--a2)", padding:0 };
   function conferma() {
-    const t = txt.trim().toLowerCase();
+    const norm = x => String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g," ").trim();
+    const t = norm(txt);
     if (!t) { setMsg("Scrivi un nome"); return; }
-    const hit = options.filter(o => o.label.toLowerCase() === t);
-    const part = hit.length ? hit : options.filter(o => o.label.toLowerCase().includes(t));
+    const hit = options.filter(o => norm(o.label) === t);
+    const parole = t.split(" ");
+    const part = hit.length ? hit : options.filter(o => parole.every(w => norm(o.label).includes(w)));
     if (part.length === 0) { setMsg("Nessuno con questo nome"); return; }
     if (part.length > 1) { setMsg("Più persone: scegli dalla lista"); return; }
     onPick(part[0].id); setOpen(false); setTxt(""); setMsg("");
@@ -97,7 +99,8 @@ export default function XCView({ auth, allProfiles, downline, clienti, rows, onS
   }
 
   const sponsorOpts = (() => {
-    const tutti = [{ id:auth.userId, nome:"Io (tu)" }, ...(downline||[]).map(m=>({id:m.id,nome:nome(m)})), ...(clienti||[]).map(c=>({id:c.id,nome:nome(c)}))]
+    const mioNome = (byId[auth.userId]?.nome && byId[auth.userId].nome!=="Tu") ? byId[auth.userId].nome : (auth.profile ? nome(auth.profile) : "");
+    const tutti = [{ id:auth.userId, nome:(mioNome||"Io")+" (tu)" }, ...(allProfiles||[]).map(m=>({id:m.id,nome:nome(m)})), ...(downline||[]).map(m=>({id:m.id,nome:nome(m)})), ...(clienti||[]).map(c=>({id:c.id,nome:nome(c)}))]
       .filter((m,i,a)=>m.id && a.findIndex(x=>x.id===m.id)===i);
     const conta = {}; tutti.forEach(t=>{ conta[t.nome]=(conta[t.nome]||0)+1; });
     return tutti.map(t=>({ id:t.id, label: conta[t.nome]>1 ? t.nome+" ("+t.id.slice(0,4)+")" : t.nome })).sort((a,b)=>a.label.localeCompare(b.label));
