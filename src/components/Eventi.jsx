@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { isVip, VIP_GOLD, VIP_BG } from "../vip";
+import { isVip, vipMancanti, VIP_GOLD, VIP_BG } from "../vip";
 import VipPill from "./VipPill";
 
 // ── EVENTI ────────────────────────────────────────────────────────
@@ -92,7 +92,7 @@ export function EventiView({ auth, allProfiles, downline, isNic, ticketRows, isL
             <div style={{fontWeight:900,fontSize:22,color:"#10b981"}}>{nelTeam}<span style={{fontSize:15,color:"var(--muted)",fontWeight:700}}> / {membri.length}</span></div>
           </div>
         </div>)}
-      {isLeader && evId==="global-mission" && <div style={{margin:"-4px 0 14px"}}><VipPill persone={membri} /></div>}
+      {isLeader && evId==="global-mission" && vipMancanti(membri).length>0 && <div style={{margin:"-4px 0 14px"}}><VipPill persone={membri} /></div>}
       {!isLeader && <div style={{fontSize:13,color:"var(--muted)",margin:"-4px 0 14px"}}>🔒 Solo i leader possono segnare i ticket. Tu puoi guardare la lista.</div>}
 
       {/* ricerca + filtri */}
@@ -123,31 +123,38 @@ export function EventiView({ auth, allProfiles, downline, isNic, ticketRows, isL
 
 // ── POPUP ALL'APERTURA DEL CRM ────────────────────────────────────
 // ticket preso → festeggiamenti; altrimenti → banner con domanda (solo ❌ per chiudere)
-export function EventoPopup({ haTicket }) {
+export function EventoPopup({ haTicket, vip, anteprima }) {
   const gm = EVENTI[0];
-  const chiave = "dl_gm_popup_" + (haTicket ? "festa" : "banner");
+  const gold = (!!vip && !!haTicket) || !!anteprima;   // solo i VIP con ticket (e Nic, come anteprima) vedono la versione oro
+  const festa = haTicket || gold;
+  const chiave = "dl_gm_popup_" + (gold ? "vip" : haTicket ? "festa" : "banner");
   const [aperto, setAperto] = useState(() => { try { return !sessionStorage.getItem(chiave); } catch { return true; } });
   const chiudi = () => { setAperto(false); try { sessionStorage.setItem(chiave, "1"); } catch {} };
-  useEffect(() => { setAperto(() => { try { return !sessionStorage.getItem(chiave); } catch { return true; } }); }, [haTicket]);
+  useEffect(() => { setAperto(() => { try { return !sessionStorage.getItem(chiave); } catch { return true; } }); }, [haTicket, vip, anteprima]);
   if (!aperto || !globalMissionAttivo()) return null;
 
   const confetti = Array.from({ length: 70 }, (_, i) => ({
     left: (i * 37) % 100, delay: (i % 14) * 0.25, dur: 3 + (i % 5) * 0.7,
-    c: ["#f59e0b","#2563eb","#10b981","#ec4899","#a855f7","#ef4444"][i % 6], w: 6 + (i % 4) * 3,
+    c: (gold ? ["#f5c842","#d4a017","#fff3b0","#b8860b","#ffe27a","#c99700"] : ["#f59e0b","#2563eb","#10b981","#ec4899","#a855f7","#ef4444"])[i % 6], w: 6 + (i % 4) * 3,
   }));
 
   return (
     <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(6,14,38,.82)",display:"flex",alignItems:"center",justifyContent:"center",padding:16,overflow:"hidden"}}>
       <style>{`@keyframes dlfall{0%{transform:translateY(-12vh) rotate(0)}100%{transform:translateY(112vh) rotate(720deg)}}@keyframes dlpop{0%{transform:scale(.8);opacity:0}100%{transform:scale(1);opacity:1}}@keyframes dlbounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}`}</style>
-      {haTicket && confetti.map((c,i) => (
+      {festa && confetti.map((c,i) => (
         <span key={i} style={{position:"absolute",top:0,left:c.left+"%",width:c.w,height:c.w*1.6,background:c.c,borderRadius:2,animation:`dlfall ${c.dur}s linear ${c.delay}s infinite`,pointerEvents:"none"}} />))}
 
       <div style={{position:"relative",width:"100%",maxWidth:480,borderRadius:26,padding:"34px 26px 28px",textAlign:"center",color:"#fff",animation:"dlpop .45s ease-out",
-        background:"linear-gradient(160deg,#0b1d4a,#1d4ed8)",boxShadow:"0 24px 70px rgba(0,0,0,.5)"}}>
-        {!haTicket && <button onClick={chiudi} aria-label="Chiudi" style={{position:"absolute",top:12,right:12,width:38,height:38,borderRadius:99,border:"none",background:"rgba(255,255,255,.18)",color:"#fff",fontSize:20,fontWeight:900,cursor:"pointer"}}>✕</button>}
+        background:gold?"linear-gradient(160deg,#7a5600,#d4a017 55%,#f5d76e)":"linear-gradient(160deg,#0b1d4a,#1d4ed8)",boxShadow:gold?"0 24px 70px rgba(212,160,23,.55), 0 0 0 2px #f5d76e":"0 24px 70px rgba(0,0,0,.5)"}}>
+        {!festa && <button onClick={chiudi} aria-label="Chiudi" style={{position:"absolute",top:12,right:12,width:38,height:38,borderRadius:99,border:"none",background:"rgba(255,255,255,.18)",color:"#fff",fontSize:20,fontWeight:900,cursor:"pointer"}}>✕</button>}
 
         <EventoLogo ev={gm} size={110} />
-        {haTicket ? (<>
+        {gold ? (<>
+          <div style={{fontSize:44,margin:"14px 0 0",animation:"dlbounce 1.2s ease-in-out infinite"}}>👑</div>
+          <h2 style={{fontWeight:900,fontSize:27,margin:"6px 0 8px",letterSpacing:-.5,color:"#fff",textShadow:"0 2px 8px rgba(80,50,0,.45)"}}>Hai comprato il VIP ticket!</h2>
+          <div style={{fontSize:17,lineHeight:1.45,color:"#fff",textShadow:"0 1px 6px rgba(80,50,0,.4)"}}>Sei un <b>VIP</b> del <b>Global Mission Event</b>.<br/>Ci vediamo il 12 dicembre! ⭐</div>
+          <button onClick={chiudi} style={{marginTop:22,padding:"13px 26px",borderRadius:14,border:"none",background:"#fff",color:"#7a5600",fontWeight:900,fontSize:16,cursor:"pointer",fontFamily:"inherit"}}>Entra nel CRM 🚀</button>
+        </>) : haTicket ? (<>
           <div style={{fontSize:44,margin:"14px 0 0",animation:"dlbounce 1.2s ease-in-out infinite"}}>🎉</div>
           <h2 style={{fontWeight:900,fontSize:27,margin:"6px 0 8px",letterSpacing:-.5}}>Congratulazioni!</h2>
           <div style={{fontSize:17,lineHeight:1.45,opacity:.95}}>Hai preso il ticket per il <b>Global Mission Event</b>.<br/>Ci vediamo il 12 dicembre! 🥳</div>

@@ -14,7 +14,7 @@ export default function VipPill({ persone }) {
       {open && (
         <div style={{position:"absolute",top:"110%",left:0,zIndex:50,background:"var(--bg2)",border:"1px solid "+VIP_GOLD,borderRadius:12,padding:"10px 14px",minWidth:250,fontSize:12.5,color:"var(--text)",boxShadow:"0 8px 24px #0003"}}>
           <div style={{fontWeight:800,color:VIP_GOLD,marginBottom:4}}>{"Trovati nel CRM: "+(tot-man.length)+" su "+tot}</div>
-          {man.length===0 ? <div>Tutti trovati ✅</div> : <div><div style={{color:"var(--muted)",marginBottom:2}}>Non trovati (nome diverso o non ancora nel CRM):</div>{man.map(n=><div key={n}>{"• "+n}</div>)}</div>}
+          {man.length===0 ? null : <div><div style={{color:"var(--muted)",marginBottom:2}}>Non trovati (nome diverso o non ancora nel CRM):</div>{man.map(n=><div key={n}>{"• "+n}</div>)}</div>}
         </div>
       )}
     </span>

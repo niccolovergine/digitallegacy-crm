@@ -5,6 +5,7 @@ import { ProfiloView } from "./components/Profilo";
 import { ListaNomiView } from "./components/ListaNomi";
 import XCView from "./components/XC.jsx";
 import { EventiView, EventoPopup } from "./components/Eventi";
+import { isVip } from "./vip";
 import { setLang } from "./i18n";
 import { Assistente } from "./components/Assistente";
 import { MappaSezione } from "./components/Mappa";
@@ -1475,7 +1476,7 @@ export default function App() {
         {view==="eventi"  && <EventiView auth={auth} allProfiles={allProfiles} downline={downline} isNic={auth.userId===LUDOVICO_ID} ticketRows={ticketRows} isLeader={!!auth.profile?.is_leader || auth.userId===LUDOVICO_ID} onToggle={toggleTicket} />}
         {auth && <button className="tema-btn lang-btn" onClick={()=>setInglese(v=>!v)} aria-label={inglese?"Italiano":"English"} title={inglese?"Italiano":"English"}>{inglese?"🇮🇹":"🇬🇧"}</button>}
         {auth && <button className="tema-btn" onClick={()=>setScuro(v=>!v)} aria-label={scuro?"Tema chiaro":"Tema scuro"} title={scuro?"Passa al chiaro":"Passa allo scuro"}>{scuro?"☀️":"🌙"}</button>}
-        {auth && ready && ticketPronti && <EventoPopup haTicket={ticketRows.some(r=>r.evento==="global-mission" && r.user_id===auth.userId)} />}
+        {auth && ready && ticketPronti && <EventoPopup haTicket={ticketRows.some(r=>r.evento==="global-mission" && r.user_id===auth.userId)} vip={isVip({nome:auth.profile?.nome, cognome:auth.profile?.cognome})} anteprima={auth.userId===LUDOVICO_ID} />}
         {view==="onboarding" && <OnboardingView auth={auth} />}
         {view==="profilo" && <ProfiloView auth={auth} onUpdateProfile={updateProfile} downlineCount={downline.filter(m=>m.attivo!==false).length} showToast={showToast} />}
       </main>
