@@ -1,4 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
+import { isVip, VIP_GOLD, VIP_BG } from "../vip";
+import VipPill from "./VipPill";
 
 // ── EVENTI ────────────────────────────────────────────────────────
 // Per cambiare date o testi: modifica solo qui.
@@ -90,6 +92,7 @@ export function EventiView({ auth, allProfiles, downline, isNic, ticketRows, isL
             <div style={{fontWeight:900,fontSize:22,color:"#10b981"}}>{nelTeam}<span style={{fontSize:15,color:"var(--muted)",fontWeight:700}}> / {membri.length}</span></div>
           </div>
         </div>)}
+      {isLeader && evId==="global-mission" && <div style={{margin:"-4px 0 14px"}}><VipPill persone={membri} /></div>}
       {!isLeader && <div style={{fontSize:13,color:"var(--muted)",margin:"-4px 0 14px"}}>🔒 Solo i leader possono segnare i ticket. Tu puoi guardare la lista.</div>}
 
       {/* ricerca + filtri */}
@@ -103,11 +106,12 @@ export function EventiView({ auth, allProfiles, downline, isNic, ticketRows, isL
       <div style={{display:"grid",gap:8}}>
         {lista.map(m => {
           const ok = hanno.has(m.id);
+          const vip = evId==="global-mission" && isVip(m);
           return (
-            <div key={m.id} style={{...card,padding:"12px 14px",display:"flex",alignItems:"center",gap:12,borderColor:ok?"#10b981":"var(--border)"}}>
+            <div key={m.id} style={{...card,padding:"12px 14px",display:"flex",alignItems:"center",gap:12,borderColor:vip?VIP_GOLD:ok?"#10b981":"var(--border)",background:vip?VIP_BG+",var(--bg2)":"var(--bg2)",boxShadow:vip?"0 0 0 1px "+VIP_GOLD+"55, 0 4px 16px "+VIP_GOLD+"2e":"none"}}>
               <button disabled={!isLeader} onClick={()=>onToggle(evId, m.id, !ok)} aria-label="Ticket acquistato"
                 style={{flex:"none",width:32,height:32,borderRadius:10,border:"2px solid "+(ok?"#10b981":"var(--border)"),background:ok?"#10b981":"var(--bg)",color:"#fff",fontWeight:900,fontSize:17,cursor:isLeader?"pointer":"default",opacity:isLeader||ok?1:.6}}>{ok?"✓":""}</button>
-              <div style={{flex:1,minWidth:0,fontWeight:700,color:"var(--text)",fontSize:15.5}}>{m.nome} {m.cognome}{m.id===auth?.userId && <span style={{color:"var(--muted)",fontWeight:600}}> (tu)</span>}</div>
+              <div style={{flex:1,minWidth:0,fontWeight:700,color:vip?VIP_GOLD:"var(--text)",fontSize:15.5}}>{vip && <span title="VIP Global Mission" style={{fontSize:10,fontWeight:900,color:"#7a5800",background:VIP_GOLD,borderRadius:5,padding:"2px 6px",marginRight:8}}>{"⭐ VIP"}</span>}{m.nome} {m.cognome}{m.id===auth?.userId && <span style={{color:"var(--muted)",fontWeight:600}}> (tu)</span>}</div>
               <div style={{fontSize:13,fontWeight:800,color:ok?"#10b981":"var(--muted)"}}>{ok?"Ticket preso 🎟️":"—"}</div>
             </div>);
         })}

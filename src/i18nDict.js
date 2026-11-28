@@ -1056,5 +1056,8 @@ export const DICT = {
 "·": "·",
 "Oppure scegli un rank": "Or pick a rank",
 "Compila la cifra con l'incasso di quel rank: puoi sempre modificarla.": "Fills in the amount with that rank's income: you can always edit it.",
-"Rank scelto": "Chosen rank"
+"Rank scelto": "Chosen rank",
+"⭐ VIP Global Mission": "⭐ Global Mission VIP",
+"Tutti trovati ✅": "All found ✅",
+"Non trovati (nome diverso o non ancora nel CRM):": "Not found (different name or not in the CRM yet):"
 };
